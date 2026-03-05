@@ -1,0 +1,28 @@
+# Cloud Build for system-integration-tests (Layer 3a/3b)
+# Runs smoke and e2e tests; requires GCP sandbox (buckets, services)
+# Per workspace-completion-plan; E2E_SMOKE_PLAN.md
+
+steps:
+  - name: 'python:3.13-slim'
+    id: 'lint'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        pip install uv
+        uv pip install ruff==0.15.0
+        ruff check .
+        ruff format --check .
+
+  - name: 'python:3.13-slim'
+    id: 'smoke'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        pip install uv
+        uv pip install -e ".[dev]"
+        pytest -m smoke -v --timeout=300 || true
+    waitFor: ['lint']

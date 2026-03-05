@@ -1,0 +1,61 @@
+name: Quality Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+    if: github.event_name \!= 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Authenticate to GCP Artifact Registry
+        if: ${{ secrets.GCP_SA_KEY \!= '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure pip for Artifact Registry
+        if: ${{ secrets.GCP_SA_KEY \!= '' }}
+        run: |
+          pip install uv keyring keyrings.google-artifactregistry-auth
+          if [ -f pip.conf ]; then
+            mkdir -p ~/.pip
+            cp pip.conf ~/.pip/pip.conf
+          fi
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Install ripgrep (required for codex checks)
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -e ".[dev]" || uv pip install --system -e .
+          uv pip install --system ruff==0.15.0 pytest pytest-cov pytest-asyncio
+
+      - name: Run quality gates
+        env:
+          CLOUD_MOCK_MODE: "true"
+          GOOGLE_CLOUD_PROJECT: "test-project"
+        run: |
+          bash scripts/quality-gates.sh --no-fix
+
