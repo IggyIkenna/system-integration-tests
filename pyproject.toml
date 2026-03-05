@@ -1,0 +1,43 @@
+[project]
+name = "system-integration-tests"
+version = "0.1.0"
+description = "System integration tests — Layer 3a smoke + Layer 3b full e2e"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "httpx>=0.28.1,<1.0.0",
+    "pytest>=9.0.1,<10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.28.1,<1.0.0",
+    "pytest>=9.0.1,<10.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "pytest-xdist<4.0.0,>=3.6.0",
+    "pytest-timeout<3.0.0,>=2.4.0",
+    "boto3<2.0.0,>=1.40.70",  # optional, for AWS S3 integration tests
+    "ruff==0.15.0",
+    "basedpyright>=1.21.0,<2.0.0",
+    "pip-audit>=2.7.0,<3.0.0",
+    "bandit>=1.7.0,<2.0.0",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "G"]
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+reportAny = "error"
+reportUnknownMemberType = "error"
+reportUnknownVariableType = "error"
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+markers = [
+    "smoke: Layer 3a — fast pipeline smoke tests (<5 min, run first)",
+    "full_e2e: Layer 3b — full end-to-end tests (15-30 min, run after smoke)",
+    "integration: AWS S3 integration tests (skips without S3_TEST_BUCKET + boto3 creds)",
+]

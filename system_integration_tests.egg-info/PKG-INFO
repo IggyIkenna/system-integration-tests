@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: system-integration-tests
+Version: 0.1.0
+Summary: System integration tests — Layer 3a smoke + Layer 3b full e2e
+Requires-Python: <3.14,>=3.13
+Requires-Dist: httpx<1.0.0,>=0.28.1
+Requires-Dist: pytest<10.0.0,>=9.0.1
+Provides-Extra: dev
+Requires-Dist: httpx<1.0.0,>=0.28.1; extra == "dev"
+Requires-Dist: pytest<10.0.0,>=9.0.1; extra == "dev"
+Requires-Dist: pytest-cov<8.0.0,>=7.0.0; extra == "dev"
+Requires-Dist: pytest-xdist; extra == "dev"
+Requires-Dist: pytest-timeout; extra == "dev"
+Requires-Dist: boto3<2.0.0,>=1.35.0; extra == "dev"
+Requires-Dist: ruff==0.15.0; extra == "dev"
+Requires-Dist: basedpyright<2.0.0,>=1.21.0; extra == "dev"
