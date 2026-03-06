@@ -173,3 +173,13 @@ No error indicates a runtime crash risk in production. The `boto3` architectural
 2. Add return type annotations to all fixtures in `conftest.py` — clears Categories 3, 5, 8.
 3. Add type annotations to all test function fixture parameters — clears Category 4.
 4. Remove `HAS_BOTO3` constant pattern after switching to `importorskip` — clears Category 2 independently.
+
+---
+
+## Coverage Exception
+
+**Rule:** MIN_COVERAGE=70 (Python)
+**Exception type:** PERMANENT — Integration test-only repository
+**Justification:** Integration test-only repo. No Python business logic to cover. Tests interact with deployed services via HTTP — coverage of test code itself is not meaningful. Exception: PERMANENT.
+**Owner:** Platform team
+**Status:** PERMANENT EXCEPTION
