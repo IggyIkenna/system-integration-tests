@@ -55,7 +55,6 @@ jobs:
       - name: Run quality gates
         env:
           CLOUD_MOCK_MODE: "true"
-          GOOGLE_CLOUD_PROJECT: "test-project"
+          GCP_PROJECT_ID: "test-project"
         run: |
           bash scripts/quality-gates.sh --no-fix
-
