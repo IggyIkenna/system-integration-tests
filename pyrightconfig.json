@@ -12,5 +12,7 @@
   "reportImplicitRelativeImport": "none",
   "reportMissingImports": "none",
   "reportUnknownMemberType": "error",
-  "reportUnknownVariableType": "error"
+  "reportUnknownVariableType": "error",
+  "venvPath": "../",
+  "venv": ".venv-workspace"
 }
