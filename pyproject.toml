@@ -26,7 +26,12 @@ dev = [
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "G"]
+select = ["E", "F", "W", "I", "G",
+"C90",]
+
+
+[tool.ruff.lint.mccabe]
+max-complexity = 7
 
 [tool.basedpyright]
 pythonVersion = "3.13"

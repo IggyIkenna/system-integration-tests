@@ -7,12 +7,15 @@
   "reportAny": "error",
   "reportMissingTypeStubs": false,
   "extraPaths": [
-    "."
+    ".",
+    "../deployment-api",
+    "../unified-api-contracts",
+    "../unified-internal-contracts"
   ],
   "reportImplicitRelativeImport": "none",
   "reportMissingImports": "none",
   "reportUnknownMemberType": "error",
   "reportUnknownVariableType": "error",
-  "venvPath": "../",
-  "venv": ".venv-workspace"
+  "venvPath": ".",
+  "venv": ".venv"
 }
