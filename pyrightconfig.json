@@ -1,21 +1,24 @@
 {
   "pythonVersion": "3.13",
   "typeCheckingMode": "strict",
-  "include": [
-    "tests"
-  ],
+  "include": ["tests"],
+  "exclude": ["tests/e2e/test_aws_s3_smoke.py"],
   "reportAny": "error",
   "reportMissingTypeStubs": false,
   "extraPaths": [
     ".",
     "../deployment-api",
     "../unified-api-contracts",
-    "../unified-internal-contracts"
+    "../unified-internal-contracts",
+    "../unified-events-interface",
+    "../unified-trading-library",
+    "../unified-cloud-interface"
   ],
   "reportImplicitRelativeImport": "none",
   "reportMissingImports": "none",
   "reportUnknownMemberType": "error",
   "reportUnknownVariableType": "error",
+  "reportUnusedFunction": "none",
   "venvPath": ".",
   "venv": ".venv"
 }

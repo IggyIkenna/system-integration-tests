@@ -40,6 +40,9 @@ reportUnknownMemberType = "error"
 reportUnknownVariableType = "error"
 reportMissingTypeStubs = false
 
+[tool.coverage.report]
+fail_under = 60
+
 [tool.pytest.ini_options]
 markers = [
     "smoke: Layer 3a — fast pipeline smoke tests (<5 min, run first)",
