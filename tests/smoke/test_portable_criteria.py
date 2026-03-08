@@ -74,12 +74,8 @@ class TestNoLiveHttpCalls:
                 mock_requests.post = MagicMock(side_effect=sentinel)  # type: ignore[union-attr]
 
             # instruments-service schema should be safe
-            try:
-                from instruments_service.schemas.output_schemas import (
-                    INSTRUMENTS_SCHEMA,  # type: ignore[import-not-found]  # noqa: F401
-                )
-            except ImportError:
-                pytest.skip("instruments-service not installed in this env")
+            pytest.importorskip("instruments_service.schemas.output_schemas")
+            from instruments_service.schemas.output_schemas import INSTRUMENTS_SCHEMA  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
@@ -137,14 +133,10 @@ class TestBatchLiveSymmetry:
 
     def test_mktdata_schema_importable_locally(self) -> None:
         """market-data-processing-service schema must import without cloud creds."""
-        try:
-            from market_data_processing_service.schemas.output_schemas import (
-                PROCESSED_CANDLE_SCHEMA,  # type: ignore[import-not-found]
-            )
+        pytest.importorskip("market_data_processing_service.schemas.output_schemas")
+        from market_data_processing_service.schemas.output_schemas import PROCESSED_CANDLE_SCHEMA
 
-            assert PROCESSED_CANDLE_SCHEMA is not None
-        except ImportError:
-            pytest.skip("market-data-processing-service not installed")
+        assert PROCESSED_CANDLE_SCHEMA is not None
 
 
 # ---------------------------------------------------------------------------
@@ -167,12 +159,8 @@ class TestSchemasDeterministic:
 
     def test_mktdata_schema_deterministic(self) -> None:
         """PROCESSED_CANDLE_SCHEMA.get_required_columns must be deterministic."""
-        try:
-            from market_data_processing_service.schemas.output_schemas import (
-                PROCESSED_CANDLE_SCHEMA,  # type: ignore[import-not-found]
-            )
-        except ImportError:
-            pytest.skip("market-data-processing-service not installed")
+        pytest.importorskip("market_data_processing_service.schemas.output_schemas")
+        from market_data_processing_service.schemas.output_schemas import PROCESSED_CANDLE_SCHEMA
 
         dims = {"category": "CEFI", "data_type": "ohlcv"}
         result_1 = PROCESSED_CANDLE_SCHEMA.get_required_columns(dims)
@@ -181,10 +169,8 @@ class TestSchemasDeterministic:
 
     def test_schema_module_level_object_is_singleton(self) -> None:
         """Importing the schema module twice returns the same object."""
-        try:
-            import instruments_service.schemas.output_schemas as m1  # type: ignore[import-not-found]
-            import instruments_service.schemas.output_schemas as m2  # type: ignore[import-not-found]
+        pytest.importorskip("instruments_service.schemas.output_schemas")
+        import instruments_service.schemas.output_schemas as m1
+        import instruments_service.schemas.output_schemas as m2
 
-            assert m1.INSTRUMENTS_SCHEMA is m2.INSTRUMENTS_SCHEMA, "INSTRUMENTS_SCHEMA is not a module-level singleton"
-        except ImportError:
-            pytest.skip("instruments-service not installed")
+        assert m1.INSTRUMENTS_SCHEMA is m2.INSTRUMENTS_SCHEMA, "INSTRUMENTS_SCHEMA is not a module-level singleton"
