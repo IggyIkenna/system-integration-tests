@@ -1,6 +1,7 @@
 """Layer 3b AWS S3 smoke tests — placeholder, skips when no AWS creds or S3_TEST_BUCKET."""
 
 import importlib.util
+from collections.abc import Generator
 
 import pytest
 
@@ -25,18 +26,25 @@ def _has_aws_creds() -> bool:
 
 
 @pytest.fixture(autouse=True)
-def _skip_aws_without_creds(request, s3_bucket):
+def _skip_aws_without_creds(request: pytest.FixtureRequest, s3_bucket: str | None) -> Generator[None, None, None]:
     """Skip AWS integration tests when no creds or S3_TEST_BUCKET."""
     if "integration" in request.keywords and (not _boto3_available() or s3_bucket is None or not _has_aws_creds()):
         pytest.skip(
             "S3_TEST_BUCKET and AWS credentials required — install boto3, set S3_TEST_BUCKET, configure credentials"
         )
+    yield
 
 
 @pytest.mark.integration
-def test_aws_s3_smoke_placeholder(s3_bucket):
+def test_aws_s3_smoke_placeholder(s3_bucket: str | None) -> None:
     """Placeholder: verify S3 bucket is reachable. Skips when no AWS creds."""
-    import boto3  # noqa: PLC0415 — available because fixture above skips if not present
+    assert s3_bucket is not None, "s3_bucket fixture should have been skipped if None"
+    # boto3.client() overload stubs return S3Client when called with "s3" but
+    # the stub version may lag the library version — use explicit cast.
+    from typing import cast  # noqa: PLC0415
 
-    client = boto3.client("s3")
+    import boto3  # noqa: PLC0415 — available because fixture above skips if not present
+    from mypy_boto3_s3 import S3Client  # noqa: PLC0415
+
+    client: S3Client = cast(S3Client, boto3.client("s3"))
     client.head_bucket(Bucket=s3_bucket)

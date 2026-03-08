@@ -1,12 +1,13 @@
 """Layer 3b full e2e tests — OAuth flows and auth failure handling."""
 
+import httpx
 import pytest
 
 
 @pytest.mark.full_e2e
-def test_unauthenticated_write_rejected(http_client, base_urls):
+def test_unauthenticated_write_rejected(http_client: httpx.Client, base_urls: dict[str, str]) -> None:
     """Write endpoints require authentication — unauthenticated requests return 401/403."""
-    resp = http_client.post(
+    resp: httpx.Response = http_client.post(
         f"{base_urls['deployment_api']}/pipeline/trigger",
         json={"date": "2024-01-15", "venue": "XNAS"},
     )
@@ -15,17 +16,17 @@ def test_unauthenticated_write_rejected(http_client, base_urls):
 
 
 @pytest.mark.full_e2e
-def test_read_endpoints_public(http_client, base_urls):
+def test_read_endpoints_public(http_client: httpx.Client, base_urls: dict[str, str]) -> None:
     """Read-only endpoints (health, version) are accessible without auth."""
     for name, url in base_urls.items():
-        resp = http_client.get(f"{url}/health")
+        resp: httpx.Response = http_client.get(f"{url}/health")
         assert resp.status_code != 401, f"{name} health check should not require auth"
 
 
 @pytest.mark.full_e2e
-def test_invalid_token_rejected(http_client, base_urls):
+def test_invalid_token_rejected(http_client: httpx.Client, base_urls: dict[str, str]) -> None:
     """Invalid bearer token is rejected with 401."""
-    resp = http_client.post(
+    resp: httpx.Response = http_client.post(
         f"{base_urls['deployment_api']}/pipeline/trigger",
         json={"date": "2024-01-15", "venue": "XNAS"},
         headers={"Authorization": "Bearer invalid-token-xyz"},

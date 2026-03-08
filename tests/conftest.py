@@ -1,6 +1,7 @@
 """Shared fixtures for integration tests. Zero service imports — HTTP/GCS/PubSub only."""
 
 import os
+from collections.abc import Generator
 
 import httpx
 import pytest
@@ -18,7 +19,7 @@ def base_urls() -> dict[str, str]:
 
 
 @pytest.fixture(scope="session")
-def http_client():
+def http_client() -> Generator[httpx.Client, None, None]:
     with httpx.Client(timeout=30.0) as client:
         yield client
 
