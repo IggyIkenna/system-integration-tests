@@ -30,8 +30,6 @@ def test_service_module_importable(module: str) -> None:
         importlib.import_module(module)
     except SystemExit:
         pass  # OK — main() called sys.exit on missing args or completed normally
-    except ImportError as exc:
-        pytest.fail(f"ImportError in {module}: {exc}")
 
 
 def test_instruments_service_config_importable() -> None:
@@ -42,8 +40,6 @@ def test_instruments_service_config_importable() -> None:
         assert instruments_config is not None
     except SystemExit:
         pass
-    except ImportError as exc:
-        pytest.fail(f"ImportError in instruments_service.config: {exc}")
 
 
 def test_strategy_service_config_importable() -> None:
@@ -54,8 +50,6 @@ def test_strategy_service_config_importable() -> None:
         assert callable(get_config)
     except SystemExit:
         pass
-    except ImportError as exc:
-        pytest.fail(f"ImportError in strategy_service.config: {exc}")
 
 
 def test_execution_service_config_importable() -> None:
@@ -66,8 +60,6 @@ def test_execution_service_config_importable() -> None:
         assert callable(get_execution_config)
     except SystemExit:
         pass
-    except ImportError as exc:
-        pytest.fail(f"ImportError in execution_service.service_config: {exc}")
 
 
 def test_market_data_processing_config_importable() -> None:
@@ -78,5 +70,3 @@ def test_market_data_processing_config_importable() -> None:
         assert callable(get_service_config)
     except SystemExit:
         pass
-    except ImportError as exc:
-        pytest.fail(f"ImportError in market_data_processing_service.config: {exc}")
