@@ -3,11 +3,11 @@
 # Per workspace-completion-plan; E2E_SMOKE_PLAN.md
 
 steps:
-  - name: 'python:3.13-slim'
-    id: 'lint'
-    entrypoint: 'bash'
+  - name: "python:3.13-slim"
+    id: "lint"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         set -e
         pip install uv
@@ -15,14 +15,14 @@ steps:
         ruff check .
         ruff format --check .
 
-  - name: 'python:3.13-slim'
-    id: 'smoke'
-    entrypoint: 'bash'
+  - name: "python:3.13-slim"
+    id: "smoke"
+    entrypoint: "bash"
     args:
-      - '-c'
+      - "-c"
       - |
         set -e
         pip install uv
         uv pip install -e ".[dev]"
         pytest -m smoke -v --timeout=300
-    waitFor: ['lint']
+    waitFor: ["lint"]
