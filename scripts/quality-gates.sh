@@ -28,7 +28,7 @@ set -e
 
 # ── REPO-SPECIFIC SETTINGS ────────────────────────────────────────────────────
 SERVICE_NAME="system-integration-tests"          # e.g. instruments-service
-SOURCE_DIR="system_integration_tests"            # e.g. instruments_service  (underscore form)
+SOURCE_DIR="tests"                               # SIT has no separate source package — tests/ is the Python root
 MIN_COVERAGE=60  # Template default — set to (actual coverage - 1%) after first test run. See test-coverage-targets.mdc
 RUN_INTEGRATION=false              # Set true when integration tests are stable
 PYTEST_WORKERS=${PYTEST_WORKERS:-2} # Default 2; override via env (cap to avoid OOM)
