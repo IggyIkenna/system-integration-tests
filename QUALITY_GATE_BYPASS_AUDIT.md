@@ -9,16 +9,16 @@
 
 ## Summary Table
 
-| Category | Count | Severity | Status | Owner | Target Date |
-|----------|-------|----------|--------|-------|-------------|
-| 1. `reportPossiblyUnboundVariable` — `boto3` after `try/except ImportError` | 2 | error | ARCHITECTURAL_VIOLATION | system-integration-tests team | 2026-Q2 |
-| 2. `reportConstantRedefinition` — `HAS_BOTO3` reassigned in `except` branch | 1 | error | ARCHITECTURAL_VIOLATION | system-integration-tests team | 2026-Q2 |
-| 3. `reportUnknownMemberType` — untyped pytest fixtures (`http_client`, `base_urls`) | 30 | warning | JUSTIFIED | system-integration-tests team | N/A |
-| 4. `reportUnknownParameterType` / `reportMissingParameterType` — unannotated pytest fixture params | 23 + 23 = 46 | warning | MIGRATION_PENDING | system-integration-tests team | 2026-Q2 |
-| 5. `reportUnknownVariableType` — variables assigned from untyped fixture returns | 17 | warning | JUSTIFIED | system-integration-tests team | N/A |
-| 6. `reportUnusedFunction` — unused fixture helper | 1 | warning | MIGRATION_PENDING | system-integration-tests team | 2026-Q2 |
-| 7. `reportUnusedCallResult` — pytest call result ignored | 1 | warning | JUSTIFIED | system-integration-tests team | N/A |
-| 8. `reportUnknownArgumentType` — cascade from untyped fixtures | 1 | warning | JUSTIFIED | system-integration-tests team | N/A |
+| Category                                                                                           | Count        | Severity | Status                  | Owner                         | Target Date |
+| -------------------------------------------------------------------------------------------------- | ------------ | -------- | ----------------------- | ----------------------------- | ----------- |
+| 1. `reportPossiblyUnboundVariable` — `boto3` after `try/except ImportError`                        | 2            | error    | ARCHITECTURAL_VIOLATION | system-integration-tests team | 2026-Q2     |
+| 2. `reportConstantRedefinition` — `HAS_BOTO3` reassigned in `except` branch                        | 1            | error    | ARCHITECTURAL_VIOLATION | system-integration-tests team | 2026-Q2     |
+| 3. `reportUnknownMemberType` — untyped pytest fixtures (`http_client`, `base_urls`)                | 30           | warning  | JUSTIFIED               | system-integration-tests team | N/A         |
+| 4. `reportUnknownParameterType` / `reportMissingParameterType` — unannotated pytest fixture params | 23 + 23 = 46 | warning  | MIGRATION_PENDING       | system-integration-tests team | 2026-Q2     |
+| 5. `reportUnknownVariableType` — variables assigned from untyped fixture returns                   | 17           | warning  | JUSTIFIED               | system-integration-tests team | N/A         |
+| 6. `reportUnusedFunction` — unused fixture helper                                                  | 1            | warning  | MIGRATION_PENDING       | system-integration-tests team | 2026-Q2     |
+| 7. `reportUnusedCallResult` — pytest call result ignored                                           | 1            | warning  | JUSTIFIED               | system-integration-tests team | N/A         |
+| 8. `reportUnknownArgumentType` — cascade from untyped fixtures                                     | 1            | warning  | JUSTIFIED               | system-integration-tests team | N/A         |
 
 ---
 
@@ -45,9 +45,11 @@ When `boto3` is not installed, the name `boto3` is never bound. basedpyright cor
 **Why this is an architectural violation:** The workspace cursor rule `no-empty-fallbacks.mdc` and the codex standard explicitly ban `try/except ImportError` around library imports. The rule states: "fail loud" — if `boto3` is required, it must be listed as a dependency in `pyproject.toml` and imported unconditionally. If it is truly optional, the test must be guarded by a `pytest.importorskip("boto3")` call at the module level, which is the pytest-idiomatic pattern and does not leave names unbound.
 
 **Fix path:**
+
 ```python
 boto3 = pytest.importorskip("boto3")
 ```
+
 This replaces the entire `try/except` block. pytest will automatically skip all tests in the module if `boto3` is not installed, and `boto3` will be a properly bound name when the module is collected.
 
 **Target date:** 2026-Q2
@@ -157,9 +159,11 @@ def test_auth_login(http_client: httpx.Client, base_urls: dict[str, str]) -> Non
 **APPROVED WITH CONDITIONS.** The 3 errors and 96 warnings break down as:
 
 **Errors (3 total):**
+
 - 3 errors in `test_aws_s3_smoke.py` are classified as `ARCHITECTURAL_VIOLATION` — they stem from the banned `try/except ImportError` pattern for optional dependencies. This is a known workspace anti-pattern violation. The bypass is approved because this is test infrastructure code, not production service code, and the violation does not affect production runtime behavior. The fix is straightforward and tracked for Q2.
 
 **Warnings (96 total):**
+
 - 76 warnings (Categories 3, 5, 7, 8) are fully justified — they cascade from pytest fixture dynamic injection, which is an architectural limitation of strict-mode basedpyright applied to pytest test files.
 - 20 warnings (Categories 4, 6) are annotation gaps in test code, tracked for migration.
 
