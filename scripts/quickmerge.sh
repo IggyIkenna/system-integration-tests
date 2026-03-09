@@ -25,6 +25,8 @@
 #   --quick            Skip only act simulation (Stage 4); all other checks run
 #   --skip-tests       Pass --skip-tests to quality-gates.sh (lint+type+codex only)
 #   --skip-typecheck   Pass --skip-typecheck to quality-gates.sh (skips basedpyright only)
+#   --skip-codex       Pass --skip-codex to quality-gates.sh (skips codex checks)
+#   --skip-preflight   Skip Stage 2 pre-flight audit (use only in emergency)
 #
 # When to use --to-staging:
 #   feat!: / BREAKING CHANGE: commits that break downstream API contracts.
@@ -64,6 +66,8 @@ SKIP_TESTS=""
 SKIP_TYPECHECK=""
 QUICK=false
 NO_PR=false
+SKIP_CODEX=""
+SKIP_PREFLIGHT=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -98,6 +102,14 @@ while [[ $# -gt 0 ]]; do
     --unit-only)
       QUICK=true
       NO_PR=true
+      shift
+      ;;
+    --skip-codex)
+      SKIP_CODEX="--skip-codex"
+      shift
+      ;;
+    --skip-preflight)
+      SKIP_PREFLIGHT=true
       shift
       ;;
     *)
@@ -325,12 +337,15 @@ if [ "$REPO_NAME" = "unified-trading-pm" ]; then
 fi
 
 # ============================================================================
-# STAGE 2: PRE-FLIGHT AUDIT (always runs — never skipped)
+# STAGE 2: PRE-FLIGHT AUDIT (skip with --skip-preflight)
 # ============================================================================
 echo "=========================================="
 echo "STAGE 2: Pre-flight Audit"
 echo "=========================================="
 
+if [ "$SKIP_PREFLIGHT" = true ]; then
+  echo "[$REPO_NAME] --skip-preflight: Skipping pre-flight audit"
+else
 PREFLIGHT_SCRIPT="$WORKSPACE_ROOT/unified-trading-pm/scripts/validation/pre-flight-audit.sh"
 if [ -f "$PREFLIGHT_SCRIPT" ]; then
   if bash "$PREFLIGHT_SCRIPT" "$REPO_NAME"; then
@@ -342,6 +357,7 @@ if [ -f "$PREFLIGHT_SCRIPT" ]; then
 else
   echo "[$REPO_NAME] ❌ pre-flight-audit.sh not found at $PREFLIGHT_SCRIPT — required"
   exit 1
+fi
 fi
 
 echo ""
@@ -402,10 +418,10 @@ echo ""
 
 if [ -f "scripts/quality-gates.sh" ]; then
   echo "[$REPO_NAME] Phase 1: auto-fix (ruff format + ruff check --fix)..."
-  bash scripts/quality-gates.sh $SKIP_TESTS $SKIP_TYPECHECK
+  bash scripts/quality-gates.sh $SKIP_TESTS $SKIP_TYPECHECK $SKIP_CODEX
 
   echo "[$REPO_NAME] Phase 2: verify (--no-fix mode)..."
-  if ! bash scripts/quality-gates.sh --no-fix $SKIP_TESTS $SKIP_TYPECHECK; then
+  if ! bash scripts/quality-gates.sh --no-fix $SKIP_TESTS $SKIP_TYPECHECK $SKIP_CODEX; then
     echo "[$REPO_NAME] ❌ Quality gates FAILED — fix remaining issues before merging"
     exit 1
   fi
