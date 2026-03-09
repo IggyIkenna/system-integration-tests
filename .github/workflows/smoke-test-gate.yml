@@ -1,0 +1,97 @@
+name: Smoke Test Gate
+
+# Triggers on push to staging branch; on success dispatches staging-validated
+# to unified-trading-pm so PM can promote repos staging→main in tier order.
+# Part of the staging-to-main automation:
+#   service repo → staging → (this workflow) → PM staging-to-main.yml → main
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Manual trigger reason"
+        required: false
+        default: "manual"
+
+jobs:
+  smoke-tests:
+    name: Layer 3a Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+      # Service URLs — use sandbox/mock values in CI (real values injected at deploy time)
+      INSTRUMENTS_SERVICE_URL: ${{ vars.INSTRUMENTS_SERVICE_URL || 'http://localhost:8080' }}
+      DEPLOYMENT_API_URL: ${{ vars.DEPLOYMENT_API_URL || 'http://localhost:8001' }}
+      ERA_URL: ${{ vars.ERA_URL || 'http://localhost:8002' }}
+      CRA_URL: ${{ vars.CRA_URL || 'http://localhost:8003' }}
+      MDA_URL: ${{ vars.MDA_URL || 'http://localhost:8004' }}
+      GCS_TEST_BUCKET: ${{ vars.GCS_TEST_BUCKET || '' }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Authenticate to GCP Artifact Registry
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install dependencies
+        run: |
+          pip install uv --quiet
+          uv pip install -e ".[dev]" --system --quiet
+
+      - name: Run Layer 3a smoke tests
+        id: smoke
+        run: |
+          pytest tests/smoke/ -m smoke -v --tb=short --no-header \
+            -q --json-report --json-report-file=smoke_report.json \
+            2>&1 | tee smoke_output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload smoke test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-report
+          path: |
+            smoke_report.json
+            smoke_output.txt
+          retention-days: 7
+
+      - name: Dispatch staging-validated to unified-trading-pm
+        if: success()
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
+          repository: IggyIkenna/unified-trading-pm
+          event-type: staging-validated
+          client-payload: |
+            {
+              "source_repo": "${{ github.repository }}",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "run_id": "${{ github.run_id }}",
+              "timestamp": "${{ github.event.head_commit.timestamp }}"
+            }
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Smoke tests FAILED — staging-validated NOT dispatched to PM"
+          echo "::error::Staging branch will NOT be promoted to main until smoke tests pass"
+          echo "::error::See smoke_output.txt artifact for details"
+          exit 1
