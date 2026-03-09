@@ -35,6 +35,7 @@ max-complexity = 7
 
 [tool.basedpyright]
 pythonVersion = "3.13"
+typeCheckingMode = "strict"
 reportAny = "error"
 reportUnknownMemberType = "error"
 reportUnknownVariableType = "error"
