@@ -28,19 +28,19 @@ set -e
 
 # ── REPO-SPECIFIC SETTINGS ────────────────────────────────────────────────────
 SERVICE_NAME="system-integration-tests"          # e.g. instruments-service
-SOURCE_DIR="tests"                               # SIT: source lives in tests/ (smoke/ + e2e/ subdirs)
-MIN_COVERAGE=60  # SIT: low coverage expected — services are tested live, not mocked. See test-coverage-targets.mdc
+SOURCE_DIR="system_integration_tests"            # e.g. instruments_service  (underscore form)
+MIN_COVERAGE=60  # Template default — set to (actual coverage - 1%) after first test run. See test-coverage-targets.mdc
 RUN_INTEGRATION=false              # Set true when integration tests are stable
 PYTEST_WORKERS=${PYTEST_WORKERS:-2} # Default 2; override via env (cap to avoid OOM)
 
 # Path dependencies to install locally (from sibling repos).
 # List each lib your pyproject.toml references as a path dep.
 LOCAL_DEPS=(
-    "unified-internal-contracts"
-    "unified-events-interface"
-    "unified-trading-library"
-    "unified-cloud-interface"
-    "unified-config-interface"
+    # "unified-config-interface"
+    # "unified-trading-library"
+    # "unified-domain-client"
+    # "unified-events-interface"
+    # "unified-market-interface"
 )
 # ── END REPO-SPECIFIC ─────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ PYTHON_CMD=".venv/bin/python"; [ ! -f "$PYTHON_CMD" ] && PYTHON_CMD="python3"
 
 # Git-aware: only check staged files when committing
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep '\.py$' | tr '\n' ' ' || :)
-SOURCE_DIRS="${STAGED:-$SOURCE_DIR/}"
+SOURCE_DIRS="${STAGED:-$SOURCE_DIR/ tests/}"
 [ -n "$STAGED" ] && log_warn "Git-aware mode: $(echo "$STAGED" | wc -w | tr -d ' ') staged files"
 
 export CLOUD_MOCK_MODE="true"; export GCP_PROJECT_ID="test-project"
@@ -112,9 +112,11 @@ RUFF_VER=$($RUFF_CMD --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -
 
 # ── [1] AUTO-FIX (prettier + ruff, 30s each) ──────────────────────────────────
 # Prettier runs FIRST on non-Python files to prevent ruff/prettier conflict in pre-commit hooks.
+# Without this, committing JSON/YAML/MD files causes "MM" status and hook stash conflicts.
 # See: 06-coding-standards/quality-gates.md § Formatter Conflict Resolution
 if [ "$RUN_LINT" = true ] && [ "$FIX_MODE" = true ]; then
     log_section "[1/6] AUTO-FIX"
+    # Pre-format non-Python files with prettier to avoid pre-commit hook conflicts
     if command -v npx &>/dev/null; then
         npx prettier --write "**/*.{md,json,yaml,yml}" --ignore-path .gitignore 2>/dev/null \
             && log_success "Prettier: non-Python files formatted" \
@@ -138,20 +140,16 @@ if [ "$RUN_TESTS" = true ]; then
     log_section "[3/6] TESTS"
     $PYTHON_CMD -c "import pytest_timeout" 2>/dev/null || { log_fail "pytest-timeout required: uv pip install pytest-timeout"; exit 1; }
     $PYTHON_CMD -c "import xdist" 2>/dev/null || { log_fail "pytest-xdist required: uv pip install pytest-xdist"; exit 1; }
+    COV="--cov=$SOURCE_DIR --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=$MIN_COVERAGE"
     PARGS="-n $PYTEST_WORKERS --timeout=60 -v --tb=short"
-    # SIT structure: smoke/ + e2e/ require live services (run in CI only).
-    # tests/integration/ contains offline library import tests (always run).
-    # In CI (RUN_INTEGRATION=true) run all suites with full coverage scope;
-    # locally run only integration tests, scoping coverage to that dir.
-    if [ "$RUN_INTEGRATION" = "true" ]; then
-        COV="--cov=$SOURCE_DIR --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=$MIN_COVERAGE"
-        $PYTHON_CMD -m pytest tests/smoke/ tests/e2e/ tests/integration/ $PARGS $COV || exit 1
+    if [ "$QUICK_MODE" = true ] || [ "$RUN_INTEGRATION" != "true" ]; then
+        $PYTHON_CMD -m pytest tests/unit/ $PARGS $COV || exit 1
     else
-        COV="--cov=tests/integration --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=$MIN_COVERAGE"
-        $PYTHON_CMD -m pytest tests/integration/ $PARGS $COV || exit 1
+        $PYTHON_CMD -m pytest tests/unit/ tests/integration/ $PARGS $COV || exit 1
     fi
     log_success "Tests PASSED"
-    [ ! -f "tests/integration/test_library_imports.py" ] && { log_fail "Missing tests/integration/test_library_imports.py"; exit 1; }
+    [ ! -f "tests/unit/test_event_logging.py" ] && { log_fail "Missing tests/unit/test_event_logging.py"; exit 1; }
+    [ ! -f "tests/unit/test_config.py" ] && { log_fail "Missing tests/unit/test_config.py"; exit 1; }
     log_success "Required test files present"
 
     # No duplicate test files (test_*_extended.py, test_*_additional.py)
@@ -161,7 +159,7 @@ if [ "$RUN_TESTS" = true ]; then
 
     # @pytest.mark.skip must have a reason comment on the preceding line
     SKIP_NO_REASON=$(rg "@pytest\.mark\.skip" --type py tests/ -B 1 2>/dev/null \
-        | grep -v "# reason:\|# noqa\|^--\|skipif" | grep "@pytest\.mark\.skip" || :)
+        | grep -v "# reason:\|# noqa\|^--" | grep "@pytest\.mark\.skip" || :)
     [[ -n "$SKIP_NO_REASON" ]] && { log_fail "pytest.mark.skip without reason comment — add '# reason: ...' above"; echo "$SKIP_NO_REASON" | head -3; exit 1; }
     log_success "All pytest.mark.skip have reason comments"
 fi
@@ -204,7 +202,7 @@ if [ "$SKIP_TYPECHECK" != "true" ]; then
     fi
     export BASEDPYRIGHT_CACHE_DIR="${TMPDIR:-/tmp}/basedpyright-cache/${SERVICE_NAME:-$(basename "$PWD")}"
     mkdir -p "$BASEDPYRIGHT_CACHE_DIR"
-    PYRIGHT_OUT=$(basedpyright "$SOURCE_DIR/" 2>&1); PYRIGHT_EXIT=$?
+    PYRIGHT_OUT=$(run_timeout 120 basedpyright "$SOURCE_DIR/" 2>&1); PYRIGHT_EXIT=$?
     if [ "$PYRIGHT_EXIT" -ne 0 ]; then echo "$PYRIGHT_OUT"; log_fail "Type check FAILED/timeout"; exit 1; fi
     WARN_COUNT=$(echo "$PYRIGHT_OUT" | grep -c " warning:" || :)
     if [ "${WARN_COUNT:-0}" -gt 0 ]; then
@@ -430,7 +428,7 @@ fi
 
 # CI/CD hygiene: ||true bypasses in quality gate scripts
 BYPASS=$(rg "\|\|true|\|\| true" --glob "**/quality-gates.sh" --glob "**/quality-gates.yml" . 2>/dev/null \
-    | grep -v "^#\|zombies\|pyright\|cleanup\|log_fail\|log_success\|log_warn\|grep -v\|:# " || :)
+    | grep -v "^#\|zombies\|pyright\|cleanup" || :)
 [[ -n "$BYPASS" ]] && { log_fail "||true bypass in quality gates — fix the root cause"; echo "$BYPASS" | head -3; ((V++)); } || log_success "No ||true quality gate bypasses"
 
 # ============================================================
@@ -588,6 +586,6 @@ VSCRIPT="${REPO_ROOT}/unified-trading-codex/scripts/run-all-validators.sh"
 
 # ── DURATION CHECK (<2 min) ───────────────────────────────────────────────────
 QG_END=$(date +%s); DUR=$((QG_END - QG_START))
-[ $DUR -gt 300 ] && { log_fail "Quality gates must complete in <5 min (took ${DUR}s)"; exit 1; }
+[ $DUR -gt 120 ] && { log_fail "Quality gates must complete in <2 min (took ${DUR}s)"; exit 1; }
 echo -e "\n${GREEN}======================================================================"
 echo -e "✅ ALL QUALITY GATES PASSED (${DUR}s)${NC}"
