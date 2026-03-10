@@ -674,7 +674,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0,<2.0.0" },
-    { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.21.0,<2.0.0" },
+    { name = "basedpyright", marker = "extra == 'dev'", specifier = "==1.38.2" },
     { name = "boto3", marker = "extra == 'dev'", specifier = ">=1.40.70,<2.0.0" },
     { name = "httpx", specifier = ">=0.28.1,<1.0.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.1,<1.0.0" },
