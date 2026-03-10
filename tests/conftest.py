@@ -15,6 +15,14 @@ def base_urls() -> dict[str, str]:
         "mda": os.environ.get("MDA_URL", "http://localhost:8004"),
         "cra": os.environ.get("CRA_URL", "http://localhost:8003"),
         "deployment_api": os.environ.get("DEPLOYMENT_API_URL", "http://localhost:8001"),
+        "market_data": os.environ.get("MARKET_DATA_API_URL", "http://localhost:8001"),
+        "client_reporting": os.environ.get("CLIENT_REPORTING_API_URL", "http://localhost:8003"),
+        "execution": os.environ.get("EXECUTION_SERVICE_URL", "http://localhost:8005"),
+        "risk": os.environ.get("RISK_SERVICE_URL", "http://localhost:8006"),
+        "position_monitor": os.environ.get("POSITION_MONITOR_URL", "http://localhost:8007"),
+        "alerting": os.environ.get("ALERTING_SERVICE_URL", "http://localhost:8008"),
+        "pnl": os.environ.get("PNL_SERVICE_URL", "http://localhost:8009"),
+        "market_tick": os.environ.get("MARKET_TICK_SERVICE_URL", "http://localhost:8010"),
     }
 
 
