@@ -107,7 +107,7 @@ def test_deployment_api_metrics(http_client: httpx.Client, api: str) -> None:
     """GET /metrics returns Prometheus text format."""
     resp = http_client.get(f"{api}/metrics")
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
-    content_type = resp.headers.get("content-type", "")
+    content_type = cast(str, resp.headers.get("content-type", ""))
     assert "text/plain" in content_type or "text" in content_type, (
         f"Expected Prometheus text format, got content-type: {content_type}"
     )
