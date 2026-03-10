@@ -6,6 +6,10 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1,<1.0.0",
     "pytest>=9.0.1,<10.0.0",
+    "unified-internal-contracts>=0.1.0",
+    "unified-api-contracts>=0.1.0",
+    "unified-events-interface>=0.1.0",
+    "unified-trading-library>=0.1.0",
     "features-multi-timeframe-service",
     "features-calendar-service",
     "features-volatility-service",
@@ -31,6 +35,22 @@ dev = [
     "pip-audit>=2.7.0,<3.0.0",
     "bandit>=1.7.0,<2.0.0",
 ]
+
+[tool.uv.sources.unified-internal-contracts]
+path = "../unified-internal-contracts"
+editable = true
+
+[tool.uv.sources.unified-api-contracts]
+path = "../unified-api-contracts"
+editable = true
+
+[tool.uv.sources.unified-events-interface]
+path = "../unified-events-interface"
+editable = true
+
+[tool.uv.sources.unified-trading-library]
+path = "../unified-trading-library"
+editable = true
 
 [tool.uv.sources.features-multi-timeframe-service]
 path = "../features-multi-timeframe-service"
@@ -98,7 +118,9 @@ fail_under = 15  # Realistic for SIT: unit+integration ~18%; e2e/smoke require l
 [tool.pytest.ini_options]
 markers = [
     "smoke: Layer 3a — fast pipeline smoke tests (<5 min, run first)",
-    "full_e2e: Layer 3b — full end-to-end tests (15-30 min, run after smoke)",
-    "integration: AWS S3 integration tests (skips without S3_TEST_BUCKET + boto3 creds)",
+    "integration: Layer 3b — cross-library contract tests (no live services required)",
+    "unit: Fast unit tests with no external dependencies",
+    "aws_integration: Tests requiring real AWS credentials and S3 access",
+    "e2e: Layer 3c — full end-to-end tests against live services",
     "version_cascade: Version cascade e2e tests using gh CLI (no push required)",
 ]
