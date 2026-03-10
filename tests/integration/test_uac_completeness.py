@@ -47,6 +47,11 @@ _EXCLUDE_DIRS: frozenset[str] = frozenset(
 # ---------------------------------------------------------------------------
 # Classes intentionally NOT in UAC top-level __all__ (mirrors EXEMPT_MISSING
 # in check_uac_completeness.py — keep in sync if source exemptions change)
+#
+# NOTE: The 68 specialty classes (analytics, CEX withdrawals, latency,
+# prediction-market-arb, protocol-sdk-action, rate-limit, eth-transfer,
+# ws-internal) were promoted to __all__ in 2026-03-10 and are no longer exempt.
+# Service wiring: unified-trading-pm/plans/active/uac-exempt-class-adoption.plan.md
 # ---------------------------------------------------------------------------
 _UAC_EXEMPT: frozenset[str] = frozenset(
     [
@@ -70,82 +75,6 @@ _UAC_EXEMPT: frozenset[str] = frozenset(
         "PolymarketNormalizer",
         # narrow-util
         "SchemaVersion",
-        # analytics-specialty: factor + alternative data; not yet cross-service
-        "FactorType",
-        "AlternativeDataType",
-        "CorrelationRegime",
-        "FactorExposure",
-        "FactorAttributionRecord",
-        "FactorAttributionModel",
-        "CrossAssetCorrelationMatrix",
-        "CorrelationRegimeChange",
-        "SentimentScore",
-        "SatelliteObservation",
-        "OptionsFlowRecord",
-        "DarkPoolPrintRecord",
-        "AlternativeDataSignal",
-        # cex-withdrawal: per-venue CEX withdraw request/response
-        "BinanceWithdrawRequest",
-        "BinanceWithdrawResponse",
-        "OKXWithdrawRequest",
-        "OKXWithdrawResponse",
-        "BybitWithdrawRequest",
-        "BybitWithdrawResponse",
-        "UpbitWithdrawRequest",
-        "UpbitWithdrawResponse",
-        "CoinbaseWithdrawRequest",
-        "CoinbaseWithdrawResponse",
-        # latency-specialty: sub-millisecond + co-location metrics
-        "LatencyComponent",
-        "LatencyPercentile",
-        "TickToTradeMetric",
-        "OrderLatencyRecord",
-        "CoLocationPerformanceMetric",
-        "NetworkJitterMetric",
-        "SubMillisecondLatencyRecord",
-        "LatencyBenchmarkReport",
-        # prediction-market-arb: Polymarket/Betfair cross-venue arb signals
-        "CrossVenueLink",
-        "BucketMarket",
-        "ProbabilityBucket",
-        "SportsbookLink",
-        "NegRiskBucket",
-        "NegRiskArbSignal",
-        "CrossVenueArbLeg",
-        "CrossVenueArbSignal",
-        "PredictionMarketUniverse",
-        # protocol-sdk-action: DeFi protocol action parameter types
-        "AaveDepositParams",
-        "AaveBorrowParams",
-        "AaveRepayParams",
-        "AaveFlashLoanParams",
-        "MorphoSupplyParams",
-        "MorphoBorrowParams",
-        "MorphoRepayParams",
-        "MorphoFlashLoanParams",
-        "EulerDepositParams",
-        "EulerBorrowParams",
-        "EulerRepayParams",
-        "FluidDepositParams",
-        "FluidBorrowParams",
-        "FluidRepayParams",
-        "LidoSubmitParams",
-        "LidoRequestWithdrawalsParams",
-        "CurveDepositParams",
-        "CurveWithdrawParams",
-        "CurveSwapParams",
-        # rate-limit: venue rate-limit spec; UMI adapter-internal
-        "HttpRateLimitHeaders",
-        "VenueRateLimitSpec",
-        # eth-transfer: raw Ethereum tx + ERC20 calldata
-        "EthSendRawTransactionRequest",
-        "EthSendRawTransactionResponse",
-        "EthTransactionRequest",
-        "EthSendTransactionRequest",
-        "Erc20TransferCalldata",
-        "Erc20TransferFromCalldata",
-        # ws-internal: server-side WS health ping sentinel
-        "HealthPingResponse",
     ]
 )
 
