@@ -4,6 +4,12 @@ name: Smoke Test Gate
 # to unified-trading-pm so PM can promote repos staging→main in tier order.
 # Part of the staging-to-main automation:
 #   service repo → staging → (this workflow) → PM staging-to-main.yml → main
+#
+# Jobs:
+#   smoke-tests              — Layer 3a: pytest smoke/ + integration/ (import-only, no services)
+#   contract-adoption-check  — UIC __all__ adoption scan: shallow-clones 18 terminal consumer
+#                              services and runs check_uic_adoption.py; exits 1 if any orphan
+#   dispatch                 — fires staging-validated to PM only when both jobs pass
 
 on:
   push:
@@ -54,10 +60,11 @@ jobs:
           pip install uv --quiet
           uv pip install -e ".[dev]" --system --quiet
 
-      - name: Run Layer 3a smoke tests
+      - name: Run Layer 3a smoke + integration tests
         id: smoke
         run: |
-          pytest tests/smoke/ -m smoke -v --tb=short --no-header \
+          pytest tests/smoke/ tests/integration/ \
+            -m "smoke or integration" -v --tb=short --no-header \
             -q --json-report --json-report-file=smoke_report.json \
             2>&1 | tee smoke_output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
@@ -72,8 +79,103 @@ jobs:
             smoke_output.txt
           retention-days: 7
 
+  contract-adoption-check:
+    name: UIC Contract Adoption Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout unified-internal-contracts
+        uses: actions/checkout@v4
+        with:
+          repository: IggyIkenna/unified-internal-contracts
+          token: ${{ secrets.GH_PAT }}
+          path: workspace/unified-internal-contracts
+          # Only need __init__.py (for __all__) and the adoption check script
+          sparse-checkout: |
+            unified_internal_contracts/__init__.py
+            scripts/check_uic_adoption.py
+          sparse-checkout-cone-mode: false
+
+      - name: Shallow-clone terminal consumer services
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          mkdir -p workspace
+          SERVICES=(
+            execution-service
+            strategy-service
+            market-data-processing-service
+            market-tick-data-service
+            market-data-api
+            instruments-service
+            alerting-service
+            risk-and-exposure-service
+            position-balance-monitor-service
+            pnl-attribution-service
+            ml-inference-service
+            ml-training-service
+            features-delta-one-service
+            features-volatility-service
+            features-cross-instrument-service
+            features-onchain-service
+            features-sports-service
+            features-calendar-service
+          )
+          MISSING=()
+          for svc in "${SERVICES[@]}"; do
+            echo "Cloning ${svc}..."
+            git clone --depth=1 --filter=blob:none \
+              "https://x-access-token:${GH_TOKEN}@github.com/IggyIkenna/${svc}.git" \
+              "workspace/${svc}" 2>/dev/null \
+              || { echo "WARN: ${svc} not found — skipping"; MISSING+=("${svc}"); }
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::${#MISSING[@]} service repo(s) not found: ${MISSING[*]}"
+          fi
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run UIC adoption check
+        run: |
+          python3 workspace/unified-internal-contracts/scripts/check_uic_adoption.py \
+            --orphans-only \
+            --workspace workspace \
+            2>&1 | tee adoption_orphans.txt
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            ORPHAN_COUNT=$(wc -l < adoption_orphans.txt | tr -d ' ')
+            echo "::error::${ORPHAN_COUNT} orphaned UIC schema(s) have no terminal consumer importer."
+            echo "::error::These contracts exist in UIC __all__ but are not imported by any of the 18 terminal services."
+            echo "::error::Either wire them into a service or remove them from UIC __all__."
+            echo "::error::See adoption_orphans.txt artifact for the full list."
+            exit 1
+          fi
+          echo "All UIC schemas have at least one terminal consumer importer."
+
+      - name: Upload adoption orphans report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adoption-orphans-report
+          path: adoption_orphans.txt
+          retention-days: 7
+
+  dispatch:
+    name: Dispatch staging-validated
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, contract-adoption-check]
+    if: success()
+    permissions:
+      contents: read
+
+    steps:
       - name: Dispatch staging-validated to unified-trading-pm
-        if: success()
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GH_PAT }}
@@ -91,7 +193,6 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          echo "::error::Smoke tests FAILED — staging-validated NOT dispatched to PM"
-          echo "::error::Staging branch will NOT be promoted to main until smoke tests pass"
-          echo "::error::See smoke_output.txt artifact for details"
+          echo "::error::Gate FAILED — staging-validated NOT dispatched to PM"
+          echo "::error::Staging branch will NOT be promoted to main until all gates pass"
           exit 1
