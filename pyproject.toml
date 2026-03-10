@@ -6,6 +6,16 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1,<1.0.0",
     "pytest>=9.0.1,<10.0.0",
+    "features-multi-timeframe-service",
+    "features-calendar-service",
+    "features-volatility-service",
+    "features-commodity-service",
+    "features-sports-service",
+    "features-onchain-service",
+    "features-cross-instrument-service",
+    "pnl-attribution-service",
+    "market-tick-data-service",
+    "market-data-processing-service",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +31,46 @@ dev = [
     "pip-audit>=2.7.0,<3.0.0",
     "bandit>=1.7.0,<2.0.0",
 ]
+
+[tool.uv.sources.features-multi-timeframe-service]
+path = "../features-multi-timeframe-service"
+editable = true
+
+[tool.uv.sources.features-calendar-service]
+path = "../features-calendar-service"
+editable = true
+
+[tool.uv.sources.features-volatility-service]
+path = "../features-volatility-service"
+editable = true
+
+[tool.uv.sources.features-commodity-service]
+path = "../features-commodity-service"
+editable = true
+
+[tool.uv.sources.features-sports-service]
+path = "../features-sports-service"
+editable = true
+
+[tool.uv.sources.features-onchain-service]
+path = "../features-onchain-service"
+editable = true
+
+[tool.uv.sources.features-cross-instrument-service]
+path = "../features-cross-instrument-service"
+editable = true
+
+[tool.uv.sources.pnl-attribution-service]
+path = "../pnl-attribution-service"
+editable = true
+
+[tool.uv.sources.market-tick-data-service]
+path = "../market-tick-data-service"
+editable = true
+
+[tool.uv.sources.market-data-processing-service]
+path = "../market-data-processing-service"
+editable = true
 
 [tool.ruff]
 line-length = 120
