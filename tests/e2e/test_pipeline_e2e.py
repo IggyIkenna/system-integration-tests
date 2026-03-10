@@ -1,9 +1,12 @@
 """Layer 3b full e2e tests — multi-date, multi-venue pipeline validation. HTTP/GCS only."""
 
+import os
 import time
+from typing import cast
 
 import httpx
 import pytest
+import requests
 
 
 @pytest.mark.full_e2e
@@ -39,3 +42,46 @@ def test_pipeline_perf_baseline(http_client: httpx.Client, base_urls: dict[str, 
     elapsed_ms = (time.monotonic() - start) * 1000
     assert resp.status_code == 200
     assert elapsed_ms < 500, f"Health check too slow: {elapsed_ms:.0f}ms"
+
+
+@pytest.mark.e2e
+def test_risk_snapshot_written_to_gcs() -> None:
+    """Verify risk exposure snapshot is written to GCS after exposure calculation."""
+    gcs_bucket = os.environ.get("GCS_TEST_BUCKET")
+    if not gcs_bucket:
+        pytest.skip("GCS_TEST_BUCKET not set — skipping GCS verification")
+    # Trigger exposure calculation and verify risk/{client_id}/{date}/exposure_summary.json exists
+    pytest.skip("GCS E2E test stub — implement with actual GCS client")
+
+
+@pytest.mark.e2e
+def test_pnl_output_written_to_gcs() -> None:
+    """Verify PnL attribution Parquet is written to GCS after compute run."""
+    gcs_bucket = os.environ.get("GCS_TEST_BUCKET")
+    if not gcs_bucket:
+        pytest.skip("GCS_TEST_BUCKET not set — skipping GCS verification")
+    pytest.skip("GCS E2E test stub — implement with actual GCS client")
+
+
+@pytest.mark.e2e
+def test_market_data_api_reads_real_candles(base_urls: dict[str, str]) -> None:
+    """Verify market-data-api returns real candle data (not synthetic)."""
+    url = base_urls.get("market_data", "http://localhost:8001")
+    try:
+        resp = requests.get(f"{url}/data-contract", timeout=3)
+    except requests.ConnectionError:
+        pytest.skip("market-data-api not running")
+    if resp.status_code == 404:
+        pytest.skip("data-contract endpoint not yet available")
+    body = cast(dict[str, object], resp.json())
+    assert body.get("type") == "GCS_READER", f"Expected GCS_READER, got {body.get('type')}"
+    assert "synthetic" not in str(body).lower()
+
+
+@pytest.mark.e2e
+def test_era_fills_survive_restart_via_gcs(base_urls: dict[str, str]) -> None:
+    """Verify fills are persisted to GCS and survive API restart."""
+    gcs_bucket = os.environ.get("GCS_TEST_BUCKET")
+    if not gcs_bucket:
+        pytest.skip("GCS_TEST_BUCKET not set — skipping GCS verification")
+    pytest.skip("GCS E2E test stub — implement with actual GCS client")
