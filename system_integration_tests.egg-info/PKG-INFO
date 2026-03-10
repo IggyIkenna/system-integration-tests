@@ -5,6 +5,20 @@ Summary: System integration tests — Layer 3a smoke + Layer 3b full e2e
 Requires-Python: <3.14,>=3.13
 Requires-Dist: httpx<1.0.0,>=0.28.1
 Requires-Dist: pytest<10.0.0,>=9.0.1
+Requires-Dist: unified-internal-contracts>=0.1.0
+Requires-Dist: unified-api-contracts>=0.1.0
+Requires-Dist: unified-events-interface>=0.1.0
+Requires-Dist: unified-trading-library>=0.1.0
+Requires-Dist: features-multi-timeframe-service
+Requires-Dist: features-calendar-service
+Requires-Dist: features-volatility-service
+Requires-Dist: features-commodity-service
+Requires-Dist: features-sports-service
+Requires-Dist: features-onchain-service
+Requires-Dist: features-cross-instrument-service
+Requires-Dist: pnl-attribution-service
+Requires-Dist: market-tick-data-service
+Requires-Dist: market-data-processing-service
 Provides-Extra: dev
 Requires-Dist: httpx<1.0.0,>=0.28.1; extra == "dev"
 Requires-Dist: pytest<10.0.0,>=9.0.1; extra == "dev"
