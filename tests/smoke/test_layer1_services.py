@@ -14,6 +14,7 @@ import importlib
 import pytest
 
 
+@pytest.mark.smoke
 @pytest.mark.parametrize(
     "module",
     [
@@ -22,6 +23,18 @@ import pytest
         "strategy_service.cli.main",
         "execution_service.cli.main",
         "features_delta_one_service.cli.main",
+        "features_multi_timeframe_service.cli.main",
+        "features_calendar_service.cli.main",
+        "features_volatility_service.cli.main",
+        "features_commodity_service.cli.main",
+        "features_sports_service.cli.main",
+        "features_onchain_service.cli.main",
+        "features_cross_instrument_service.cli.main",
+        "pnl_attribution_service.config",
+        "market_tick_data_service.config",
+        "alerting_service.config",
+        "risk_and_exposure_service.config",
+        "position_balance_monitor_service.config",
     ],
 )
 def test_service_module_importable(module: str) -> None:
