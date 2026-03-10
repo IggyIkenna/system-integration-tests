@@ -93,10 +93,11 @@ jobs:
           repository: IggyIkenna/unified-internal-contracts
           token: ${{ secrets.GH_PAT }}
           path: workspace/unified-internal-contracts
-          # Only need __init__.py (for __all__) and the adoption check script
+          # __init__.py + adoption + completeness scripts + full source for AST scan
           sparse-checkout: |
-            unified_internal_contracts/__init__.py
+            unified_internal_contracts/
             scripts/check_uic_adoption.py
+            scripts/check_uic_completeness.py
           sparse-checkout-cone-mode: false
 
       - name: Checkout unified-api-contracts
@@ -105,9 +106,15 @@ jobs:
           repository: IggyIkenna/unified-api-contracts
           token: ${{ secrets.GH_PAT }}
           path: workspace/unified-api-contracts
+          # __init__.py + adoption + completeness scripts + scoped source for AST scan
           sparse-checkout: |
             unified_api_contracts/__init__.py
+            unified_api_contracts/schemas/
+            unified_api_contracts/unified_normalised_contracts/
+            unified_api_contracts/trading_schemas.py
+            unified_api_contracts/canonical_mappings.py
             scripts/check_uac_adoption.py
+            scripts/check_uac_completeness.py
           sparse-checkout-cone-mode: false
 
       - name: Checkout unified-trading-library
@@ -216,6 +223,32 @@ jobs:
           fi
           echo "All non-exempt UTL symbols have at least one terminal consumer importer."
 
+      - name: Run UIC completeness check (warn-mode)
+        run: |
+          python3 workspace/unified-internal-contracts/scripts/check_uic_completeness.py \
+            --workspace workspace \
+            2>&1 | tee uic_completeness_report.txt || true
+          if grep -q "MISSING from __all__" uic_completeness_report.txt; then
+            COUNT=$(grep -c "^  - " uic_completeness_report.txt || echo "?")
+            echo "::warning::${COUNT} UIC public class(es) defined in source but missing from __all__."
+            echo "::warning::See uic_completeness_report.txt — add to __all__ or mark exempt."
+          else
+            echo "UIC completeness: all non-exempt public classes are in __all__."
+          fi
+
+      - name: Run UAC completeness check (warn-mode)
+        run: |
+          python3 workspace/unified-api-contracts/scripts/check_uac_completeness.py \
+            --workspace workspace \
+            2>&1 | tee uac_completeness_report.txt || true
+          if grep -q "MISSING from __all__" uac_completeness_report.txt; then
+            COUNT=$(grep -c "^  - " uac_completeness_report.txt || echo "?")
+            echo "::warning::${COUNT} UAC public class(es) defined in core source but missing from __all__."
+            echo "::warning::See uac_completeness_report.txt — add to __all__ or mark exempt."
+          else
+            echo "UAC completeness: all non-exempt public core classes are in __all__."
+          fi
+
       - name: Upload adoption orphans reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -225,6 +258,8 @@ jobs:
             uic_adoption_orphans.txt
             uac_adoption_orphans.txt
             utl_adoption_orphans.txt
+            uic_completeness_report.txt
+            uac_completeness_report.txt
           retention-days: 7
 
   dispatch:
