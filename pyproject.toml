@@ -123,4 +123,5 @@ markers = [
     "aws_integration: Tests requiring real AWS credentials and S3 access",
     "e2e: Layer 3c — full end-to-end tests against live services",
     "version_cascade: Version cascade e2e tests using gh CLI (no push required)",
+    "slow: Peak/sustained load performance tests — nightly or weekly CI only (excluded from PR CI)",
 ]
