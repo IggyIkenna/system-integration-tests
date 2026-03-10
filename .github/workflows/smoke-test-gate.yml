@@ -80,9 +80,9 @@ jobs:
           retention-days: 7
 
   contract-adoption-check:
-    name: UIC Contract Adoption Check
+    name: UIC + UAC + UTL Contract Adoption Check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
 
@@ -97,6 +97,28 @@ jobs:
           sparse-checkout: |
             unified_internal_contracts/__init__.py
             scripts/check_uic_adoption.py
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout unified-api-contracts
+        uses: actions/checkout@v4
+        with:
+          repository: IggyIkenna/unified-api-contracts
+          token: ${{ secrets.GH_PAT }}
+          path: workspace/unified-api-contracts
+          sparse-checkout: |
+            unified_api_contracts/__init__.py
+            scripts/check_uac_adoption.py
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout unified-trading-library
+        uses: actions/checkout@v4
+        with:
+          repository: IggyIkenna/unified-trading-library
+          token: ${{ secrets.GH_PAT }}
+          path: workspace/unified-trading-library
+          sparse-checkout: |
+            unified_trading_library/__init__.py
+            scripts/check_utl_adoption.py
           sparse-checkout-cone-mode: false
 
       - name: Shallow-clone terminal consumer services
@@ -123,6 +145,8 @@ jobs:
             features-onchain-service
             features-sports-service
             features-calendar-service
+            unified-market-interface
+            unified-sports-execution-interface
           )
           MISSING=()
           for svc in "${SERVICES[@]}"; do
@@ -146,24 +170,61 @@ jobs:
           python3 workspace/unified-internal-contracts/scripts/check_uic_adoption.py \
             --orphans-only \
             --workspace workspace \
-            2>&1 | tee adoption_orphans.txt
+            2>&1 | tee uic_adoption_orphans.txt
           EXIT=${PIPESTATUS[0]}
           if [ "$EXIT" -ne 0 ]; then
-            ORPHAN_COUNT=$(wc -l < adoption_orphans.txt | tr -d ' ')
+            ORPHAN_COUNT=$(wc -l < uic_adoption_orphans.txt | tr -d ' ')
             echo "::error::${ORPHAN_COUNT} orphaned UIC schema(s) have no terminal consumer importer."
-            echo "::error::These contracts exist in UIC __all__ but are not imported by any of the 18 terminal services."
+            echo "::error::These contracts exist in UIC __all__ but are not imported by any terminal service."
             echo "::error::Either wire them into a service or remove them from UIC __all__."
-            echo "::error::See adoption_orphans.txt artifact for the full list."
+            echo "::error::See uic_adoption_orphans.txt artifact for the full list."
             exit 1
           fi
           echo "All UIC schemas have at least one terminal consumer importer."
 
-      - name: Upload adoption orphans report
+      - name: Run UAC adoption check
+        run: |
+          python3 workspace/unified-api-contracts/scripts/check_uac_adoption.py \
+            --orphans-only \
+            --workspace workspace \
+            2>&1 | tee uac_adoption_orphans.txt
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            ORPHAN_COUNT=$(wc -l < uac_adoption_orphans.txt | tr -d ' ')
+            echo "::error::${ORPHAN_COUNT} orphaned UAC schema(s) have no terminal consumer importer."
+            echo "::error::These contracts exist in UAC __all__ but are not imported by any terminal service."
+            echo "::error::Either wire them into a service or remove them from UAC __all__."
+            echo "::error::See uac_adoption_orphans.txt artifact for the full list."
+            exit 1
+          fi
+          echo "All non-exempt UAC schemas have at least one terminal consumer importer."
+
+      - name: Run UTL adoption check
+        run: |
+          python3 workspace/unified-trading-library/scripts/check_utl_adoption.py \
+            --orphans-only \
+            --workspace workspace \
+            2>&1 | tee utl_adoption_orphans.txt
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            ORPHAN_COUNT=$(wc -l < utl_adoption_orphans.txt | tr -d ' ')
+            echo "::error::${ORPHAN_COUNT} orphaned UTL symbol(s) have no terminal consumer importer."
+            echo "::error::These symbols exist in UTL __all__ but are not imported by any terminal service."
+            echo "::error::Either wire them into a service, add to EXEMPT_CLASSES, or remove from UTL __all__."
+            echo "::error::See utl_adoption_orphans.txt artifact for the full list."
+            exit 1
+          fi
+          echo "All non-exempt UTL symbols have at least one terminal consumer importer."
+
+      - name: Upload adoption orphans reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: adoption-orphans-report
-          path: adoption_orphans.txt
+          path: |
+            uic_adoption_orphans.txt
+            uac_adoption_orphans.txt
+            utl_adoption_orphans.txt
           retention-days: 7
 
   dispatch:
