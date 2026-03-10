@@ -14,6 +14,7 @@ from __future__ import annotations
 import importlib
 import re
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -93,7 +94,7 @@ def test_uic_all_no_duplicates() -> None:
     src = pkg_init.read_text()
     all_match = re.search(r"__all__\s*=\s*\[(.*?)\]", src, re.DOTALL)
     assert all_match, "Could not parse __all__"
-    raw = re.findall(r'"(\w+)"', all_match.group(1))
+    raw = cast(list[str], re.findall(r'"(\w+)"', all_match.group(1)))
     dupes = [x for x in set(raw) if raw.count(x) > 1]
     assert not dupes, f"Duplicate entries in UIC __all__: {dupes}"
 
