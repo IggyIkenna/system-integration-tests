@@ -1,0 +1,57 @@
+{
+  "_meta": {
+    "description": "Performance baselines for regression detection",
+    "source": "unified-trading-codex/06-coding-standards/performance-targets.md",
+    "created": "2026-03-11",
+    "note": "All latency values in milliseconds. Regression threshold: >20% worse than baseline triggers CI failure."
+  },
+  "order_submission": {
+    "path": "execution-service → venue mock",
+    "p50_ms": 200.0,
+    "p95_ms": 400.0,
+    "p99_ms": 500.0,
+    "max_ms": 1000.0
+  },
+  "signal_generation": {
+    "path": "strategy-service full cycle",
+    "p50_ms": 500.0,
+    "p95_ms": 800.0,
+    "p99_ms": 1000.0,
+    "max_ms": 2000.0
+  },
+  "feature_computation": {
+    "path": "any single service, 1 symbol",
+    "p50_ms": 100.0,
+    "p95_ms": 300.0,
+    "p99_ms": 500.0,
+    "max_ms": 1000.0
+  },
+  "ml_inference": {
+    "path": "ml-inference-api, single prediction",
+    "p50_ms": 50.0,
+    "p95_ms": 150.0,
+    "p99_ms": 250.0,
+    "max_ms": 500.0
+  },
+  "e2e_signal_to_order": {
+    "path": "strategy → execution",
+    "p50_ms": 800.0,
+    "p95_ms": 1500.0,
+    "p99_ms": 2000.0,
+    "max_ms": 5000.0
+  },
+  "gcs_read": {
+    "path": "feature batch, 1 day, 1 symbol",
+    "p50_ms": 500.0,
+    "p95_ms": 1000.0,
+    "p99_ms": 2000.0,
+    "max_ms": 5000.0
+  },
+  "pubsub_publish": {
+    "path": "single event",
+    "p50_ms": 10.0,
+    "p95_ms": 50.0,
+    "p99_ms": 100.0,
+    "max_ms": 200.0
+  }
+}

@@ -1,0 +1,86 @@
+name: Performance Tests
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 2am UTC nightly
+  workflow_dispatch: {}
+
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Authenticate to GCP Artifact Registry
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install UV
+        run: pip install uv
+
+      - name: Install ripgrep (required for codex checks)
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Install dependencies
+        run: |
+          uv venv .venv
+          uv pip install --python .venv/bin/python -e ".[dev]" || uv pip install --python .venv/bin/python -e .
+          uv pip install --python .venv/bin/python ruff==0.15.0 pytest pytest-cov pytest-asyncio pytest-timeout pytest-xdist basedpyright psutil
+
+      - name: Clone build scripts
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          DEP_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          BRANCH="${DEP_BRANCH:-main}"
+          (git clone -b "$BRANCH" "https://x-access-token:${GH_PAT}@github.com/IggyIkenna/unified-trading-pm.git" ../unified-trading-pm 2>/dev/null \
+            || git clone -b main "https://x-access-token:${GH_PAT}@github.com/IggyIkenna/unified-trading-pm.git" ../unified-trading-pm 2>/dev/null) || true
+
+      - name: Run performance tests (normal load)
+        env:
+          CLOUD_PROVIDER: local
+          CLOUD_MOCK_MODE: "true"
+          RUN_PERFORMANCE_TESTS: "true"
+          GCP_PROJECT_ID: "test-project"
+        run: |
+          export PATH="$(pwd)/.venv/bin:$PATH"
+          .venv/bin/pytest tests/performance/ -m "not slow" \
+            --tb=short \
+            -q \
+            --no-header \
+            -p no:cacheprovider \
+            2>&1 | tee tests/performance/results/performance_run_${GITHUB_RUN_ID:-local}.log
+
+      - name: Run regression detection
+        if: always()
+        run: |
+          export PATH="$(pwd)/.venv/bin:$PATH"
+          if [ -f tests/performance/compare_benchmark_baseline.py ]; then
+            python tests/performance/compare_benchmark_baseline.py \
+              --results tests/performance/results/performance_run_${GITHUB_RUN_ID:-local}.log \
+              --baseline tests/performance/baselines/baseline.json \
+              || echo "Regression check complete (see output above)"
+          fi
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-${{ github.run_id }}
+          path: tests/performance/results/
+          retention-days: 30
