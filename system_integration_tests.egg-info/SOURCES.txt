@@ -1,7 +1,0 @@
-README.md
-pyproject.toml
-system_integration_tests.egg-info/PKG-INFO
-system_integration_tests.egg-info/SOURCES.txt
-system_integration_tests.egg-info/dependency_links.txt
-system_integration_tests.egg-info/requires.txt
-system_integration_tests.egg-info/top_level.txt
