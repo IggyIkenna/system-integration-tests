@@ -29,7 +29,7 @@ def _has_gcp_creds() -> bool:
     if importlib.util.find_spec("google.auth") is None:
         return False
     try:
-        import google.auth  # noqa: PLC0415
+        import google.auth
 
         creds, _ = google.auth.default()
         return creds is not None
@@ -50,7 +50,7 @@ def _get_redis_url(project_id: str) -> str | None:
         return None
     try:
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_secret_client  # noqa: PLC0415
+        from unified_cloud_interface import get_secret_client
 
         client = get_secret_client(provider="gcp")
         secret = client.get_secret(project_id=project_id, secret_name="redis-url")
@@ -71,7 +71,7 @@ class TestLocalCacheCapable:
     def test_local_cache_client_instantiates(self) -> None:
         """get_cache_client(provider='local') must return a working client."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_cache_client  # noqa: PLC0415
+        from unified_cloud_interface import get_cache_client
 
         client = get_cache_client(provider="local")
         assert client is not None
@@ -79,7 +79,7 @@ class TestLocalCacheCapable:
     def test_local_cache_set_get_delete(self) -> None:
         """Local cache must support set / get / delete round-trip."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_cache_client  # noqa: PLC0415
+        from unified_cloud_interface import get_cache_client
 
         client = get_cache_client(provider="local")
         key = f"sit-probe:{uuid.uuid4().hex}"
@@ -94,7 +94,7 @@ class TestLocalCacheCapable:
     def test_local_cache_ttl_expiry(self) -> None:
         """Local cache set with ex=1 must expire (or at minimum not error on ttl)."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_cache_client  # noqa: PLC0415
+        from unified_cloud_interface import get_cache_client
 
         client = get_cache_client(provider="local")
         key = f"sit-ttl-probe:{uuid.uuid4().hex}"
@@ -129,7 +129,7 @@ class TestRedisMemorystore:
         if url is None:
             pytest.skip("No Redis URL available")
 
-        import redis as redis_lib  # noqa: PLC0415
+        import redis as redis_lib
 
         r = redis_lib.from_url(url, socket_timeout=5, socket_connect_timeout=5)
         try:
@@ -147,7 +147,7 @@ class TestRedisMemorystore:
         if url is None:
             pytest.skip("No Redis URL available")
 
-        import redis as redis_lib  # noqa: PLC0415
+        import redis as redis_lib
 
         r = redis_lib.from_url(url, socket_timeout=5, socket_connect_timeout=5)
         key = f"sit-probe:{uuid.uuid4().hex}"
@@ -170,7 +170,7 @@ class TestRedisMemorystore:
             pytest.skip("No Redis URL available")
 
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_cache_client  # noqa: PLC0415
+        from unified_cloud_interface import get_cache_client
 
         client = get_cache_client(provider="gcp", url=url)
         key = f"sit-uci-probe:{uuid.uuid4().hex}"
@@ -198,7 +198,7 @@ class TestAWSElastiCache:
         if aws_url is None:
             pytest.skip("ELASTICACHE_URL not set — AWS ElastiCache not configured")
 
-        import redis as redis_lib  # noqa: PLC0415
+        import redis as redis_lib
 
         r = redis_lib.from_url(aws_url, socket_timeout=5, socket_connect_timeout=5)
         try:

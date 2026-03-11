@@ -15,8 +15,8 @@ def _has_aws_creds() -> bool:
     """Return True if boto3 can obtain credentials."""
     if not _boto3_available():
         return False
-    import boto3  # noqa: PLC0415 — conditional import after availability check
-    from botocore.exceptions import BotoCoreError, NoCredentialsError  # noqa: PLC0415
+    import boto3
+    from botocore.exceptions import BotoCoreError, NoCredentialsError
 
     try:
         creds = boto3.Session().get_credentials()
@@ -41,10 +41,10 @@ def test_aws_s3_smoke_placeholder(s3_bucket: str | None) -> None:
     assert s3_bucket is not None, "s3_bucket fixture should have been skipped if None"
     # boto3.client() overload stubs return S3Client when called with "s3" but
     # the stub version may lag the library version — use explicit cast.
-    from typing import cast  # noqa: PLC0415
+    from typing import cast
 
-    import boto3  # noqa: PLC0415 — available because fixture above skips if not present
-    from mypy_boto3_s3 import S3Client  # noqa: PLC0415
+    import boto3
+    from mypy_boto3_s3 import S3Client
 
     client: S3Client = cast(S3Client, boto3.client("s3"))
     client.head_bucket(Bucket=s3_bucket)
