@@ -3598,7 +3598,7 @@ wheels = [
 
 [[package]]
 name = "unified-api-contracts"
-version = "0.2.32"
+version = "0.2.34"
 source = { editable = "../unified-api-contracts" }
 dependencies = [
     { name = "pydantic" },
@@ -4005,7 +4005,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-trading-library"
-version = "0.3.187"
+version = "0.3.189"
 source = { editable = "../unified-trading-library" }
 dependencies = [
     { name = "fsspec" },
