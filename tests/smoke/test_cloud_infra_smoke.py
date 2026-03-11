@@ -9,7 +9,7 @@ Cloud provider selection:
   CLOUD_PROVIDER=gcp | aws | local (default: gcp)
 
 Required env vars for live GCP tests:
-  GCP_PROJECT_ID       — e.g. central-element-323112
+  GCP_PROJECT_ID       — e.g. test-project
   GCS_TEST_BUCKET      — test bucket for read/write probe (default: instruments-store-cefi-test-{project})
 
 Required env vars for live AWS tests:
@@ -181,7 +181,7 @@ class TestSecretManagerAuth:
         from unified_cloud_interface import get_secret_client
 
         client = get_secret_client(provider="gcp")
-        # github-automation-token is a known-good secret in central-element-323112 SM
+        # github-automation-token is a known-good secret in test-project SM
         secret_name = os.environ.get("SIT_PROBE_SECRET", "github-automation-token")
         try:
             value = client.get_secret(project_id=gcp_project_id, secret_name=secret_name)
