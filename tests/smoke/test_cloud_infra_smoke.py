@@ -71,7 +71,7 @@ class TestGCSBucketsExist:
         """Fixture must resolve at least the core infra buckets from deployment-service config."""
         assert len(required_gcs_buckets) >= 10, (
             f"Expected ≥10 required buckets from deployment-service config, got {len(required_gcs_buckets)}. "
-            "Check deployment-service/configs/dependencies.yaml is reachable."
+            "Check unified-trading-pm/configs/dependencies.yaml is reachable."
         )
 
     @pytest.mark.skipif(not _has_gcp_creds(), reason="GCP credentials not available")
