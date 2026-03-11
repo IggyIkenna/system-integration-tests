@@ -10,7 +10,7 @@
 SERVICE_NAME="system-integration-tests"
 SOURCE_DIR="tests"
 MIN_COVERAGE=2
-RUN_INTEGRATION=false
+RUN_INTEGRATION=true
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 LOCAL_DEPS=()
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
