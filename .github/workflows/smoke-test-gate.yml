@@ -76,6 +76,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout unified-trading-codex (readiness checklists)
+        uses: actions/checkout@v4
+        with:
+          repository: IggyIkenna/unified-trading-codex
+          token: ${{ secrets.GH_PAT }}
+          path: ../unified-trading-codex # RELATIVE sibling path — works on GHA
+        continue-on-error: true
+
+      - name: Check SIT readiness prerequisites (advisory)
+        run: |
+          if [ -d "../unified-trading-codex/10-audit/repos" ]; then
+            python3 scripts/check-sit-readiness.py \
+              --codex-path ../unified-trading-codex/10-audit/repos \
+              2>&1 || true
+          else
+            echo "::warning::unified-trading-codex not available — skipping readiness prereq check"
+          fi
+
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
