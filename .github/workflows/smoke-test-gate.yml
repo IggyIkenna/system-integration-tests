@@ -21,6 +21,10 @@ on:
         required: false
         default: "manual"
 
+concurrency:
+  group: sit-staging
+  cancel-in-progress: true
+
 jobs:
   smoke-tests:
     name: Layer 3a Smoke Tests
@@ -40,6 +44,35 @@ jobs:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || '' }}
 
     steps:
+      - name: SIT debounce (10-min quiet period)
+        run: |
+          echo "Waiting 600s quiet period — new staging push will cancel this run via concurrency group."
+          sleep 600
+
+      - name: Lock staging (dispatch sit-lock to PM)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+
+          # Read staging_commits from PM manifest
+          git clone --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-trading-pm.git" /tmp/pm-repo
+          COMMIT_SHAS=$(python3 -c "
+          import json
+          with open('/tmp/pm-repo/workspace-manifest.json') as f:
+              m = json.load(f)
+          commits = {k: v for k, v in m.get('staging_commits', {}).items() if not k.startswith('_')}
+          print(json.dumps(commits))
+          ")
+
+          curl -s -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${OWNER}/unified-trading-pm/dispatches" \
+            -d "{\"event_type\": \"sit-lock\", \"client_payload\": {\"commit_shas\": ${COMMIT_SHAS}}}"
+          echo "SIT lock dispatched to PM."
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -78,6 +111,19 @@ jobs:
             smoke_report.json
             smoke_output.txt
           retention-days: 7
+
+      - name: Unlock staging on failure (dispatch sit-failed to PM)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          curl -s -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${OWNER}/unified-trading-pm/dispatches" \
+            -d '{"event_type": "sit-failed"}'
+          echo "sit-failed dispatched to PM."
 
   contract-adoption-check:
     name: UIC + UAC + UTL Contract Adoption Check
