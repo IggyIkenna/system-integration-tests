@@ -1,5 +1,9 @@
 """Integration tests verifying T0-T3 library imports and basic contracts."""
 
+import pytest
+
+pytestmark = pytest.mark.code_test
+
 
 def test_uac_uic_schema_compat() -> None:
     """UIC instruments schema is importable and non-empty."""

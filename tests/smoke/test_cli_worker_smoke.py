@@ -10,6 +10,8 @@ import importlib
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 CLI_WORKER_MODULES = [
     "execution_service.cli.main",
     "strategy_service.cli.main",

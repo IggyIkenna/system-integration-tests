@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 # ---------------------------------------------------------------------------
 # Scoped source directories and files (mirrors check_uac_completeness.py SCAN_*)
 # ---------------------------------------------------------------------------

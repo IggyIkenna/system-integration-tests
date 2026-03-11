@@ -61,7 +61,7 @@ def _read_manifest() -> dict[str, Any]:
 # Tests
 # ---------------------------------------------------------------------------
 
-pytestmark = pytest.mark.version_cascade
+pytestmark = [pytest.mark.version_cascade, pytest.mark.deployment_test]
 
 
 @pytest.mark.version_cascade

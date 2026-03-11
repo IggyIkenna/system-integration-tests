@@ -5,6 +5,8 @@ from collections.abc import Generator
 
 import pytest
 
+pytestmark = pytest.mark.deployment_test
+
 
 def _boto3_available() -> bool:
     """Return True if boto3 is installed."""

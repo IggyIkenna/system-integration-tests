@@ -16,6 +16,8 @@ from typing import cast
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 
 def _get_utl_all() -> list[str]:
     """Read __all__ from the installed UTL package source at collection time."""

@@ -8,6 +8,8 @@ import httpx
 import pytest
 import requests
 
+pytestmark = pytest.mark.deployment_test
+
 
 @pytest.mark.full_e2e
 def test_pipeline_single_date_single_venue(http_client: httpx.Client, base_urls: dict[str, str]) -> None:

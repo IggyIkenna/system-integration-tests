@@ -5,6 +5,10 @@ and their key schemas are intact. No cloud credentials required.
 Runs as part of quickmerge gate (Layer 0 — blocks contract alignment).
 """
 
+import pytest
+
+pytestmark = pytest.mark.code_test
+
 
 def test_uac_schemas_importable() -> None:
     """UAC top-level schemas must all be importable without errors."""

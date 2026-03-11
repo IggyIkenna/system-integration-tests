@@ -7,6 +7,8 @@ from typing import cast
 import pytest
 import requests
 
+pytestmark = pytest.mark.deployment_test
+
 INTERNAL_SERVICES = [
     ("execution", 8005),
     ("risk", 8006),

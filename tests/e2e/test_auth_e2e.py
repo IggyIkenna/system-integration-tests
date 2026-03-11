@@ -3,6 +3,8 @@
 import httpx
 import pytest
 
+pytestmark = pytest.mark.deployment_test
+
 
 @pytest.mark.full_e2e
 def test_unauthenticated_write_rejected(http_client: httpx.Client, base_urls: dict[str, str]) -> None:

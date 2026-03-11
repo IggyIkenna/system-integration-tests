@@ -24,6 +24,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import yaml
 
+pytestmark = pytest.mark.deployment_test
+
 logger = logging.getLogger(__name__)
 
 

@@ -38,6 +38,7 @@ from unified_internal_contracts.reference.data_freshness import (
 )
 from unified_trading_library import FreshnessMonitor
 
+pytestmark = pytest.mark.deployment_test
 logger = logging.getLogger(__name__)
 
 

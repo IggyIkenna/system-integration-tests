@@ -18,6 +18,8 @@ import uuid
 
 import pytest
 
+pytestmark = pytest.mark.deployment_test
+
 # ---------------------------------------------------------------------------
 # Credential guards (module-level, called at collection time)
 # ---------------------------------------------------------------------------

@@ -18,6 +18,8 @@ from typing import cast
 import httpx
 import pytest
 
+pytestmark = pytest.mark.deployment_test
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

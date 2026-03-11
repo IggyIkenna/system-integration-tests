@@ -18,6 +18,8 @@ from typing import cast
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 
 def _get_uic_all() -> list[str]:
     """Read __all__ from the installed UIC package source at collection time."""
