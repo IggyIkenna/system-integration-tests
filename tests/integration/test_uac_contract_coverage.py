@@ -17,6 +17,8 @@ from typing import cast
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 
 def _get_uac_all() -> list[str]:
     """Read __all__ from the installed UAC package source at collection time."""

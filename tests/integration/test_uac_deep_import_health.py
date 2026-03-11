@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 
 @pytest.mark.integration
 def test_canonical_options_chain_entry_top_level() -> None:

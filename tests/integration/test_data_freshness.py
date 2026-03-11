@@ -29,6 +29,7 @@ from unified_events_interface import (
 from unified_internal_contracts import DataFreshnessContract
 from unified_trading_library import FreshnessMonitor
 
+pytestmark = pytest.mark.deployment_test
 logger = logging.getLogger(__name__)
 
 

@@ -4,6 +4,10 @@ These tests verify the import chain from unified-api-contracts and
 unified-internal-contracts is intact without making any HTTP calls.
 """
 
+import pytest
+
+pytestmark = pytest.mark.code_test
+
 
 def test_canonical_imports() -> None:
     """UAC domain module is importable and contains CanonicalBetOrder."""

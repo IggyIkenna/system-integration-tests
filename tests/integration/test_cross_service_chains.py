@@ -9,6 +9,8 @@ from __future__ import annotations
 import pytest
 import requests
 
+pytestmark = pytest.mark.deployment_test
+
 
 @pytest.mark.integration
 def test_execution_risk_chain_contract(base_urls: dict[str, str]) -> None:

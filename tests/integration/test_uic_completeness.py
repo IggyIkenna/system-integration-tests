@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 # ---------------------------------------------------------------------------
 # Classes intentionally NOT in UIC top-level __all__ (mirrors EXEMPT_MISSING
 # in check_uic_completeness.py — keep in sync if source exemptions change)

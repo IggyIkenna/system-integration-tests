@@ -1,5 +1,9 @@
 """Unit tests for SIT configuration and fixture setup. Required by quality gates."""
 
+import pytest
+
+pytestmark = pytest.mark.code_test
+
 
 def test_base_urls_fixture_keys() -> None:
     """base_urls fixture provides all required service URL keys."""

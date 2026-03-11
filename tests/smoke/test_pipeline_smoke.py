@@ -3,6 +3,8 @@
 import httpx
 import pytest
 
+pytestmark = pytest.mark.deployment_test
+
 
 @pytest.mark.smoke
 def test_instruments_service_health(http_client: httpx.Client, base_urls: dict[str, str]) -> None:

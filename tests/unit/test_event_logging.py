@@ -5,6 +5,10 @@ Verifies setup_events/setup_service and log_event are callable with required eve
 
 from unittest.mock import MagicMock
 
+import pytest
+
+pytestmark = pytest.mark.code_test
+
 
 def test_setup_events_is_callable() -> None:
     """setup_events must be callable with service_name and mode."""

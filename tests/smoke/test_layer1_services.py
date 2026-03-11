@@ -13,6 +13,8 @@ import importlib
 
 import pytest
 
+pytestmark = pytest.mark.code_test
+
 
 @pytest.mark.smoke
 @pytest.mark.parametrize(
