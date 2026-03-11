@@ -58,7 +58,9 @@ class TestNoLiveHttpCalls:
         with patch("httpx.Client.send", side_effect=sentinel):
             with patch("httpx.AsyncClient.send", side_effect=sentinel):
                 # These imports must complete without triggering any HTTP call
-                import unified_cloud_interface  # noqa: F401  # type: ignore[import-not-found]
+                import unified_cloud_interface  # type: ignore[import-not-found]
+
+                assert unified_cloud_interface is not None
 
     def test_requests_not_called_on_schema_import(self) -> None:
         """Importing instrument schemas must not fire any HTTP request."""
@@ -75,7 +77,9 @@ class TestNoLiveHttpCalls:
 
             # instruments-service schema should be safe
             pytest.importorskip("instruments_service.schemas.output_schemas")
-            from instruments_service.schemas.output_schemas import INSTRUMENTS_SCHEMA  # noqa: F401
+            from instruments_service.schemas.output_schemas import INSTRUMENTS_SCHEMA
+
+            assert INSTRUMENTS_SCHEMA is not None
 
 
 # ---------------------------------------------------------------------------

@@ -27,7 +27,7 @@ def _has_gcp_creds() -> bool:
     if importlib.util.find_spec("google.auth") is None:
         return False
     try:
-        import google.auth  # noqa: PLC0415
+        import google.auth
 
         creds, _ = google.auth.default()
         return creds is not None
@@ -64,7 +64,7 @@ class TestPubSubTopicsExist:
     def test_deployment_topics_exist(self, gcp_project_id: str) -> None:
         """deployment-events and deployment-status topics must exist."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client  # noqa: PLC0415
+        from unified_cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         missing = [t for t in ["deployment-events", "deployment-status"] if not client.topic_exists(t)]
@@ -75,7 +75,7 @@ class TestPubSubTopicsExist:
     def test_required_topics_accessible(self, gcp_project_id: str) -> None:
         """All required system topics must exist (created by setup-pubsub.sh)."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client  # noqa: PLC0415
+        from unified_cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         missing = [t for t in _REQUIRED_TOPICS if not client.topic_exists(t)]
@@ -100,7 +100,7 @@ class TestPubSubPublishSubscribe:
     def test_publish_to_deployment_events(self, gcp_project_id: str) -> None:
         """Publishing to deployment-events must succeed (fire-and-forget)."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client  # noqa: PLC0415
+        from unified_cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         probe_id = uuid.uuid4().hex
@@ -116,7 +116,7 @@ class TestPubSubPublishSubscribe:
     def test_publish_subscribe_roundtrip(self, gcp_project_id: str) -> None:
         """Create ephemeral topic + subscription, publish, pull, ack, tear down."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client  # noqa: PLC0415
+        from unified_cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         probe_id = uuid.uuid4().hex
@@ -166,7 +166,7 @@ class TestLocalPubSubCapable:
     def test_local_pubsub_client_instantiates(self) -> None:
         """UCI local Pub/Sub client must instantiate without credentials."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client  # noqa: PLC0415
+        from unified_cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="local")
         assert client is not None
@@ -174,7 +174,7 @@ class TestLocalPubSubCapable:
     def test_local_pubsub_publish_subscribe_roundtrip(self) -> None:
         """Local provider publish/subscribe must work in-process."""
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client  # noqa: PLC0415
+        from unified_cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="local")
         probe_id = uuid.uuid4().hex
@@ -204,6 +204,6 @@ class TestLocalPubSubCapable:
     def test_aws_queue_client_importable(self) -> None:
         """UCI AWS queue path must be importable (proves dual-cloud code exists)."""
         pytest.importorskip("unified_cloud_interface")
-        import unified_cloud_interface as uci  # noqa: PLC0415
+        import unified_cloud_interface as uci
 
         assert hasattr(uci, "get_pubsub_client"), "get_pubsub_client not exported from UCI"

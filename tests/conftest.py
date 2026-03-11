@@ -19,7 +19,7 @@ def _load_deployment_configs(config_dir: Path) -> tuple[dict, dict] | None:
     if not config_dir.exists():
         return None
     try:
-        import yaml  # noqa: PLC0415
+        import yaml
 
         deps = yaml.safe_load((config_dir / "dependencies.yaml").read_text())
         bucket_cfg = yaml.safe_load((config_dir / "bucket_config.yaml").read_text())
@@ -134,7 +134,7 @@ def has_gcp_creds() -> bool:
     if importlib.util.find_spec("google.auth") is None:
         return False
     try:
-        import google.auth  # noqa: PLC0415
+        import google.auth
 
         credentials, _ = google.auth.default()
         return credentials is not None

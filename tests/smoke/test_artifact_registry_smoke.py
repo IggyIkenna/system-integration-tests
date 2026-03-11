@@ -31,7 +31,7 @@ def _has_gcp_creds() -> bool:
     if importlib.util.find_spec("google.auth") is None:
         return False
     try:
-        import google.auth  # noqa: PLC0415
+        import google.auth
 
         creds, _ = google.auth.default()
         return creds is not None
@@ -71,8 +71,8 @@ def _ar_base_url(project_id: str, location: str = _AR_LOCATION, repo: str = _AR_
 def _get_auth_token() -> str | None:
     """Get a short-lived OAuth2 token for AR API requests."""
     try:
-        import google.auth  # noqa: PLC0415
-        import google.auth.transport.requests  # noqa: PLC0415
+        import google.auth
+        import google.auth.transport.requests
 
         creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
         request = google.auth.transport.requests.Request()
@@ -95,7 +95,7 @@ class TestArtifactRegistryAccessible:
     @pytest.mark.skipif(not _has_requests(), reason="requests not installed")
     def test_docker_repo_accessible(self, gcp_project_id: str) -> None:
         """Docker image repository must respond to v2 catalog endpoint."""
-        import requests  # noqa: PLC0415
+        import requests
 
         token = _get_auth_token()
         if token is None:
@@ -119,7 +119,7 @@ class TestArtifactRegistryAccessible:
     @pytest.mark.skipif(not _has_gcp_creds(), reason="GCP credentials not available")
     def test_ar_repos_list_accessible(self, gcp_project_id: str) -> None:
         """gcloud artifacts repositories list must return at least one repo."""
-        import subprocess  # noqa: PLC0415
+        import subprocess
 
         result = subprocess.run(
             [
@@ -159,7 +159,7 @@ class TestServiceImagesExist:
     @pytest.mark.skipif(not _has_requests(), reason="requests not installed")
     def test_at_least_one_service_image_present(self, gcp_project_id: str) -> None:
         """At least one of the expected service images must exist in the registry."""
-        import requests  # noqa: PLC0415
+        import requests
 
         token = _get_auth_token()
         if token is None:
@@ -190,7 +190,7 @@ class TestServiceImagesExist:
     @pytest.mark.skipif(not _has_requests(), reason="requests not installed")
     def test_deployment_api_image_tagged(self, gcp_project_id: str) -> None:
         """deployment-api image must have at least one tag (most recently deployed)."""
-        import requests  # noqa: PLC0415
+        import requests
 
         token = _get_auth_token()
         if token is None:
@@ -220,7 +220,7 @@ class TestArtifactRegistryUCI:
     def test_ar_utils_importable(self) -> None:
         """deployment-api artifact_registry utils must be importable."""
         try:
-            from deployment_api.utils.artifact_registry import ArtifactRegistryClient  # noqa: PLC0415
+            from deployment_api.utils.artifact_registry import ArtifactRegistryClient
 
             assert ArtifactRegistryClient is not None
         except ImportError:
@@ -230,7 +230,7 @@ class TestArtifactRegistryUCI:
     def test_ar_client_instantiates(self, gcp_project_id: str) -> None:
         """ArtifactRegistryClient must instantiate with project_id + location."""
         try:
-            from deployment_api.utils.artifact_registry import ArtifactRegistryClient  # noqa: PLC0415
+            from deployment_api.utils.artifact_registry import ArtifactRegistryClient
         except ImportError:
             pytest.skip("deployment_api not installed in SIT virtualenv")
 
@@ -253,7 +253,7 @@ class TestAWSRegistries:
         if ecr_url is None:
             pytest.skip("ECR_REGISTRY_URL not set — AWS ECR not configured")
         # If set: validate connectivity
-        import requests  # noqa: PLC0415
+        import requests
 
         resp = requests.get(f"https://{ecr_url}/v2/", timeout=10)
         assert resp.status_code in (200, 401)  # 401 = auth required (reachable)
@@ -263,7 +263,7 @@ class TestAWSRegistries:
         ca_url = os.environ.get("CODEARTIFACT_INDEX_URL")
         if ca_url is None:
             pytest.skip("CODEARTIFACT_INDEX_URL not set — AWS CodeArtifact not configured")
-        import requests  # noqa: PLC0415
+        import requests
 
         resp = requests.get(ca_url, timeout=10)
         assert resp.status_code in (200, 401, 403)

@@ -32,7 +32,7 @@ def _has_gcp_creds() -> bool:
     if importlib.util.find_spec("google.auth") is None:
         return False
     try:
-        import google.auth  # noqa: PLC0415
+        import google.auth
 
         creds, _ = google.auth.default()
         return creds is not None
@@ -57,7 +57,7 @@ def _get_db_url(project_id: str) -> str | None:
         return None
     try:
         pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_secret_client  # noqa: PLC0415
+        from unified_cloud_interface import get_secret_client
 
         client = get_secret_client(provider="gcp")
         secret = client.get_secret(project_id=project_id, secret_name="cloudsql-execution-db-url")
@@ -94,9 +94,9 @@ class TestCloudSQLConnectivity:
         if url is None:
             pytest.skip("No DATABASE_URL available")
 
-        import asyncio  # noqa: PLC0415
+        import asyncio
 
-        import asyncpg  # noqa: PLC0415
+        import asyncpg
 
         async def _ping() -> str:
             # Convert asyncpg URL format if needed
@@ -118,9 +118,9 @@ class TestCloudSQLConnectivity:
         if url is None:
             pytest.skip("No DATABASE_URL available")
 
-        import asyncio  # noqa: PLC0415
+        import asyncio
 
-        import asyncpg  # noqa: PLC0415
+        import asyncpg
 
         async def _check_tables() -> list[str]:
             dsn = url.replace("postgresql+asyncpg://", "postgresql://")
@@ -153,9 +153,9 @@ class TestCloudSQLConnectivity:
         if url is None:
             pytest.skip("No DATABASE_URL available")
 
-        import asyncio  # noqa: PLC0415
+        import asyncio
 
-        import asyncpg  # noqa: PLC0415
+        import asyncpg
 
         probe_id = uuid.uuid4().hex
 
@@ -189,7 +189,7 @@ class TestSQLiteFallback:
     @pytest.mark.skipif(not _has_sqlalchemy(), reason="sqlalchemy not installed")
     def test_sqlite_basic_rw(self) -> None:
         """SQLAlchemy with SQLite must support basic read/write (dev fallback path)."""
-        from sqlalchemy import Column, MetaData, String, Table, create_engine  # noqa: PLC0415
+        from sqlalchemy import Column, MetaData, String, Table, create_engine
 
         engine = create_engine("sqlite:///:memory:")
         metadata = MetaData()
@@ -226,9 +226,9 @@ class TestAWSRDS:
             pytest.skip("AWS_DATABASE_URL not set — AWS RDS not configured")
 
         # If URL is set, validate basic connectivity
-        import asyncio  # noqa: PLC0415
+        import asyncio
 
-        import asyncpg  # noqa: PLC0415
+        import asyncpg
 
         async def _ping() -> None:
             conn = await asyncpg.connect(dsn=rds_url, timeout=10)
