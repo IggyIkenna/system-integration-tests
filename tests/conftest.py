@@ -129,6 +129,42 @@ def _enumerate_infra_buckets(bucket_cfg: dict, project_id: str) -> set[str]:
     return buckets
 
 
+_original_connect = socket.socket.connect
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--block-network",
+        action="store_true",
+        default=False,
+        help="Block all socket connections to enforce credential-free CI runs.",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "allow_network: mark test as allowed to make network calls (opt-out of --block-network)",
+    )
+
+
+def _blocked_connect(self: socket.socket, address: object) -> None:
+    raise OSError(f"Network access blocked by --block-network: attempted connection to {address}")
+
+
+@pytest.fixture(autouse=True)
+def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+    if not request.config.getoption("--block-network", default=False):
+        yield
+        return
+    if request.node.get_closest_marker("allow_network"):
+        yield
+        return
+    socket.socket.connect = _blocked_connect  # type: ignore[method-assign]
+    yield
+    socket.socket.connect = _original_connect  # type: ignore[method-assign]
+
+
 @pytest.fixture(scope="session")
 def base_urls() -> dict[str, str]:
     return {
