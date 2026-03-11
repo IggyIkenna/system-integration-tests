@@ -1,8 +1,56 @@
-"""Shared fixtures for integration tests. Zero service imports — HTTP/GCS/PubSub only."""
+"""Shared fixtures for integration tests. Zero service imports — HTTP/GCS/PubSub only.
+
+GCP Pub/Sub Emulator
+--------------------
+When ``PUBSUB_EMULATOR_HOST`` is set (or the emulator is reachable at
+``localhost:8085``), the ``with_pubsub_emulator`` fixture activates it for
+individual tests.  Tests that use this fixture are **skipped automatically**
+when the emulator is not running.
+
+To run the emulator locally::
+
+    gcloud beta emulators pubsub start --host-port=localhost:8085
+    # or
+    docker run --rm -p 8085:8085 gcr.io/google.com/cloudsdktool/google-cloud-cli:latest \\
+        gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+
+CI (GitHub Actions) — add to the workflow job that runs SIT::
+
+    services:
+      pubsub-emulator:
+        image: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+        options: >-
+          --entrypoint gcloud
+        args: beta emulators pubsub start --host-port=0.0.0.0:8085
+        ports:
+          - 8085:8085
+    env:
+      PUBSUB_EMULATOR_HOST: localhost:8085
+
+GCS Emulator (fake-gcs-server)
+-------------------------------
+When ``STORAGE_EMULATOR_HOST`` is set and the emulator is reachable, the
+``gcs_emulator`` fixture activates it.  Tests that use this fixture are
+**skipped automatically** when the env var is not set or the emulator is down.
+
+# GCS emulator: docker run -d -p 4443:4443 fsouza/fake-gcs-server:latest
+# Set STORAGE_EMULATOR_HOST=http://localhost:4443 before running integration tests
+
+CI (GitHub Actions) — add to the workflow job that runs SIT::
+
+    services:
+      gcs-emulator:
+        image: fsouza/fake-gcs-server:latest
+        ports:
+          - 4443:4443
+    env:
+      STORAGE_EMULATOR_HOST: http://localhost:4443
+"""
 
 from __future__ import annotations
 
 import os
+import socket
 from collections.abc import Generator
 from pathlib import Path
 
@@ -159,3 +207,162 @@ def required_gcs_buckets(gcp_project_id: str) -> list[str]:
     buckets = _enumerate_service_buckets(deps, bucket_cfg, gcp_project_id)
     buckets |= _enumerate_infra_buckets(bucket_cfg, gcp_project_id)
     return sorted(buckets)
+
+
+# ---------------------------------------------------------------------------
+# GCP Pub/Sub emulator fixtures
+# ---------------------------------------------------------------------------
+
+
+def _is_pubsub_emulator_running(host: str, port: int) -> bool:
+    """Return True if something is listening on *host*:*port*."""
+    try:
+        with socket.create_connection((host, port), timeout=1.0):
+            return True
+    except OSError:
+        return False
+
+
+@pytest.fixture(scope="session")
+def pubsub_emulator_host() -> str | None:
+    """Return ``PUBSUB_EMULATOR_HOST`` when the emulator is reachable, else ``None``.
+
+    The fixture probes the configured host:port via a raw TCP connect so that
+    tests skip gracefully when the emulator is not running rather than
+    hard-failing with a GCP API error.
+
+    To run the emulator before your test session::
+
+        gcloud beta emulators pubsub start --host-port=localhost:8085
+        # or
+        docker run --rm -p 8085:8085 gcr.io/google.com/cloudsdktool/google-cloud-cli:latest \\
+            gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+
+    CI (GitHub Actions) — add to the workflow job::
+
+        services:
+          pubsub-emulator:
+            image: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+            options: >-
+              --entrypoint gcloud
+            args: beta emulators pubsub start --host-port=0.0.0.0:8085
+            ports:
+              - 8085:8085
+        env:
+          PUBSUB_EMULATOR_HOST: localhost:8085
+    """
+    raw = os.environ.get("PUBSUB_EMULATOR_HOST", "localhost:8085")
+    hostname, _, port_str = raw.partition(":")
+    port = int(port_str) if port_str else 8085
+    if _is_pubsub_emulator_running(hostname, port):
+        return raw
+    return None
+
+
+@pytest.fixture()
+def with_pubsub_emulator(
+    pubsub_emulator_host: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    """Activate the Pub/Sub emulator for a single SIT test.
+
+    Sets ``PUBSUB_EMULATOR_HOST`` via *monkeypatch* so the ``google-cloud-pubsub``
+    SDK routes all calls to the local emulator.  The test is **skipped**
+    automatically when the emulator is not running.
+
+    Usage::
+
+        def test_something(with_pubsub_emulator: None) -> None:
+            ...
+    """
+    if pubsub_emulator_host is None:
+        pytest.skip(
+            "Pub/Sub emulator not running — start it with "
+            "'gcloud beta emulators pubsub start --host-port=localhost:8085' "
+            "or set PUBSUB_EMULATOR_HOST=<host>:<port>"
+        )
+    monkeypatch.setenv("PUBSUB_EMULATOR_HOST", pubsub_emulator_host)
+    yield
+
+
+# ---------------------------------------------------------------------------
+# GCS emulator fixtures (fake-gcs-server)
+# ---------------------------------------------------------------------------
+
+# GCS emulator: docker run -d -p 4443:4443 fsouza/fake-gcs-server:latest
+# Set STORAGE_EMULATOR_HOST=http://localhost:4443 before running integration tests
+
+
+def _is_gcs_emulator_reachable(url: str) -> bool:
+    """Return True if the GCS emulator endpoint is reachable via TCP."""
+    stripped = url.removeprefix("http://").removeprefix("https://")
+    host, _, port_str = stripped.partition(":")
+    port = int(port_str) if port_str else 4443
+    try:
+        with socket.create_connection((host, port), timeout=1.0):
+            return True
+    except OSError:
+        return False
+
+
+@pytest.fixture(scope="session")
+def gcs_emulator() -> Generator[str, None, None]:
+    """Yield the GCS emulator URL when ``STORAGE_EMULATOR_HOST`` is set and reachable.
+
+    Tests that request this fixture are **skipped automatically** when the env var
+    is not set or the emulator is not running — no manual ``pytest.mark.skipif``
+    decoration needed.
+
+    To start the emulator locally::
+
+        docker run -d -p 4443:4443 fsouza/fake-gcs-server:latest
+        export STORAGE_EMULATOR_HOST=http://localhost:4443
+
+    CI (GitHub Actions) — add to the workflow job::
+
+        services:
+          gcs-emulator:
+            image: fsouza/fake-gcs-server:latest
+            ports:
+              - 4443:4443
+        env:
+          STORAGE_EMULATOR_HOST: http://localhost:4443
+
+    Usage::
+
+        def test_something(gcs_emulator: str) -> None:
+            # gcs_emulator is the emulator URL, e.g. "http://localhost:4443"
+            ...
+    """
+    url = os.environ.get("STORAGE_EMULATOR_HOST", "")
+    if not url:
+        pytest.skip(
+            "GCS emulator not configured — set STORAGE_EMULATOR_HOST=http://localhost:4443 "
+            "and start: docker run -d -p 4443:4443 fsouza/fake-gcs-server:latest"
+        )
+    if not _is_gcs_emulator_reachable(url):
+        pytest.skip(
+            f"GCS emulator not reachable at {url} — start: docker run -d -p 4443:4443 fsouza/fake-gcs-server:latest"
+        )
+    yield url
+
+
+@pytest.fixture()
+def with_gcs_emulator(
+    gcs_emulator: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    """Activate the GCS emulator for a single SIT test via ``STORAGE_EMULATOR_HOST``.
+
+    Sets ``STORAGE_EMULATOR_HOST`` via *monkeypatch* so the ``google-cloud-storage``
+    SDK routes all calls to the local fake-gcs-server.  The test is **skipped**
+    automatically when the emulator is not running (inherited from ``gcs_emulator``).
+
+    Usage::
+
+        def test_something(with_gcs_emulator: None) -> None:
+            # STORAGE_EMULATOR_HOST is set for this test's duration
+            ...
+    """
+    monkeypatch.setenv("STORAGE_EMULATOR_HOST", gcs_emulator)
+    yield
