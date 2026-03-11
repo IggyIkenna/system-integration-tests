@@ -62,7 +62,6 @@ jobs:
             || git clone -b main "https://x-access-token:${GH_PAT}@github.com/IggyIkenna/unified-trading-pm.git" ../unified-trading-pm 2>/dev/null) || true
           echo "✅ unified-trading-pm cloned for quality-gates base scripts"
 
-
       - name: Run quality gates
         env:
           CLOUD_MOCK_MODE: "true"
