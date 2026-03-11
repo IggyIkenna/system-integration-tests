@@ -3598,7 +3598,7 @@ wheels = [
 
 [[package]]
 name = "unified-api-contracts"
-version = "0.2.8"
+version = "0.2.20"
 source = { editable = "../unified-api-contracts" }
 dependencies = [
     { name = "pydantic" },
@@ -3764,7 +3764,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-events-interface"
-version = "0.2.38"
+version = "0.2.44"
 source = { editable = "../unified-events-interface" }
 
 [package.metadata]
@@ -3825,7 +3825,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-internal-contracts"
-version = "0.1.78"
+version = "0.1.87"
 source = { editable = "../unified-internal-contracts" }
 dependencies = [
     { name = "pandas" },
@@ -3901,6 +3901,7 @@ requires-dist = [
     { name = "python-dateutil", specifier = ">=2.8.2,<3.0.0" },
     { name = "pyyaml", specifier = ">=6.0.1,<7.0.0" },
     { name = "requests", specifier = ">=2.32.5,<3.0.0" },
+    { name = "respx", marker = "extra == 'dev'", specifier = ">=0.21.0,<1.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.0" },
     { name = "unified-api-contracts", editable = "../unified-api-contracts" },
     { name = "unified-cloud-interface", extras = ["gcp"], editable = "../unified-cloud-interface" },
@@ -3998,7 +3999,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "unified-trading-library"
-version = "0.3.185"
+version = "0.3.187"
 source = { editable = "../unified-trading-library" }
 dependencies = [
     { name = "fsspec" },
