@@ -115,7 +115,7 @@ def test_delayed_scenario_fast_forwards() -> None:
     # Effective per-tick sleep (seconds) = delay_ms / ff_factor / 1000
     # = 3600000 / 3600 / 1000 = 1.0 second per tick
     effective_sleep_s = cfg.delay_ms / cfg.fast_forward_factor / 1000.0
-    assert effective_sleep_s == approx(1.0), "Effective sleep should be ~1.0s per tick"
+    assert abs(effective_sleep_s - 1.0) < 1e-9, "Effective sleep should be ~1.0s per tick"
 
     # Wall-clock budget: 4 ticks × 1s = 4s < 5s
     ticks = 4
