@@ -11,23 +11,16 @@ dependencies = [
     "unified-events-interface>=0.1.0",
     "unified-trading-library>=0.1.0",
     "market-data-processing-service",
-]
-
-[project.optional-dependencies]
-dev = [
-    "httpx>=0.28.1,<1.0.0",
-    "pytest>=9.0.1,<10.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.0",
     "pytest-timeout<3.0.0,>=2.4.0",
-    "boto3<2.0.0,>=1.40.70",  # optional, for AWS S3 integration tests
+    "boto3<2.0.0,>=1.40.70",
     "ruff==0.15.0",
     "basedpyright==1.38.2",
     "pip-audit>=2.7.0,<3.0.0",
     "bandit>=1.7.0,<2.0.0",
 ]
-
 [tool.uv.sources.unified-internal-contracts]
 path = "../unified-internal-contracts"
 editable = true
