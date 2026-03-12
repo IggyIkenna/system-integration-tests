@@ -160,15 +160,13 @@ jobs:
             echo "::warning::unified-trading-codex not available — skipping readiness prereq check"
           fi
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+      - name: Setup Python CI tools
+        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
         with:
-          python-version: "3.13"
-          cache: "pip"
+          python-version: "3.13.9"
 
       - name: Install dependencies
         run: |
-          pip install uv --quiet
           uv pip install -e ".[dev]" --system --quiet
 
       - name: Run code tests (static, no live services)
@@ -292,15 +290,13 @@ jobs:
           echo "Waiting for services to be healthy..."
           sleep 30
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+      - name: Setup Python CI tools
+        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
         with:
-          python-version: "3.13"
-          cache: "pip"
+          python-version: "3.13.9"
 
       - name: Install dependencies
         run: |
-          pip install uv --quiet
           uv pip install -e ".[dev]" --system --quiet
 
       - name: Run deployment tests (mock stack)

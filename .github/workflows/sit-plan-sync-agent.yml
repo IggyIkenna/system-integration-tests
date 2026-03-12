@@ -50,13 +50,8 @@ jobs:
             plans/active
           sparse-checkout-cone-mode: false
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install Claude Code CLI
-        run: npm install -g @anthropic-ai/claude-code --quiet
+      - name: Setup agent CI tools
+        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-agent-tools@main
 
       - name: Configure git identity
         run: |
