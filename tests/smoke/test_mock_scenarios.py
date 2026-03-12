@@ -14,7 +14,6 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-from pytest import approx
 
 pytestmark = pytest.mark.code_test
 
