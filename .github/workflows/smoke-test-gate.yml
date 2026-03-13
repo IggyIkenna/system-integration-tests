@@ -9,13 +9,20 @@ name: Smoke Test Gate
 # SIT VERSION SCOPE: Only repos with staging_versions[repo] >= 1.0.0 are tested.
 # If no such repos exist on staging, the workflow exits immediately (no lock dispatched).
 #
+# SIT MODE:
+#   full (default) — code-tests + deployment-tests; full contract + integration suite
+#   abbreviated    — tests/abbreviated/ only (<2 min schema checks); used for hotfix path
+#                    and repos with sit_level=abbreviated in PM manifest (e.g. PM, Codex)
+#
+# Hotfix detection: PM manifest staging_status.hotfix_mode=true (set by quickmerge --hotfix)
+# sit_level detection: PM manifest repositories[repo].sit_level (abbreviated|standard)
+#
 # Jobs:
-#   setup               — reads staging_versions, computes v1_repos list, sets skip guard
-#   code-tests          — Layer 3a: static tests, no live services required (<10 min)
-#                         Includes: UIC/UAC/UTL contract adoption + completeness checks,
-#                         library imports, schema parity, error normalisation
-#   deployment-tests    — Layer 3b/3c: tests requiring docker-compose mock stack
-#   dispatch            — fires staging-validated to PM only when both test jobs pass
+#   setup               — reads staging_versions, hotfix_mode, sit_level; sets skip/mode guard
+#   abbreviated-tests   — runs tests/abbreviated/ -m abbreviated_sit (<2 min); hotfix/abbreviated path
+#   code-tests          — Layer 3a: static tests, no live services required (<10 min); full path only
+#   deployment-tests    — Layer 3b/3c: tests requiring docker-compose mock stack; full path only
+#   dispatch            — fires staging-validated to PM; clears hotfix_mode if set
 
 on:
   push:
@@ -26,6 +33,10 @@ on:
         description: "Manual trigger reason"
         required: false
         default: "manual"
+      sit_mode:
+        description: "SIT mode: full or abbreviated"
+        required: false
+        default: "full"
 
 concurrency:
   group: sit-staging
@@ -33,7 +44,7 @@ concurrency:
 
 jobs:
   setup:
-    name: SIT Setup (v1 repo filter)
+    name: SIT Setup (v1 repo filter + mode detection)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -41,17 +52,24 @@ jobs:
     outputs:
       has_v1_repos: ${{ steps.filter.outputs.has_v1_repos }}
       v1_repos_json: ${{ steps.filter.outputs.v1_repos_json }}
+      sit_mode: ${{ steps.filter.outputs.sit_mode }}
 
     steps:
-      - name: SIT debounce (10-min quiet period)
+      - name: SIT debounce (10-min quiet period — skipped for abbreviated/hotfix)
         run: |
-          echo "Waiting 600s quiet period — new staging push will cancel this run via concurrency group."
-          sleep 600
+          # Skip debounce if workflow_dispatch with sit_mode=abbreviated
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.sit_mode }}" = "abbreviated" ]; then
+            echo "Abbreviated mode — skipping debounce."
+          else
+            echo "Waiting 600s quiet period — new staging push will cancel this run via concurrency group."
+            sleep 600
+          fi
 
-      - name: Clone PM manifest and filter v1 repos
+      - name: Clone PM manifest and filter v1 repos + detect SIT mode
         id: filter
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
+          DISPATCH_SIT_MODE: ${{ inputs.sit_mode || 'full' }}
         run: |
           set -euo pipefail
           OWNER="${{ github.repository_owner }}"
@@ -63,6 +81,7 @@ jobs:
           python3 - <<'PYEOF'
           import json
           import sys
+          import os
           from pathlib import Path
 
           try:
@@ -74,22 +93,53 @@ jobs:
 
           manifest = json.loads(Path("/tmp/pm-repo/workspace-manifest.json").read_text())
           staging_versions = manifest.get("staging_versions", {})
+          staging_status = manifest.get("staging_status", {})
+          repositories = manifest.get("repositories", {})
+
+          # Detect SIT mode: hotfix_mode in staging_status OR workflow_dispatch input OR
+          # all promoted repos have sit_level=abbreviated
+          hotfix_mode = staging_status.get("hotfix_mode", False)
+          dispatch_mode = os.environ.get("DISPATCH_SIT_MODE", "full")
+
+          # Check if all repos on staging have sit_level=abbreviated
+          staging_repos = [r for r in staging_versions if not r.startswith("_")]
+          all_abbreviated = all(
+              repositories.get(r, {}).get("sit_level", "standard") == "abbreviated"
+              for r in staging_repos
+          ) if staging_repos else False
+
+          sit_mode = "full"
+          if hotfix_mode or dispatch_mode == "abbreviated" or all_abbreviated:
+              sit_mode = "abbreviated"
+              reason = "hotfix_mode" if hotfix_mode else ("all_abbreviated" if all_abbreviated else "dispatch_input")
+              print(f"SIT mode: abbreviated (reason: {reason})")
+          else:
+              print("SIT mode: full")
 
           v1_repos = [
               repo for repo, ver in staging_versions.items()
               if not repo.startswith("_") and Version(ver) >= Version("1.0.0")
           ]
 
-          if not v1_repos:
+          # For abbreviated mode, include all staging repos (not just v1)
+          if sit_mode == "abbreviated":
+              active_repos = staging_repos
+          else:
+              active_repos = v1_repos
+
+          if not active_repos and sit_mode == "full":
               print("No repos with staging_versions >= 1.0.0 found on staging. Skipping SIT.")
-              print("has_v1_repos=false", file=open("/tmp/filter_outputs.txt", "w"))
-              print("v1_repos_json=[]", file=open("/tmp/filter_outputs.txt", "a"))
+              with open("/tmp/filter_outputs.txt", "w") as f:
+                  f.write("has_v1_repos=false\n")
+                  f.write("v1_repos_json=[]\n")
+                  f.write(f"sit_mode={sit_mode}\n")
               sys.exit(0)
 
-          print(f"Repos with staging version >= 1.0.0: {v1_repos}")
+          print(f"Active repos for SIT ({sit_mode}): {active_repos}")
           with open("/tmp/filter_outputs.txt", "w") as f:
               f.write("has_v1_repos=true\n")
-              f.write(f"v1_repos_json={json.dumps(v1_repos)}\n")
+              f.write(f"v1_repos_json={json.dumps(active_repos)}\n")
+              f.write(f"sit_mode={sit_mode}\n")
           PYEOF
 
           # Write outputs to GITHUB_OUTPUT
@@ -98,13 +148,67 @@ jobs:
           else
             echo "has_v1_repos=false" >> "$GITHUB_OUTPUT"
             echo "v1_repos_json=[]" >> "$GITHUB_OUTPUT"
+            echo "sit_mode=full" >> "$GITHUB_OUTPUT"
           fi
+
+  abbreviated-tests:
+    name: Abbreviated SIT (contract + workflow sanity, <2 min)
+    runs-on: ubuntu-latest
+    needs: setup
+    if: needs.setup.outputs.has_v1_repos == 'true' && needs.setup.outputs.sit_mode == 'abbreviated'
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python CI tools
+        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
+        with:
+          python-version: "3.13.9"
+
+      - name: Install dependencies
+        run: |
+          uv pip install -e . --system --quiet
+
+      - name: Run abbreviated SIT (contract normalization + workflow sanity)
+        run: |
+          pytest tests/abbreviated/ \
+            -m "abbreviated_sit" -v --tb=short --no-header \
+            --timeout=120 \
+            -q --json-report --json-report-file=abbreviated_sit_report.json \
+            2>&1 | tee abbreviated_sit_output.txt
+
+      - name: Upload abbreviated SIT report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: abbreviated-sit-report
+          path: |
+            abbreviated_sit_report.json
+            abbreviated_sit_output.txt
+          retention-days: 7
+
+      - name: Unlock staging on failure (dispatch sit-failed to PM)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          curl -s -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${OWNER}/unified-trading-pm/dispatches" \
+            -d '{"event_type": "sit-failed"}'
+          echo "sit-failed dispatched to PM (abbreviated-tests failure)."
 
   code-tests:
     name: Code Tests (static, <10 min)
     runs-on: ubuntu-latest
     needs: setup
-    if: needs.setup.outputs.has_v1_repos == 'true'
+    if: needs.setup.outputs.has_v1_repos == 'true' && needs.setup.outputs.sit_mode == 'full'
     timeout-minutes: 10
     permissions:
       contents: read
@@ -244,7 +348,7 @@ jobs:
     name: Deployment Tests (docker-compose mock stack)
     runs-on: ubuntu-latest
     needs: [setup, code-tests]
-    if: needs.setup.outputs.has_v1_repos == 'true'
+    if: needs.setup.outputs.has_v1_repos == 'true' && needs.setup.outputs.sit_mode == 'full'
     timeout-minutes: 45
     permissions:
       contents: read
@@ -342,12 +446,37 @@ jobs:
   dispatch:
     name: Dispatch staging-validated
     runs-on: ubuntu-latest
-    needs: [setup, code-tests, deployment-tests]
-    if: needs.setup.outputs.has_v1_repos == 'true' && success()
+    needs: [setup, abbreviated-tests, code-tests, deployment-tests]
+    # Run if: has repos to test AND (abbreviated path passed OR full path passed)
+    if: |
+      always() &&
+      needs.setup.outputs.has_v1_repos == 'true' &&
+      (
+        (needs.setup.outputs.sit_mode == 'abbreviated' && needs.abbreviated-tests.result == 'success') ||
+        (needs.setup.outputs.sit_mode == 'full' && needs.code-tests.result == 'success' && needs.deployment-tests.result == 'success')
+      )
     permissions:
-      contents: read
+      contents: write
 
     steps:
+      - name: Clear hotfix_mode in PM manifest (if set)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          SIT_MODE="${{ needs.setup.outputs.sit_mode }}"
+
+          if [ "$SIT_MODE" = "abbreviated" ]; then
+            # Dispatch clear-hotfix-mode event to PM so manifest is cleaned up
+            curl -s -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${OWNER}/unified-trading-pm/dispatches" \
+              -d '{"event_type": "clear-hotfix-mode"}' || true
+            echo "clear-hotfix-mode dispatched to PM."
+          fi
+
       - name: Dispatch staging-validated to unified-trading-pm
         uses: peter-evans/repository-dispatch@v3
         with:
@@ -360,7 +489,8 @@ jobs:
               "branch": "${{ github.ref_name }}",
               "commit": "${{ github.sha }}",
               "run_id": "${{ github.run_id }}",
-              "timestamp": "${{ github.event.head_commit.timestamp }}"
+              "timestamp": "${{ github.event.head_commit.timestamp }}",
+              "sit_mode": "${{ needs.setup.outputs.sit_mode }}"
             }
 
       - name: Notify on failure
