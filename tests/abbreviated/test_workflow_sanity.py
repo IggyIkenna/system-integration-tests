@@ -20,6 +20,9 @@ import yaml
 
 pytestmark = pytest.mark.abbreviated_sit
 
+# Type alias for a parsed YAML workflow document
+WorkflowDoc = dict[str, object]
+
 
 def _workspace_root() -> Path:
     """Return workspace root from env var or infer from this file's location.
@@ -47,15 +50,31 @@ def _collect_repo_dirs(workspace_root: Path) -> list[Path]:
     return repos
 
 
-def _parse_workflow_file(wf_file: Path) -> dict[str, object] | None:
-    """Parse a single workflow YAML file. Return typed dict or None on error/non-dict."""
+def _parse_workflow_file(wf_file: Path) -> WorkflowDoc | None:
+    """Parse a single workflow YAML file. Return typed dict or None on error/non-dict.
+
+    yaml.safe_load() is typed as returning Any; we narrow the type here so
+    callers receive WorkflowDoc | None without Any leaking into their scope.
+
+    PyYAML (YAML 1.1) may parse bare 'on:' keys as Python True.  We normalise
+    this to the string key "on" before returning so callers never see a bool key.
+    """
     try:
-        raw: object = yaml.safe_load(wf_file.read_text())
+        # cast(object, ...) prevents the Any return type of yaml.safe_load from
+        # propagating into callers under basedpyright strict reportAny mode.
+        parsed: object = cast(object, yaml.safe_load(wf_file.read_text()))
     except yaml.YAMLError:
         return None
-    if not isinstance(raw, dict):
+    if not isinstance(parsed, dict):
         return None
-    return cast(dict[str, object], raw)
+    # Normalise PyYAML's bool True key ('on' → True in YAML 1.1) to string "on".
+    # Cast to dict[object, object] first so iteration has known (not Unknown) types.
+    raw_dict = cast(dict[object, object], parsed)
+    normalised: WorkflowDoc = {}
+    for raw_key, val in raw_dict.items():
+        str_key: str = "on" if raw_key is True else str(raw_key)
+        normalised[str_key] = val
+    return normalised
 
 
 def _load_workflow_names(repo_dir: Path) -> dict[str, str]:
@@ -75,17 +94,22 @@ def _load_workflow_names(repo_dir: Path) -> dict[str, str]:
     return names
 
 
-def _get_on_block(content: dict[str, object]) -> dict[str, object] | None:
-    """Extract the 'on:' trigger block, handling PyYAML's True-key behaviour."""
-    # PyYAML may parse the YAML key 'on' as the Python bool True.
-    on_block = content.get("on")
-    if on_block is None:
-        # Fall back to True key (PyYAML behaviour for bare 'on:')
-        for key, val in content.items():
-            if key is True:
-                on_block = val
-                break
-    return cast(dict[str, object], on_block) if isinstance(on_block, dict) else None
+def _get_on_block(content: WorkflowDoc) -> WorkflowDoc | None:
+    """Extract the 'on:' trigger block.
+
+    Keys are already normalised to strings by _parse_workflow_file (bool True → "on"),
+    so we always look up the string key "on".
+    """
+    on_val = content.get("on")
+    return cast(WorkflowDoc, on_val) if isinstance(on_val, dict) else None
+
+
+def _has_on_trigger(content: WorkflowDoc) -> bool:
+    """Return True if the workflow has an 'on:' trigger.
+
+    Keys are already normalised to strings by _parse_workflow_file.
+    """
+    return "on" in content
 
 
 def _workflow_run_broken_refs(
@@ -103,7 +127,7 @@ def _workflow_run_broken_refs(
     workflow_run_raw = on_block.get("workflow_run")
     if not isinstance(workflow_run_raw, dict):
         return []
-    workflow_run = cast(dict[str, object], workflow_run_raw)
+    workflow_run = cast(WorkflowDoc, workflow_run_raw)
     referenced_raw = workflow_run.get("workflows")
     if not isinstance(referenced_raw, list):
         return []
@@ -130,7 +154,10 @@ def _check_jobs(
     label = f"{repo_name}/{wf_file.name}"
     if jobs is None:
         return label, None
-    if not isinstance(jobs, dict) or len(cast(dict[str, object], jobs)) == 0:
+    if not isinstance(jobs, dict):
+        return None, label
+    jobs_dict = cast(dict[str, object], jobs)
+    if len(jobs_dict) == 0:
         return None, label
     return None, None
 
@@ -153,12 +180,12 @@ class TestWorkflowYAMLSyntax:
             for wf_file in sorted((repo_dir / ".github" / "workflows").glob("*.yml")):
                 total_files += 1
                 try:
-                    raw: object = yaml.safe_load(wf_file.read_text())
+                    parsed: object = cast(object, yaml.safe_load(wf_file.read_text()))
                 except yaml.YAMLError as exc:
                     failures.append(f"{repo_dir.name}/{wf_file.name}: {exc}")
                     continue
-                if not isinstance(raw, dict):
-                    failures.append(f"{repo_dir.name}/{wf_file.name}: parsed to {type(raw).__name__}, expected dict")
+                if not isinstance(parsed, dict):
+                    failures.append(f"{repo_dir.name}/{wf_file.name}: parsed to {type(parsed).__name__}, expected dict")
 
         assert total_files > 0, f"No workflow files found under {workspace_root}"
         assert not failures, f"{len(failures)} workflow file(s) failed YAML validation:\n" + "\n".join(
@@ -180,11 +207,7 @@ class TestWorkflowYAMLSyntax:
                 content = _parse_workflow_file(wf_file)
                 if content is None:
                     continue
-                # PyYAML parses 'on' as Python True in some contexts.
-                # Check both 'on' string key and True bool key.
-                has_on_str = "on" in content
-                has_on_bool = any(k is True for k in content)
-                if not has_on_str and not has_on_bool:
+                if not _has_on_trigger(content):
                     missing_on.append(f"{repo_dir.name}/{wf_file.name}")
 
         assert not missing_on, f"{len(missing_on)} workflow file(s) missing 'on:' trigger:\n" + "\n".join(

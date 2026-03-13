@@ -22,6 +22,7 @@ import pytest
 
 # UAC canonical execution schemas (UAC has py.typed; import directly from UAC)
 from unified_api_contracts import CanonicalFill, CanonicalOrder
+from unified_api_contracts.unified_normalised_contracts.execution import OrderSide, OrderType
 from unified_events_interface import (
     STANDARD_COORDINATION_EVENTS,
     STANDARD_LIFECYCLE_EVENTS,
@@ -299,8 +300,8 @@ def test_uac_canonical_order_round_trip() -> None:
         timestamp=ts,
         venue="BINANCE",
         instrument_id="BTCUSDT",
-        side="buy",
-        order_type="limit",
+        side=OrderSide.BUY,
+        order_type=OrderType.LIMIT,
         quantity=Decimal("0.001"),
         price=Decimal("50000.00"),
     )
@@ -326,7 +327,7 @@ def test_uac_canonical_fill_round_trip() -> None:
         timestamp=ts,
         venue="BINANCE",
         instrument_id="BTCUSDT",
-        side="buy",
+        side=OrderSide.BUY,
         price=Decimal("50000.00"),
         quantity=Decimal("0.001"),
         fee=Decimal("0.05"),
