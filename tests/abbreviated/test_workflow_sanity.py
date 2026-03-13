@@ -112,14 +112,48 @@ def _has_on_trigger(content: WorkflowDoc) -> bool:
     return "on" in content
 
 
+def _is_cross_repo_workflow_run(content: WorkflowDoc) -> bool:
+    """Return True if the workflow uses workflow_run as a cross-repo trigger.
+
+    GHA allows workflow_run to fire from workflows in other repos when a job
+    uses 'github.event.workflow_run.repository.name' to filter the source repo.
+    Such references cannot be validated against same-repo workflow names.
+    """
+    raw_text = str(content)
+    return "workflow_run.repository" in raw_text
+
+
+def _missing_workflow_names(
+    workflow_run: WorkflowDoc,
+    all_workflow_names: set[str],
+    repo_name: str,
+    wf_file_name: str,
+) -> list[str]:
+    """Return error strings for workflow_run refs that don't exist in the same repo."""
+    referenced_raw = workflow_run.get("workflows")
+    if not isinstance(referenced_raw, list):
+        return []
+    return [
+        f"{repo_name}/{wf_file_name}: references '{ref_name}' "
+        f"but no workflow named '{ref_name}' found in "
+        f"{repo_name}/.github/workflows/ (known: {sorted(all_workflow_names)!r})"
+        for ref_name in cast(list[object], referenced_raw)
+        if isinstance(ref_name, str) and ref_name not in all_workflow_names
+    ]
+
+
 def _workflow_run_broken_refs(
     wf_file: Path,
     repo_name: str,
     all_workflow_names: set[str],
 ) -> list[str]:
-    """Return broken workflow_run reference strings for a single workflow file."""
+    """Return broken workflow_run reference strings for a single workflow file.
+
+    Cross-repo workflow_run triggers (detected via workflow_run.repository guard)
+    are excluded — their workflow names live in the source repo, not this one.
+    """
     content = _parse_workflow_file(wf_file)
-    if content is None:
+    if content is None or _is_cross_repo_workflow_run(content):
         return []
     on_block = _get_on_block(content)
     if on_block is None:
@@ -127,19 +161,7 @@ def _workflow_run_broken_refs(
     workflow_run_raw = on_block.get("workflow_run")
     if not isinstance(workflow_run_raw, dict):
         return []
-    workflow_run = cast(WorkflowDoc, workflow_run_raw)
-    referenced_raw = workflow_run.get("workflows")
-    if not isinstance(referenced_raw, list):
-        return []
-    broken: list[str] = []
-    for ref_name in cast(list[object], referenced_raw):
-        if isinstance(ref_name, str) and ref_name not in all_workflow_names:
-            broken.append(
-                f"{repo_name}/{wf_file.name}: references '{ref_name}' "
-                f"but no workflow named '{ref_name}' found in "
-                f"{repo_name}/.github/workflows/ (known: {sorted(all_workflow_names)!r})"
-            )
-    return broken
+    return _missing_workflow_names(cast(WorkflowDoc, workflow_run_raw), all_workflow_names, repo_name, wf_file.name)
 
 
 def _check_jobs(
