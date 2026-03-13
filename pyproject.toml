@@ -75,4 +75,5 @@ markers = [
     "slow: Peak/sustained load performance tests — nightly or weekly CI only (excluded from PR CI)",
     "code_test: Static tests — no live services required; run in code-tests CI job (<10 min)",
     "deployment_test: Tests requiring docker-compose mock stack; run in deployment-tests CI job",
+    "abbreviated_sit: Abbreviated SIT suite — fast contract and workflow sanity checks (<2 min, runs in hotfix path)",
 ]
