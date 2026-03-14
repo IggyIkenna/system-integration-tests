@@ -64,7 +64,7 @@ def _make_order_payload(
 
 def test_umi_normal_scenario_ticker_validates() -> None:
     """UMI + NORMAL scenario: synthetic data validates as CanonicalTicker."""
-    from unified_api_contracts.unified_normalised_contracts.domain import CanonicalTicker
+    from unified_api_contracts.canonical.domain import CanonicalTicker
 
     payload = _make_ticker_payload(venue="binance", price=40000.0)
     ticker = CanonicalTicker.model_validate(payload)
@@ -76,7 +76,7 @@ def test_umi_normal_scenario_ticker_validates() -> None:
 
 def test_umi_bust_scenario_ticker_validates_under_extreme_prices() -> None:
     """UMI + BUST scenario (8x vol): extreme prices still validate as CanonicalTicker."""
-    from unified_api_contracts.unified_normalised_contracts.domain import CanonicalTicker
+    from unified_api_contracts.canonical.domain import CanonicalTicker
 
     # Bust scenario can produce extreme prices — schema must accept them
     extreme_price = 320_000.0  # 8x nominal
@@ -106,7 +106,7 @@ def test_umi_fault_injection_schema_unchanged() -> None:
 
 def test_utei_missing_data_order_validates() -> None:
     """UTEI + MISSING_DATA: order with gaps in optional fields validates as CanonicalOrder."""
-    from unified_api_contracts.unified_normalised_contracts.execution import CanonicalOrder
+    from unified_api_contracts.canonical.execution import CanonicalOrder
 
     payload = _make_order_payload(venue="coinbase")
     order = CanonicalOrder.model_validate(payload)
@@ -118,7 +118,7 @@ def test_utei_missing_data_order_validates() -> None:
 
 def test_utei_hyperliquid_order_validates() -> None:
     """UTEI + DeFi venue: Hyperliquid order validates as CanonicalOrder."""
-    from unified_api_contracts.unified_normalised_contracts.execution import CanonicalOrder
+    from unified_api_contracts.canonical.execution import CanonicalOrder
 
     payload = _make_order_payload(venue="hyperliquid", symbol="BTC-PERP", price=40100.0)
     order = CanonicalOrder.model_validate(payload)

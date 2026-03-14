@@ -385,6 +385,19 @@ jobs:
           echo "V1_REPOS=${{ needs.setup.outputs.v1_repos_json }}" > ../unified-trading-pm/docker/.env.v1
           echo "V1 repos for compose: ${{ needs.setup.outputs.v1_repos_json }}"
 
+      - name: Clone v1 service repos for docker-compose build context
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          REPOS=(market-data-service execution-service trading-analytics-api)
+          for REPO in "${REPOS[@]}"; do
+            git clone --depth 1 -b staging \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${REPO}.git" \
+              "../${REPO}"
+          done
+
       - name: Start mock docker-compose stack (v1 services)
         run: |
           docker compose \

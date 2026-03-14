@@ -1,8 +1,34 @@
-# Cloud Build for system-integration-tests (Layer 3a/3b)
-# Runs smoke and e2e tests; requires GCP sandbox (buckets, services)
-# Per workspace-completion-plan; E2E_SMOKE_PLAN.md
+# Cloud Build Template — System Integration Tests (Lint + Smoke)
+#
+# Test-harness repo: lint + smoke tests only. No Docker image, no push.
+# Satisfies STEP 5.17 with no-op push and scan steps.
+#
+# Placeholders: system-integration-tests (e.g. system-integration-tests).
+#
+# Generated from PM template. Rollout: rollout-cloudbuild.py
+#
+# Required steps:
+#   - auth-precheck   (GCP token)
+#   - lint            (ruff)
+#   - run-tests       (pytest -m smoke)
+#   - push            (no-op)
+#   - vulnerability-scan (no-op)
+
+substitutions:
+  _REPO_NAME: "system-integration-tests"
 
 steps:
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+    id: "auth-precheck"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        set -e
+        gcloud auth print-access-token >/dev/null || { echo "FAIL: No GCP token"; exit 1; }
+        echo "Auth pre-check passed"
+    waitFor: ["-"]
+
   - name: "python:3.13-slim"
     id: "lint"
     entrypoint: "bash"
@@ -11,9 +37,10 @@ steps:
       - |
         set -e
         pip install uv
-        uv pip install ruff==0.15.0
+        uv pip install --system ruff
         ruff check .
         ruff format --check .
+    waitFor: ["auth-precheck"]
 
   - name: "python:3.13-slim"
     id: "run-tests"
@@ -23,18 +50,22 @@ steps:
       - |
         set -e
         pip install uv
-        uv pip install -e ".[dev]"
+        uv pip install --system -e ".[dev]"
         pytest -m smoke -v --timeout=300
     waitFor: ["lint"]
 
-  # SIT is a test-only repo with no Docker image — push and vulnerability-scan are no-ops.
-  # These step IDs are required by the codex cloudbuild.yaml compliance check (STEP 5.17).
   - name: "bash"
     id: "push"
-    args: ["-c", "echo 'SIT has no image to push — no-op'"]
+    args: ["-c", "echo '${_REPO_NAME} has no image to push — no-op'"]
     waitFor: ["run-tests"]
 
   - name: "bash"
     id: "vulnerability-scan"
-    args: ["-c", "echo 'SIT has no image to scan — no-op'"]
+    args: ["-c", "echo '${_REPO_NAME} has no image to scan — no-op'"]
     waitFor: ["push"]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "E2_MEDIUM"
+
+timeout: "600s"

@@ -22,7 +22,7 @@ import pytest
 
 # UAC canonical execution schemas (UAC has py.typed; import directly from UAC)
 from unified_api_contracts import CanonicalFill, CanonicalOrder
-from unified_api_contracts.unified_normalised_contracts.execution import OrderSide, OrderType
+from unified_api_contracts.canonical.execution import OrderSide, OrderType
 from unified_events_interface import (
     STANDARD_COORDINATION_EVENTS,
     STANDARD_LIFECYCLE_EVENTS,
@@ -37,6 +37,12 @@ from unified_internal_contracts.domain.ml_inference_service import (
     CascadePredictionEvent,
     PredictionSnapshot,
 )
+from unified_internal_contracts.domain.pubsub_service import (
+    FillEventMessage,
+    PubSubMessageEnvelope,
+    RiskAlertMessage,
+)
+from unified_internal_contracts.domain.risk_service import RiskMetrics, RiskPosition, RiskStatus
 from unified_internal_contracts.events import (
     EventMetadata,
     EventSeverity,
@@ -45,12 +51,6 @@ from unified_internal_contracts.events import (
 )
 from unified_internal_contracts.market_data import CanonicalOHLCV, OHLCVSource
 from unified_internal_contracts.ml import InferenceRequest, InferenceResult
-from unified_internal_contracts.pubsub import (
-    FillEventMessage,
-    PubSubMessageEnvelope,
-    RiskAlertMessage,
-)
-from unified_internal_contracts.risk import RiskMetrics, RiskPosition, RiskStatus
 
 pytestmark = pytest.mark.abbreviated_sit
 

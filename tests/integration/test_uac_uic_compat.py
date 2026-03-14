@@ -11,7 +11,7 @@ pytestmark = pytest.mark.code_test
 
 def test_canonical_imports() -> None:
     """UAC domain module is importable and contains CanonicalBetOrder."""
-    from unified_api_contracts.unified_normalised_contracts import domain
+    from unified_api_contracts.canonical import domain
 
     assert hasattr(domain, "CanonicalBetOrder")
 
