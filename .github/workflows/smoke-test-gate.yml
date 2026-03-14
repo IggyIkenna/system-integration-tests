@@ -391,11 +391,16 @@ jobs:
         run: |
           set -euo pipefail
           OWNER="${{ github.repository_owner }}"
-          REPOS=(market-data-service execution-service trading-analytics-api)
-          for REPO in "${REPOS[@]}"; do
+          V1_REPOS_JSON='${{ needs.setup.outputs.v1_repos_json }}'
+          for REPO in $(echo "$V1_REPOS_JSON" | jq -r '.[]'); do
+            if [ "$REPO" = "system-integration-tests" ] || [ "$REPO" = "unified-trading-pm" ]; then
+              echo "Skipping $REPO (already checked out)"
+              continue
+            fi
             git clone --depth 1 -b staging \
               "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${REPO}.git" \
-              "../${REPO}"
+              "../${REPO}" 2>/dev/null \
+              || echo "WARN: ${REPO} not found — skipping"
           done
 
       - name: Start mock docker-compose stack (v1 services)
