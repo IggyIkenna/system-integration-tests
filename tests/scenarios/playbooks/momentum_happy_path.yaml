@@ -1,0 +1,64 @@
+# Scenario: Momentum Happy Path
+#
+# Validates the end-to-end flow: market tick ingestion -> strategy signal
+# generation -> execution instruction creation -> position state update.
+#
+# All steps use mock data and require no credentials or live services.
+# This playbook is loaded by test_scenario_playbooks.py.
+
+name: momentum-happy-path
+description: >
+  End-to-end validation of the momentum/basis strategy pipeline.
+  A BTC market tick arrives, the strategy evaluates the funding rate,
+  generates a signal, creates an execution instruction, and the position
+  tracker records the new state.
+
+steps:
+  - action: ingest_market_tick
+    params:
+      venue: binance
+      symbol: BTC-USDT
+      price: "65000.0"
+      funding_rate: "0.0003"
+      timestamp: "2026-03-15T10:00:00Z"
+    expected_result:
+      tick_ingested: true
+    timeout_seconds: 5
+
+  - action: evaluate_strategy_signal
+    params:
+      strategy_name: btc_basis
+      venue: binance
+      symbol: BTC-USDT
+    expected_result:
+      signal_generated: true
+      signal_direction: long
+    timeout_seconds: 10
+
+  - action: create_execution_instruction
+    params:
+      strategy_name: btc_basis
+      venue: binance
+      symbol: BTC-USDT
+      side: buy
+      quantity: "0.1"
+    expected_result:
+      instruction_created: true
+    timeout_seconds: 5
+
+  - action: update_position_state
+    params:
+      venue: binance
+      symbol: BTC-USDT
+      side: long
+      quantity: "0.1"
+      entry_price: "65000.0"
+    expected_result:
+      position_updated: true
+    timeout_seconds: 5
+
+expected_outcomes:
+  tick_ingested: true
+  signal_generated: true
+  instruction_created: true
+  position_updated: true
