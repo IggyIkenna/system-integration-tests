@@ -29,14 +29,14 @@ def test_uac_canonical_mappings_importable() -> None:
     assert len(VENUE_TO_DATA_SOURCE) > 0
 
 
-def test_uac_schemas_non_empty() -> None:
-    """UAC schemas package must export at least one schema class."""
-    from unified_api_contracts import schemas
+def test_uac_facade_modules_non_empty() -> None:
+    """UAC facade modules (market, execution, errors) must be importable and non-empty."""
+    from unified_api_contracts import errors, execution, market
 
-    assert schemas is not None
-    # Verify the schemas subpackage has content
-    exported = [name for name in dir(schemas) if not name.startswith("_")]
-    assert len(exported) > 0, "unified_api_contracts.schemas exports nothing"
+    for mod_name, mod in [("market", market), ("execution", execution), ("errors", errors)]:
+        assert mod is not None, f"unified_api_contracts.{mod_name} is None"
+        exported = [name for name in dir(mod) if not name.startswith("_")]
+        assert len(exported) > 0, f"unified_api_contracts.{mod_name} exports nothing"
 
 
 def test_uic_schemas_importable() -> None:
