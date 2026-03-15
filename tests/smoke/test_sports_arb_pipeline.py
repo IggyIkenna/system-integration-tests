@@ -20,6 +20,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
+from unified_api_contracts import BetOrder, BetStatus
 
 
 class TestSportsVenueRegistryCompleteness:
@@ -30,9 +31,7 @@ class TestSportsVenueRegistryCompleteness:
             VENUE_EXECUTION_REGISTRY,
         )
 
-        assert len(VENUE_EXECUTION_REGISTRY) >= 70, (
-            f"Expected >=70 venues, got {len(VENUE_EXECUTION_REGISTRY)}"
-        )
+        assert len(VENUE_EXECUTION_REGISTRY) >= 70, f"Expected >=70 venues, got {len(VENUE_EXECUTION_REGISTRY)}"
 
     def test_api_venues_present(self) -> None:
         from unified_api_contracts.canonical.domain.sports.venue_execution_registry import (
@@ -49,9 +48,7 @@ class TestSportsVenueRegistryCompleteness:
         )
 
         for key, profile in VENUE_EXECUTION_REGISTRY.items():
-            assert profile.primary_execution_method is not None, (
-                f"Venue '{key}' has no execution method"
-            )
+            assert profile.primary_execution_method is not None, f"Venue '{key}' has no execution method"
 
 
 class TestUSEIRouterCoverage:
@@ -217,6 +214,7 @@ class TestClientReportingAPISportsEndpoints:
 
             assert generate_sports_pnl_report is not None
             assert generate_clv_report is not None
+            assert generate_venue_performance_report is not None
             assert read_sports_positions is not None
             assert read_sports_risk is not None
         except ImportError:
@@ -229,9 +227,7 @@ class TestBrowserAdapterCoverage:
     def test_venue_key_to_adapter_mapping_populated(self) -> None:
         from unified_sports_execution_interface.adapters.browser import VENUE_KEY_TO_ADAPTER
 
-        assert len(VENUE_KEY_TO_ADAPTER) >= 50, (
-            f"Expected >=50 browser venue mappings, got {len(VENUE_KEY_TO_ADAPTER)}"
-        )
+        assert len(VENUE_KEY_TO_ADAPTER) >= 50, f"Expected >=50 browser venue mappings, got {len(VENUE_KEY_TO_ADAPTER)}"
 
     def test_all_browser_adapters_have_venue_key(self) -> None:
         from unified_sports_execution_interface.adapters.browser import VENUE_KEY_TO_ADAPTER
@@ -296,7 +292,7 @@ class TestCredentialConfigCoverage:
 
     def test_credential_configs_populated(self) -> None:
         try:
-            from unified_config_interface.sports_venue_credentials import (
+            from unified_config_interface import (
                 SPORTS_VENUE_CREDENTIALS,
             )
 
@@ -308,7 +304,7 @@ class TestCredentialConfigCoverage:
 
     def test_kalshi_credential_config_exists(self) -> None:
         try:
-            from unified_config_interface.sports_venue_credentials import (
+            from unified_config_interface import (
                 SPORTS_VENUE_CREDENTIALS,
             )
 
