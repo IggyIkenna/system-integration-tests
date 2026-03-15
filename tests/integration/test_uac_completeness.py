@@ -3,8 +3,6 @@
 Scope: structural completeness for UAC core directories only —
   unified_api_contracts/schemas/
   unified_api_contracts/canonical/
-  unified_api_contracts/trading_schemas.py
-  unified_api_contracts/canonical_mappings.py
 
 Mirrors the logic in unified-api-contracts/scripts/check_uac_completeness.py but
 runs against the installed package. Intentionally excludes unified_api_contracts.external/
@@ -35,7 +33,7 @@ pytestmark = pytest.mark.code_test
 # Scoped source directories and files (mirrors check_uac_completeness.py SCAN_*)
 # ---------------------------------------------------------------------------
 _SCAN_SUBDIRS: list[str] = ["schemas", "canonical"]
-_SCAN_FILES: list[str] = ["trading_schemas.py", "canonical_mappings.py"]
+_SCAN_FILES: list[str] = []
 
 _EXCLUDE_DIRS: frozenset[str] = frozenset(
     {

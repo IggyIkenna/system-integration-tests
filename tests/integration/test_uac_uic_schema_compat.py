@@ -1,7 +1,7 @@
 """Layer 0 contract alignment: UAC + UIC schema round-trip."""
 
 import pytest
-from unified_api_contracts.canonical.domain import CanonicalBetOrder
+from unified_api_contracts import CanonicalBetOrder
 from unified_internal_contracts.schema_definition import SchemaDefinition
 
 pytestmark = pytest.mark.code_test

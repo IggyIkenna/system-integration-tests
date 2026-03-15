@@ -21,8 +21,7 @@ from decimal import Decimal
 import pytest
 
 # UAC canonical execution schemas (UAC has py.typed; import directly from UAC)
-from unified_api_contracts import CanonicalFill, CanonicalOrder
-from unified_api_contracts.canonical.execution import OrderSide, OrderType
+from unified_api_contracts import CanonicalFill, CanonicalOrder, OrderSide, OrderType
 from unified_events_interface import (
     STANDARD_COORDINATION_EVENTS,
     STANDARD_LIFECYCLE_EVENTS,
