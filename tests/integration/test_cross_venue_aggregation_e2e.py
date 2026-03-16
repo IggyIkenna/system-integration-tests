@@ -46,9 +46,7 @@ def test_aggregated_position_net_quantity_two_venues() -> None:
     )
 
     async def _run() -> None:
-        with patch(
-            "position_balance_monitor_service.core.cross_venue_aggregator.log_event"
-        ):
+        with patch("position_balance_monitor_service.core.cross_venue_aggregator.log_event"):
             agg = CrossVenueAggregator()
 
             vd_a = _VenueData(
@@ -93,9 +91,7 @@ def test_aggregated_position_net_quantity_long_short_net() -> None:
     )
 
     async def _run() -> None:
-        with patch(
-            "position_balance_monitor_service.core.cross_venue_aggregator.log_event"
-        ):
+        with patch("position_balance_monitor_service.core.cross_venue_aggregator.log_event"):
             agg = CrossVenueAggregator()
 
             vd_long = _VenueData(
@@ -137,9 +133,7 @@ def test_aggregated_position_multi_instrument() -> None:
     )
 
     async def _run() -> None:
-        with patch(
-            "position_balance_monitor_service.core.cross_venue_aggregator.log_event"
-        ):
+        with patch("position_balance_monitor_service.core.cross_venue_aggregator.log_event"):
             agg = CrossVenueAggregator()
 
             # BTC on two venues
@@ -214,9 +208,7 @@ def test_float_to_decimal_boundary_0_1_plus_0_2() -> None:
     float_b = 0.2
     dec_a = Decimal(str(float_a))
     dec_b = Decimal(str(float_b))
-    assert dec_a + dec_b == Decimal("0.3"), (
-        "Float->Decimal(str()) conversion must produce exact Decimal arithmetic"
-    )
+    assert dec_a + dec_b == Decimal("0.3"), "Float->Decimal(str()) conversion must produce exact Decimal arithmetic"
 
 
 def test_float_to_decimal_price_precision() -> None:
