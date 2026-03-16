@@ -94,8 +94,7 @@ async def _asyncpg_list_tables(dsn: str) -> list[str]:
     conn = await asyncpg.connect(dsn=dsn, timeout=10)
     try:
         rows = await conn.fetch(
-            "SELECT table_name FROM information_schema.tables"
-            " WHERE table_schema = 'public' ORDER BY table_name"
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"
         )
         return [r["table_name"] for r in rows]
     finally:
@@ -109,8 +108,7 @@ async def _asyncpg_read_write_probe(dsn: str, probe_id: str) -> str:
     conn = await asyncpg.connect(dsn=dsn, timeout=10)
     try:
         await conn.execute(
-            "CREATE TABLE IF NOT EXISTS sit_probe"
-            " (id TEXT PRIMARY KEY, created_at TIMESTAMP DEFAULT NOW())"
+            "CREATE TABLE IF NOT EXISTS sit_probe (id TEXT PRIMARY KEY, created_at TIMESTAMP DEFAULT NOW())"
         )
         await conn.execute("INSERT INTO sit_probe (id) VALUES ($1)", probe_id)
         result = await conn.fetchval("SELECT id FROM sit_probe WHERE id = $1", probe_id)

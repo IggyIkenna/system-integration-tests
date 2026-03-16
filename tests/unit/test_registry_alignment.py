@@ -13,17 +13,53 @@ def test_instrument_type_not_reexported_from_uci() -> None:
     import unified_config_interface as uci
 
     assert not hasattr(uci, "InstrumentType"), (
-        "UCI should not export InstrumentType. "
-        "Consumers must import from unified_api_contracts directly."
+        "UCI should not export InstrumentType. Consumers must import from unified_api_contracts directly."
     )
 
 
 def test_uac_instrument_type_is_canonical_source() -> None:
-    """UAC InstrumentType is the canonical source for all instrument types."""
+    """UAC InstrumentType must contain every type the system trades or references.
+
+    These are the types actively used across execution-service (CLOB/DEX/zero-alpha),
+    instruments-service (venue→type mapping), and strategy configs. If a type is
+    removed from UAC, downstream services break.
+    """
     from unified_api_contracts.reference import InstrumentType
 
-    assert len(InstrumentType) >= 20, (
-        f"UAC InstrumentType has only {len(InstrumentType)} members, expected >= 20"
+    # Types required by at least one service or venue mapping
+    required_types = {
+        # CeFi / TradFi execution
+        "SPOT_PAIR",
+        "PERPETUAL",
+        "FUTURE",
+        "OPTION",
+        "INDEX",
+        # TradFi assets
+        "BOND",
+        "EQUITY",
+        "ETF",
+        "COMMODITY",
+        "CURRENCY",
+        # DeFi protocols
+        "POOL",
+        "LENDING",
+        "STAKING",
+        "YIELD_BEARING",
+        "DEBT_TOKEN",
+        "LST",
+        "A_TOKEN",
+        "SPOT_ASSET",
+        # Sports / prediction markets
+        "PREDICTION_MARKET",
+        "EXCHANGE_ODDS",
+        "FIXED_ODDS",
+        "PROP",
+    }
+    actual_names = {m.name for m in InstrumentType}
+    missing = required_types - actual_names
+    assert not missing, (
+        f"UAC InstrumentType missing required types: {missing}. "
+        "These are used by execution-service, instruments-service, or strategy configs."
     )
 
 
@@ -43,7 +79,7 @@ def test_venue_to_tardis_matches_inverted_venue_mapping() -> None:
     module load time. This test verifies the inversion produces the expected
     mappings that were previously hardcoded.
     """
-    from unified_config_interface.venue_config import VenueMapping
+    from unified_config_interface import VenueMapping
     from unified_internal_contracts.reference.instrument_key import _VENUE_TO_TARDIS
 
     mapping = VenueMapping()

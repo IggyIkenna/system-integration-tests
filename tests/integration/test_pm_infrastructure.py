@@ -37,7 +37,9 @@ class TestQualityGateScriptInheritance:
     def test_base_ui_script_exists(self) -> None:
         """UI repos may use a different base or quality-gates-ui-template.sh."""
         ui_template = PM_ROOT / "scripts" / "quality-gates-base" / "base-ui.sh"
-        codex_template = WORKSPACE_ROOT / "unified-trading-codex" / "06-coding-standards" / "quality-gates-ui-template.sh"
+        codex_template = (
+            WORKSPACE_ROOT / "unified-trading-codex" / "06-coding-standards" / "quality-gates-ui-template.sh"
+        )
         assert ui_template.is_file() or codex_template.is_file(), (
             "Neither base-ui.sh nor quality-gates-ui-template.sh found"
         )
