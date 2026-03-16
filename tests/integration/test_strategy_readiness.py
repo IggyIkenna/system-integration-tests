@@ -49,9 +49,14 @@ _REQUIRED_KEYS: list[str] = [
 
 
 def _load_strategies() -> list[_StrategyDict]:
-    """Load strategy-manifest.json and return the strategies list."""
+    """Load strategy-manifest.json and return the strategies list.
+
+    Raises FileNotFoundError if the manifest is missing — callers that want
+    to assert existence should catch or let it propagate.
+    """
     if not _STRATEGY_MANIFEST_PATH.exists():
-        pytest.skip(f"strategy-manifest.json not found at {_STRATEGY_MANIFEST_PATH}")  # pyright: ignore[reportUnknownMemberType]
+        msg = f"strategy-manifest.json not found at {_STRATEGY_MANIFEST_PATH}"
+        raise FileNotFoundError(msg)
     raw = _STRATEGY_MANIFEST_PATH.read_text(encoding="utf-8")
     parsed: dict[str, list[_StrategyDict]] = json.loads(raw)  # pyright: ignore[reportAny]
     strategies: list[_StrategyDict] = parsed.get("strategies", [])
@@ -82,9 +87,21 @@ def _strategy_ids() -> list[str]:
     return [str(s.get("strategy_id", f"unknown_{i}")) for i, s in enumerate(strategies)]
 
 
+def _require_strategies() -> list[_StrategyDict]:
+    """Load strategies, skipping the test if the manifest is absent.
+
+    Use for data-dependent tests where existence is already asserted by
+    ``test_manifest_exists_and_not_empty``.
+    """
+    try:
+        return _load_strategies()
+    except FileNotFoundError:
+        pytest.skip("strategy-manifest.json not present — see test_manifest_exists_and_not_empty")  # pyright: ignore[reportUnknownMemberType]
+
+
 def _strategy_by_id(strategy_id: str) -> _StrategyDict:
     """Look up a strategy entry by ID."""
-    strategies = _load_strategies()
+    strategies = _require_strategies()
     for s in strategies:
         if str(s.get("strategy_id")) == strategy_id:
             return s
@@ -99,6 +116,10 @@ def _strategy_by_id(strategy_id: str) -> _StrategyDict:
 
 def test_manifest_exists_and_not_empty() -> None:
     """strategy-manifest.json must exist and contain at least one strategy."""
+    assert _STRATEGY_MANIFEST_PATH.exists(), (
+        f"strategy-manifest.json not found at {_STRATEGY_MANIFEST_PATH} — "
+        "ensure unified-trading-pm is cloned as a sibling repo"
+    )
     strategies = _load_strategies()
     assert len(strategies) > 0, "strategy-manifest.json has zero strategies"
 
@@ -147,7 +168,7 @@ def test_required_manifest_fields_present(strategy_id: str) -> None:
 
 def test_no_duplicate_strategy_ids() -> None:
     """Strategy IDs must be unique across the manifest."""
-    strategies = _load_strategies()
+    strategies = _require_strategies()
     ids = [str(s.get("strategy_id", "")) for s in strategies]
     seen: set[str] = set()
     duplicates: list[str] = []
@@ -160,7 +181,7 @@ def test_no_duplicate_strategy_ids() -> None:
 
 def test_all_domains_represented() -> None:
     """The manifest should contain strategies from multiple domains."""
-    strategies = _load_strategies()
+    strategies = _require_strategies()
     domains = {str(s.get("domain", "")) for s in strategies}
     # We expect at least cefi, tradfi, defi, and sports in the manifest
     assert len(domains) >= 3, f"Expected at least 3 domains represented, got {len(domains)}: {domains}"

@@ -13,8 +13,12 @@ MIN_COVERAGE=2
 RUN_INTEGRATION=false
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 LOCAL_DEPS=()
-UAC_CANONICAL_EXEMPT=true  # SIT needs deep imports for contract validation
-MANIFEST_ALIGNMENT_SKIP=true  # test-harness repo: SOURCE_DIR=tests, deps are test infrastructure
+# SIT-specific exemptions — MUST NOT be copied to other repos.
+# Guard: only activate for system-integration-tests.
+if [ "$SERVICE_NAME" = "system-integration-tests" ]; then
+    UAC_CANONICAL_EXEMPT=true   # SIT needs deep imports for contract validation
+    MANIFEST_ALIGNMENT_SKIP=true  # test-harness repo: SOURCE_DIR=tests, deps are test infrastructure
+fi
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-service.sh"
 

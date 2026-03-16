@@ -121,14 +121,12 @@ jobs:
               if not repo.startswith("_") and Version(ver) >= Version("1.0.0")
           ]
 
-          # For abbreviated mode, include all staging repos (not just v1)
-          if sit_mode == "abbreviated":
-              active_repos = staging_repos
-          else:
-              active_repos = v1_repos
+          # Both modes filter to v1+ repos only — abbreviated tests assume
+          # production-ready contract structures that pre-release repos may lack.
+          active_repos = v1_repos
 
-          if not active_repos and sit_mode == "full":
-              print("No repos with staging_versions >= 1.0.0 found on staging. Skipping SIT.")
+          if not active_repos:
+              print(f"No repos with staging_versions >= 1.0.0 found on staging (mode={sit_mode}). Skipping SIT.")
               with open("/tmp/filter_outputs.txt", "w") as f:
                   f.write("has_v1_repos=false\n")
                   f.write("v1_repos_json=[]\n")
