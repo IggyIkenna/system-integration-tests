@@ -26,6 +26,4 @@ def test_uci_instrument_type_values_match_uac() -> None:
     uac_values = {m.value for m in UAC_IT}
     uci_values = {m.value for m in UCI_IT}
     missing_from_uac = uci_values - uac_values
-    assert not missing_from_uac, (
-        f"UCI has InstrumentType values not in UAC (UAC must be superset): {missing_from_uac}"
-    )
+    assert not missing_from_uac, f"UCI has InstrumentType values not in UAC (UAC must be superset): {missing_from_uac}"
