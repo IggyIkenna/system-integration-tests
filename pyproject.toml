@@ -76,4 +76,9 @@ markers = [
     "code_test: Static tests — no live services required; run in code-tests CI job (<10 min)",
     "deployment_test: Tests requiring docker-compose mock stack; run in deployment-tests CI job",
     "abbreviated_sit: Abbreviated SIT suite — fast contract and workflow sanity checks (<2 min, runs in hotfix path)",
+    "real_flow: Real UI/API flow validation tests with triad assertions",
+    "critical: Critical journey — runs on every staging deploy",
+    "high: High-priority journey — runs in nightly SIT",
+    "medium: Medium-priority journey — runs in weekly SIT",
+    "scorecard: Test contributes to flow-validation scorecard",
 ]
