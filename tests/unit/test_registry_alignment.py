@@ -3,18 +3,27 @@
 from __future__ import annotations
 
 
-def test_uci_instrument_type_is_uac_reexport() -> None:
-    """UCI InstrumentType must be the exact same class object as UAC InstrumentType.
+def test_instrument_type_not_reexported_from_uci() -> None:
+    """UCI must NOT re-export InstrumentType.
 
-    After consolidation, UCI no longer defines its own InstrumentType --
-    it re-exports from unified_api_contracts.reference.
+    InstrumentType lives in UAC (unified-api-contracts). Consumers import
+    directly from the source. UCI should not create a false ownership
+    illusion by re-exporting it.
     """
-    from unified_api_contracts.reference import InstrumentType as UAC_IT
-    from unified_config_interface import InstrumentType as UCI_IT
+    import unified_config_interface as uci
 
-    assert UCI_IT is UAC_IT, (
-        "UCI InstrumentType is not the same object as UAC InstrumentType. "
-        "UCI should re-export from unified_api_contracts.reference, not define its own."
+    assert not hasattr(uci, "InstrumentType"), (
+        "UCI should not export InstrumentType. "
+        "Consumers must import from unified_api_contracts directly."
+    )
+
+
+def test_uac_instrument_type_is_canonical_source() -> None:
+    """UAC InstrumentType is the canonical source for all instrument types."""
+    from unified_api_contracts.reference import InstrumentType
+
+    assert len(InstrumentType) >= 20, (
+        f"UAC InstrumentType has only {len(InstrumentType)} members, expected >= 20"
     )
 
 
@@ -25,22 +34,6 @@ def test_uac_instrument_type_values_are_valid_strings() -> None:
     for member in InstrumentType:
         assert isinstance(member.value, str), f"{member.name} value is not a string"
         assert len(member.value) > 0, f"{member.name} has empty value"
-
-
-def test_uac_instrument_type_superset_of_uci() -> None:
-    """UAC InstrumentType must be a superset of UCI InstrumentType.
-
-    Since UCI now re-exports from UAC, this is trivially true, but this test
-    guards against future regression if someone accidentally re-introduces
-    a local definition.
-    """
-    from unified_api_contracts.reference import InstrumentType as UAC_IT
-    from unified_config_interface import InstrumentType as UCI_IT
-
-    uac_values = {m.value for m in UAC_IT}
-    uci_values = {m.value for m in UCI_IT}
-    missing = uci_values - uac_values
-    assert not missing, f"UCI has InstrumentType values not in UAC: {missing}"
 
 
 def test_venue_to_tardis_matches_inverted_venue_mapping() -> None:
