@@ -235,7 +235,7 @@ if [ "$IS_UI_REPO" = true ]; then
             fi
             if [ "$DIST_EMPTY" = true ] || [ "$FORCE" = true ]; then
                 log_step "Build library dist/ (main points to dist/, dist/ missing or empty)"
-                if npm run --silent build 2>&1; then
+                if npm run build --silent 2>&1; then
                     log_ok "npm run build complete — dist/ ready"
                 else
                     log_warn "npm run build failed — consumers may fail to import; run: npm run build"

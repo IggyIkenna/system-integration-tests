@@ -79,7 +79,7 @@ def test_venue_to_tardis_matches_inverted_venue_mapping() -> None:
     module load time. This test verifies the inversion produces the expected
     mappings that were previously hardcoded.
     """
-    from unified_config_interface import VenueMapping
+    from unified_api_contracts import VenueMapping
     from unified_internal_contracts.reference.instrument_key import _VENUE_TO_TARDIS
 
     mapping = VenueMapping()
