@@ -174,22 +174,42 @@ def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None, No
 
 @pytest.fixture(scope="session")
 def base_urls() -> dict[str, str]:
-    # Port defaults aligned with ui-api-mapping.json SSOT
-    return {
-        "instruments": os.environ.get("INSTRUMENTS_SERVICE_URL", "http://localhost:8080"),
-        "era": os.environ.get("ERA_URL", "http://localhost:8006"),
-        "mda": os.environ.get("MDA_URL", "http://localhost:8016"),
-        "cra": os.environ.get("CRA_URL", "http://localhost:8014"),
-        "deployment_api": os.environ.get("DEPLOYMENT_API_URL", "http://localhost:8004"),
-        "market_data": os.environ.get("MARKET_DATA_API_URL", "http://localhost:8016"),
-        "client_reporting": os.environ.get("CLIENT_REPORTING_API_URL", "http://localhost:8014"),
-        "execution": os.environ.get("EXECUTION_SERVICE_URL", "http://localhost:8006"),
-        "risk": os.environ.get("RISK_SERVICE_URL", "http://localhost:8006"),
-        "position_monitor": os.environ.get("POSITION_MONITOR_URL", "http://localhost:8007"),
-        "alerting": os.environ.get("ALERTING_SERVICE_URL", "http://localhost:8008"),
-        "pnl": os.environ.get("PNL_SERVICE_URL", "http://localhost:8009"),
-        "market_tick": os.environ.get("MARKET_TICK_SERVICE_URL", "http://localhost:8010"),
-    }
+    """Load API URLs from ui-api-mapping.json SSOT, with env var overrides.
+
+    Only includes API services that serve HTTP (started by dev-start.sh).
+    Worker services (execution-service, risk-service, instruments-service, etc.)
+    are CLI workers — they don't serve HTTP and are tested via their own QG.
+    """
+    workspace_root = Path(__file__).resolve().parent.parent.parent
+    mapping_file = workspace_root / "unified-trading-pm" / "scripts" / "dev" / "ui-api-mapping.json"
+
+    # Build from SSOT
+    urls: dict[str, str] = {}
+    if mapping_file.exists():
+        import json
+        with open(mapping_file) as f:
+            mapping = json.load(f)
+        for stack_name, stack in mapping.get("stacks", {}).items():
+            api_port = stack.get("api_port")
+            api_name = stack.get("api")
+            if api_port and api_name:
+                # Normalize key: "deployment-api" -> "deployment_api"
+                key = api_name.replace("-", "_")
+                urls[key] = f"http://localhost:{api_port}"
+
+    # Env var overrides (any SIT_<KEY>_URL takes precedence)
+    for key in list(urls.keys()):
+        env_key = f"{key.upper()}_URL"
+        env_val = os.environ.get(env_key)
+        if env_val:
+            urls[key] = env_val
+
+    # Legacy aliases used by existing tests
+    urls.setdefault("era", urls.get("execution_results_api", "http://localhost:8006"))
+    urls.setdefault("mda", urls.get("market_data_api", "http://localhost:8016"))
+    urls.setdefault("cra", urls.get("client_reporting_api", "http://localhost:8014"))
+
+    return urls
 
 
 @pytest.fixture(scope="session")

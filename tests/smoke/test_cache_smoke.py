@@ -87,20 +87,21 @@ class TestLocalCacheCapable:
         key = f"sit-probe:{uuid.uuid4().hex}"
         value = "sit-local-cache-check"
 
-        client.set(key, value, ex=60)
+        # LocalCacheProvider uses ttl_seconds parameter, not ex (Redis convention)
+        client.set(key, value.encode(), ttl_seconds=60)
         result = client.get(key)
         assert result == value or result == value.encode(), f"Cache get returned {result!r}, expected {value!r}"
         client.delete(key)
         assert client.get(key) is None, "Key still exists after delete"
 
     def test_local_cache_ttl_expiry(self) -> None:
-        """Local cache set with ex=1 must expire (or at minimum not error on ttl)."""
+        """Local cache set with ttl_seconds=1 must expire (or at minimum not error on ttl)."""
         pytest.importorskip("unified_cloud_interface")
         from unified_cloud_interface import get_cache_client
 
         client = get_cache_client(provider="local")
         key = f"sit-ttl-probe:{uuid.uuid4().hex}"
-        client.set(key, "ephemeral", ex=1)
+        client.set(key, b"ephemeral", ttl_seconds=1)
         # Verify key exists immediately
         assert client.get(key) is not None, "Key missing right after set"
         # Clean up

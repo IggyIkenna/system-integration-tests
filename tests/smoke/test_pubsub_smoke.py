@@ -183,25 +183,15 @@ class TestLocalPubSubCapable:
         payload = f"local-probe:{probe_id}".encode()
         topic = f"sit-local-{probe_id}"
 
-        try:
-            client.create_topic(topic)
-            sub = f"sit-local-sub-{probe_id}"
-            client.create_subscription(topic=topic, subscription=sub)
-            client.publish(topic=topic, message=payload)
-            messages = client.pull(subscription=sub, max_messages=5)
-            received = [m.data if hasattr(m, "data") else m for m in messages]
-            assert any(payload in (d if isinstance(d, bytes) else d.encode()) for d in received), (
-                "Local pub/sub roundtrip failed — message not received"
-            )
-        finally:
-            try:
-                client.delete_subscription(sub)
-            except Exception:
-                pass
-            try:
-                client.delete_topic(topic)
-            except Exception:
-                pass
+        client.create_topic(topic)
+        client.publish(topic=topic, data=payload)
+        # LocalPubSubClient uses messages_for() to retrieve messages
+        # Returns list of (data_bytes, attributes_dict) tuples
+        messages = client.messages_for(topic)
+        received_data = [m[0] if isinstance(m, tuple) else m for m in messages]
+        assert any(payload == d for d in received_data), (
+            f"Local pub/sub roundtrip failed — message not received. Got {len(messages)} messages."
+        )
 
     def test_aws_queue_client_importable(self) -> None:
         """UCI AWS queue path must be importable (proves dual-cloud code exists)."""

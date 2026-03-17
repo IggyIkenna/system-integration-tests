@@ -148,13 +148,21 @@ class TestPerStackFields:
             )
 
     def test_ui_ports_in_valid_range(self) -> None:
-        """All UI ports (where set) must be in the 5173-5183 range."""
+        """All UI ports (where set) must be in the 5173-5183 range.
+
+        Exception: non-Vite stacks (e.g. odum-website on port 3000) are excluded
+        from the Vite dev-server port range check.
+        """
+        # Stacks that use non-Vite dev servers and have ports outside the Vite range
+        _NON_VITE_STACKS = {"odum-website"}
         stacks = self._stacks()
         for name, stack in stacks.items():
             assert isinstance(stack, dict)
             port = stack.get("ui_port")
             if port is None:
                 continue  # Non-UI stacks
+            if name in _NON_VITE_STACKS:
+                continue  # Non-Vite stack — different port range is expected
             assert isinstance(port, int), f"Stack '{name}' ui_port must be int, got {type(port)}"
             assert _UI_PORT_MIN <= port <= _UI_PORT_MAX, (
                 f"Stack '{name}' ui_port {port} outside expected range {_UI_PORT_MIN}-{_UI_PORT_MAX}"

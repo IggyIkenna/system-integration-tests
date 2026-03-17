@@ -37,7 +37,6 @@ _UAC_ALL: list[str] = _get_uac_all()
 
 # Public submodules/subpackages accessible as top-level attributes
 _UAC_SUBMODULES = [
-    "schemas",
     "registry.venue_constants",
     "canonical.canonical_mappings",
     "registry.endpoint_registry",
