@@ -50,6 +50,13 @@ CI (GitHub Actions) — add to the workflow job that runs SIT::
 from __future__ import annotations
 
 import os
+
+# Set credential-free environment BEFORE any imports that might trigger GCP client init
+os.environ.setdefault("CLOUD_PROVIDER", "local")
+os.environ.setdefault("CLOUD_MOCK_MODE", "true")
+os.environ.setdefault("STORAGE_EMULATOR_HOST", "http://localhost:4443")
+os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+
 import socket
 from collections.abc import Generator
 from pathlib import Path
@@ -142,12 +149,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    # Ensure credential-free CI runs: prevent GCP/AWS SDK from seeking real credentials
-    os.environ.setdefault("CLOUD_PROVIDER", "local")
-    os.environ.setdefault("CLOUD_MOCK_MODE", "true")
-    os.environ.setdefault("STORAGE_EMULATOR_HOST", "http://localhost:4443")
-    # Prevent GCP client from loading a placeholder credentials file that doesn't exist
-    os.environ.setdefault("GOOGLE_APPLICATION_CREDENTIALS", "")
     config.addinivalue_line(
         "markers",
         "allow_network: mark test as allowed to make network calls (opt-out of --block-network)",
