@@ -65,7 +65,7 @@ _UIC_SUBMODULES = [
 
 # Symbols declared in UIC __all__ but with known broken re-exports.
 # These must be fixed in unified-internal-contracts, tracked as upstream issues.
-_UIC_KNOWN_BROKEN_EXPORTS: frozenset[str] = frozenset({"OptionsChain"})
+_UIC_KNOWN_BROKEN_EXPORTS: frozenset[str] = frozenset()
 
 
 @pytest.mark.parametrize("symbol", _UIC_ALL, ids=_UIC_ALL)

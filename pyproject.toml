@@ -16,6 +16,7 @@ dependencies = [
     "pytest-xdist<4.0.0,>=3.6.0",
     "pytest-timeout<3.0.0,>=2.4.0",
     "boto3<2.0.0,>=1.40.70",  # only for @pytest.mark.aws_integration tests (S3 cassette replay)
+    "asyncpg>=0.30.0,<1.0.0",  # Cloud SQL / RDS smoke tests (test_database_smoke.py)
     "ruff==0.15.0",
     "basedpyright==1.38.2",
     "pip-audit>=2.7.0,<3.0.0",

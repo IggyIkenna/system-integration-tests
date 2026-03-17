@@ -49,13 +49,13 @@ _REQUIRED_STACKS = {
     "client-reporting",
 }
 
-# Port range for APIs: 8004-8016
+# Port range for APIs: 8004-8025 (8004-8016 stacks, 8018-8025 service workers)
 _API_PORT_MIN = 8004
-_API_PORT_MAX = 8016
+_API_PORT_MAX = 8025
 
-# Port range for UIs: 5173-5183
+# Port range for UIs: 5173-5184
 _UI_PORT_MIN = 5173
-_UI_PORT_MAX = 5183
+_UI_PORT_MAX = 5184
 
 
 # ---------------------------------------------------------------------------
