@@ -23,10 +23,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
+from unified_events_interface import setup_events
 
 pytestmark = pytest.mark.deployment_test
 
 logger = logging.getLogger(__name__)
+
+# Initialize event logging for tests — services call log_event() internally
+setup_events(service_name="system-integration-tests", mode="test")
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +361,7 @@ def test_portfolio_rebalancer_no_orders_within_threshold() -> None:
 
     weights = [
         AssetWeight(symbol="BTC", target_weight=0.50, current_weight=0.501, notional_usd=50100.0),
+        AssetWeight(symbol="USDC", target_weight=0.50, current_weight=0.499, notional_usd=49900.0),
     ]
 
     class _MockFetcher:
@@ -370,7 +375,7 @@ def test_portfolio_rebalancer_no_orders_within_threshold() -> None:
             submitted.append(order)
             return "order-id"
 
-    config_path = _write_temp_rebalancing_config("test-strategy-no-drift", {"BTC": 0.50})
+    config_path = _write_temp_rebalancing_config("test-strategy-no-drift", {"BTC": 0.50, "USDC": 0.50})
 
     rebalancer = PortfolioRebalancer(
         position_fetcher=_MockFetcher(),

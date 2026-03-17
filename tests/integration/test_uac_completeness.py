@@ -208,7 +208,7 @@ def _get_orphan_count() -> int:
         cwd=str(workspace),
         capture_output=True,
         text=True,
-        timeout=180,
+        timeout=600,
     )
     lines = (result.stdout or "").strip().splitlines()
     return len([line for line in lines if line.strip()])

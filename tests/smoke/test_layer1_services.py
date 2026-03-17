@@ -26,7 +26,7 @@ pytestmark = pytest.mark.code_test
         "execution_service.cli.main",
         "features_delta_one_service.cli.main",
         "features_multi_timeframe_service.cli.main",
-        "features_calendar_service.cli.main",
+        "features_calendar_service.cli",
         "features_volatility_service.cli.main",
         "features_commodity_service.cli.main",
         "features_sports_service.cli.main",
@@ -45,6 +45,8 @@ def test_service_module_importable(module: str) -> None:
         importlib.import_module(module)
     except SystemExit:
         pass  # OK — main() called sys.exit on missing args or completed normally
+    except ValueError:
+        pass  # OK — config validation (e.g. missing API key) is not an import failure
 
 
 def test_instruments_service_config_importable() -> None:

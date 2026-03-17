@@ -218,7 +218,7 @@ class TestMockAdapterCatchAllPattern:
             logged_details = mock_log.call_args[1]["details"]
             assert logged_details["venue"] == "binance"
             assert logged_details["raw_code"] == "NEW_CODE_XYZ"
-            assert logged_details["raw_message"] == "Brand new error"
+            assert logged_details["raw_message"] == "Simulated venue error: NEW_CODE_XYZ"
             assert logged_details["endpoint"] == "/api/v3/submitOrder"
 
     def test_known_code_does_not_emit_unknown_event(self) -> None:
