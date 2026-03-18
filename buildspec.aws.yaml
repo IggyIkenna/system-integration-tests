@@ -13,7 +13,7 @@ phases:
       - pip install uv
       - VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "//;s/"//') && export VERSION
       - echo "Building version $VERSION"
-      - uv pip install --system -e ".[dev]" || uv pip install --system -e "."
+      - uv pip install --system -e "." || uv pip install --system -e "."
 
   build:
     commands:
