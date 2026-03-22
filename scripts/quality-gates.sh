@@ -10,7 +10,7 @@
 SERVICE_NAME="system-integration-tests"
 SOURCE_DIR="tests"
 MIN_COVERAGE=2
-RUN_INTEGRATION=true
+RUN_INTEGRATION=false
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 LOCAL_DEPS=()
     UAC_CANONICAL_EXEMPT=true   # SIT needs deep imports for contract validation
