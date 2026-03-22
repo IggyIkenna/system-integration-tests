@@ -51,9 +51,7 @@ class TestCascadeQGOrderingWorkflow:
         triggers = wf.get("on") or wf.get(True)  # YAML parses bare 'on' as True
         assert triggers is not None, "cascade-qg-ordering.yml missing 'on' trigger"
 
-        assert "repository_dispatch" in triggers, (
-            "cascade-qg-ordering.yml missing repository_dispatch trigger"
-        )
+        assert "repository_dispatch" in triggers, "cascade-qg-ordering.yml missing repository_dispatch trigger"
 
         # Must have concurrency group
         concurrency = wf.get("concurrency")
@@ -69,15 +67,11 @@ class TestInvalidateCIStatusScript:
 
     def test_invalidate_ci_status_script_exists_and_executable(self) -> None:
         """Verify scripts/cascade/invalidate-ci-status.py exists and is executable."""
-        assert self.SCRIPT_PATH.is_file(), (
-            f"invalidate-ci-status.py not found at {self.SCRIPT_PATH}"
-        )
+        assert self.SCRIPT_PATH.is_file(), f"invalidate-ci-status.py not found at {self.SCRIPT_PATH}"
         # Check executable bit (owner or group or other)
         mode = self.SCRIPT_PATH.stat().st_mode
         is_executable = bool(mode & 0o111)
-        assert is_executable, (
-            f"invalidate-ci-status.py is not executable (mode={oct(mode)})"
-        )
+        assert is_executable, f"invalidate-ci-status.py is not executable (mode={oct(mode)})"
 
     def test_invalidate_ci_status_dry_run(self) -> None:
         """Run invalidate-ci-status.py with --dry-run and verify it outputs
@@ -100,9 +94,7 @@ class TestInvalidateCIStatusScript:
         manifest_after = MANIFEST_PATH.read_text()
 
         # Dry run must not modify the manifest
-        assert manifest_before == manifest_after, (
-            "invalidate-ci-status.py --dry-run modified the manifest"
-        )
+        assert manifest_before == manifest_after, "invalidate-ci-status.py --dry-run modified the manifest"
 
         # Script should exit cleanly (0 = success, or expected non-zero for "nothing to do")
         assert result.returncode in (0, 1), (
@@ -144,26 +136,20 @@ class TestTopologicalOrder:
 
         # Check for duplicates in topological order
         assert len(topo_repos) == len(topo_set), (
-            f"Duplicate repos in topologicalOrder: "
-            f"{[r for r in topo_repos if topo_repos.count(r) > 1]}"
+            f"Duplicate repos in topologicalOrder: {[r for r in topo_repos if topo_repos.count(r) > 1]}"
         )
 
         # Every repo in topological order must be in repositories (no phantom entries).
         # Not all repos must be in topo order — standalone repos (websites) may be excluded.
         # But any repo WITH dependencies should appear in a level.
         repos_with_deps = {
-            name for name, cfg in repositories.items()
-            if cfg.get("dependencies") and name not in topo_set
+            name for name, cfg in repositories.items() if cfg.get("dependencies") and name not in topo_set
         }
-        assert not repos_with_deps, (
-            f"Repos with dependencies but missing from topologicalOrder: {repos_with_deps}"
-        )
+        assert not repos_with_deps, f"Repos with dependencies but missing from topologicalOrder: {repos_with_deps}"
 
         # Every repo in topological order must appear in repositories
         extra_in_topo = topo_set - repo_set
-        assert not extra_in_topo, (
-            f"Repos in topologicalOrder but not in repositories{{}}: {extra_in_topo}"
-        )
+        assert not extra_in_topo, f"Repos in topologicalOrder but not in repositories{{}}: {extra_in_topo}"
 
 
 @pytest.mark.code_test
@@ -232,13 +218,9 @@ class TestCascadeWorkflowTelegram:
             assert wf_path.is_file(), f"Workflow not found: {wf_path}"
             content = wf_path.read_text()
             has_telegram = (
-                "notify-telegram" in content
-                or "TELEGRAM_BOT_TOKEN" in content
-                or "telegram" in content.lower()
+                "notify-telegram" in content or "TELEGRAM_BOT_TOKEN" in content or "telegram" in content.lower()
             )
-            assert has_telegram, (
-                f"{wf_name} does not reference Telegram notifications"
-            )
+            assert has_telegram, f"{wf_name} does not reference Telegram notifications"
 
 
 @pytest.mark.code_test
@@ -271,8 +253,7 @@ class TestSecretsInherit:
 
         assert persist_callers, "No workflows call persist-cicd-event.yml"
         assert not missing_inherit, (
-            f"Workflows calling persist-cicd-event.yml without 'secrets: inherit': "
-            f"{missing_inherit}"
+            f"Workflows calling persist-cicd-event.yml without 'secrets: inherit': {missing_inherit}"
         )
 
 
@@ -312,9 +293,7 @@ class TestDownstreamFixAgentClaude:
         assert wf_path.is_file(), f"downstream-fix-agent.yml not found at {wf_path}"
         content = wf_path.read_text()
 
-        has_anthropic_api = (
-            "api.anthropic.com" in content or "ANTHROPIC_API_KEY" in content
-        )
+        has_anthropic_api = "api.anthropic.com" in content or "ANTHROPIC_API_KEY" in content
         assert has_anthropic_api, (
             "downstream-fix-agent.yml does not contain Anthropic API call pattern "
             "(expected 'api.anthropic.com' or 'ANTHROPIC_API_KEY')"
@@ -337,15 +316,11 @@ class TestAutoMergeSafetyGates:
 
         # Gate 1: version >= 1.0.0 check (pre-1.0.0 guard)
         has_version_gate = "1.0.0" in content or "pre_1_0" in content or "is_pre_1_0" in content
-        assert has_version_gate, (
-            "auto-merge-minor-fixes.yml missing version >= 1.0.0 safety gate"
-        )
+        assert has_version_gate, "auto-merge-minor-fixes.yml missing version >= 1.0.0 safety gate"
 
         # Gate 2: is_breaking check
         has_breaking_gate = "is_breaking" in content or "breaking" in content.lower()
-        assert has_breaking_gate, (
-            "auto-merge-minor-fixes.yml missing is_breaking safety gate"
-        )
+        assert has_breaking_gate, "auto-merge-minor-fixes.yml missing is_breaking safety gate"
 
         # Gate 3: dry_run defaults to true
         wf = _load_workflow("auto-merge-minor-fixes.yml")
@@ -355,6 +330,5 @@ class TestAutoMergeSafetyGates:
         wd_inputs = (triggers.get("workflow_dispatch") or {}).get("inputs") or {}
         dry_run_input = wd_inputs.get("dry_run", {})
         assert dry_run_input.get("default") is True, (
-            f"auto-merge-minor-fixes.yml dry_run default is not true "
-            f"(got {dry_run_input.get('default')!r})"
+            f"auto-merge-minor-fixes.yml dry_run default is not true (got {dry_run_input.get('default')!r})"
         )

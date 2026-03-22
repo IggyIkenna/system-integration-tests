@@ -26,6 +26,7 @@ def _skip_if_mock_500(resp: httpx.Response, endpoint: str) -> None:
     if resp.status_code == 500:
         pytest.skip(f"{endpoint} not implemented in mock mode")
 
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

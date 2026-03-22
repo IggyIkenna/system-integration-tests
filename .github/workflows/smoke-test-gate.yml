@@ -268,7 +268,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -e ".[dev]" --system --quiet
+          uv pip install -e "." --system --quiet
 
       - name: Run code tests (static, no live services)
         id: code_tests
@@ -416,7 +416,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -e ".[dev]" --system --quiet
+          uv pip install -e "." --system --quiet
 
       - name: Run deployment tests (mock stack)
         id: deployment_tests

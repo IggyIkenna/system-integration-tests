@@ -187,6 +187,7 @@ def base_urls() -> dict[str, str]:
     urls: dict[str, str] = {}
     if mapping_file.exists():
         import json
+
         with open(mapping_file) as f:
             mapping = json.load(f)
         for stack_name, stack in mapping.get("stacks", {}).items():

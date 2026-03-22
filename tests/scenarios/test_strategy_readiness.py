@@ -161,7 +161,9 @@ def test_production_strategies_must_have_tests(
         maturity_raw = strat.get("maturity", "")
         # maturity may be a dict (new schema) or string (old schema)
         if isinstance(maturity_raw, dict):
-            maturity = str(maturity_raw.get("code", {}).get("status", "") if isinstance(maturity_raw.get("code"), dict) else "")
+            maturity = str(
+                maturity_raw.get("code", {}).get("status", "") if isinstance(maturity_raw.get("code"), dict) else ""
+            )
         else:
             maturity = str(maturity_raw)
         if maturity != "production":
@@ -257,7 +259,11 @@ def test_strategy_readiness_score(strategy_manifest: list[StrategyEntry]) -> Non
         maturity_raw = strat.get("maturity", "unknown")
         # maturity may be a dict (new schema) or string (old schema)
         if isinstance(maturity_raw, dict):
-            maturity = str(maturity_raw.get("code", {}).get("status", "unknown") if isinstance(maturity_raw.get("code"), dict) else "unknown")
+            maturity = str(
+                maturity_raw.get("code", {}).get("status", "unknown")
+                if isinstance(maturity_raw.get("code"), dict)
+                else "unknown"
+            )
         else:
             maturity = str(maturity_raw)
         results.append(
