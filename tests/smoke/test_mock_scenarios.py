@@ -123,3 +123,34 @@ def test_delayed_scenario_fast_forwards() -> None:
     assert expected_total_s < 5.0, (
         f"{ticks} ticks at {effective_sleep_s:.3f}s each = {expected_total_s:.1f}s — must be < 5s"
     )
+
+
+def test_bad_schema_has_instrument_overrides() -> None:
+    """bad_schema scenario should have inject overrides for malformed instruments."""
+    from unified_internal_contracts.modes import MockScenario
+    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+
+    cfg = ScenarioConfig.load(MockScenario.BAD_SCHEMA)
+    assert len(cfg.instrument_overrides) > 0, "bad_schema should have instrument overrides"
+    inject_overrides = [o for o in cfg.instrument_overrides if o.action == "inject"]
+    assert len(inject_overrides) > 0, "bad_schema should have at least one inject override"
+
+
+def test_flash_crash_has_expire_overrides() -> None:
+    """flash_crash scenario should have expire overrides for options."""
+    from unified_internal_contracts.modes import MockScenario
+    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+
+    cfg = ScenarioConfig.load(MockScenario.FLASH_CRASH)
+    assert len(cfg.instrument_overrides) > 0, "flash_crash should have instrument overrides"
+    expire_overrides = [o for o in cfg.instrument_overrides if o.action == "expire"]
+    assert len(expire_overrides) > 0, "flash_crash should have at least one expire override"
+
+
+def test_normal_has_empty_instrument_overrides() -> None:
+    """normal scenario should have no instrument overrides."""
+    from unified_internal_contracts.modes import MockScenario
+    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+
+    cfg = ScenarioConfig.load(MockScenario.NORMAL)
+    assert len(cfg.instrument_overrides) == 0, "normal should have no instrument overrides"

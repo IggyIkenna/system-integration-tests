@@ -18,6 +18,12 @@ from datetime import UTC, date, datetime
 
 import pytest
 from unified_api_contracts import CanonicalInstrument, InstrumentType, OptionType
+from unified_api_contracts.registry.representative_sample import (
+    CEFI_BASE_ASSETS,
+    DEFI_LENDING_ASSETS,
+    TRADFI_EQUITIES,
+    TRADFI_FUTURES,
+)
 from unified_config_interface import Venue
 from unified_internal_contracts import InstrumentDefinition, InstrumentKey, InstrumentRecord
 from unified_internal_contracts.testing.instrument_generator import InstrumentGenerator
@@ -655,3 +661,62 @@ class TestTradFiFieldAlignment:
         for inst in cme_futures:
             assert inst.contract_size is not None, f"Missing contract_size for {inst.instrument_key}"
             assert inst.contract_size > 0, f"contract_size must be positive for {inst.instrument_key}"
+
+
+# =========================================================================
+# I. Registry-Driven Alignment
+# =========================================================================
+
+
+class TestRegistryDrivenAlignment:
+    """Verify InstrumentGenerator reads from UAC REPRESENTATIVE_INSTRUMENT_SAMPLE."""
+
+    def test_cefi_base_assets_from_registry(self, no_options_instruments: list[CanonicalInstrument]) -> None:
+        """CeFi spot instruments should use base assets from the registry."""
+        cefi_spot = [
+            inst
+            for inst in no_options_instruments
+            if inst.instrument_type == InstrumentType.SPOT_PAIR and inst.asset_class == "crypto_cefi"
+        ]
+        base_assets = {inst.base_asset for inst in cefi_spot}
+        for asset in CEFI_BASE_ASSETS:
+            assert asset in base_assets, f"Registry asset {asset} not found in generated CeFi spots"
+
+    def test_tradfi_equities_venues_from_registry(self, no_options_instruments: list[CanonicalInstrument]) -> None:
+        """TradFi equity/ETF venues in generator output should be in TRADFI_EQUITIES registry."""
+        tradfi_equity_types = {InstrumentType.EQUITY, InstrumentType.ETF, InstrumentType.INDEX}
+        tradfi = [inst for inst in no_options_instruments if inst.instrument_type in tradfi_equity_types]
+        generated_venues = {inst.venue for inst in tradfi}
+        registry_venues = set(TRADFI_EQUITIES.keys())
+        for venue in generated_venues:
+            assert venue in registry_venues, f"Generated venue {venue} not in TRADFI_EQUITIES registry"
+
+    def test_tradfi_futures_from_registry(self, no_options_instruments: list[CanonicalInstrument]) -> None:
+        """TradFi futures should be generated for all venues in TRADFI_FUTURES registry."""
+        for venue in TRADFI_FUTURES:
+            venue_futures = [
+                inst
+                for inst in no_options_instruments
+                if inst.venue == venue and inst.instrument_type == InstrumentType.FUTURE
+            ]
+            assert len(venue_futures) > 0, f"No futures generated for registry venue {venue}"
+
+    def test_defi_lending_assets_from_registry(self, no_options_instruments: list[CanonicalInstrument]) -> None:
+        """DeFi lending instruments should use assets from DEFI_LENDING_ASSETS registry."""
+        a_tokens = [inst for inst in no_options_instruments if inst.instrument_type == InstrumentType.A_TOKEN]
+        base_assets = {inst.base_asset for inst in a_tokens}
+        for asset in DEFI_LENDING_ASSETS:
+            assert asset in base_assets, f"Registry DeFi asset {asset} not found in generated A_TOKENs"
+
+    def test_generator_imports_from_uac_registry(self) -> None:
+        """InstrumentGenerator module should import from UAC representative_sample."""
+        import unified_internal_contracts.testing.instrument_generator as gen_mod
+
+        source_file = gen_mod.__file__
+        assert source_file is not None
+        from pathlib import Path
+
+        source = Path(source_file).read_text()
+        assert "representative_sample" in source, (
+            "InstrumentGenerator should import from UAC representative_sample registry"
+        )
