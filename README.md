@@ -25,6 +25,13 @@ tests/
     test_aws_s3_smoke.py   # AWS S3 (skips without S3_TEST_BUCKET + boto3 creds)
 ```
 
+## Operational modes (staging / E2E)
+
+Declared combinations of `DATA_MODE`, `CLOUD_PROVIDER`, `TESTNET_MODE`, and related axes must match what services
+actually deploy. SSOT for the matrix:
+`unified-trading-codex/09-strategy/cross-cutting/operational-modes-matrix.md`. When CI or staging changes those env
+defaults, extend smoke (3a) and full E2E (3b) assertions so testnet paths cannot silently hit production endpoints.
+
 ## Environment Variables
 
 ```bash
