@@ -211,18 +211,18 @@ class TestVenueTypeMatrix:
                 venue_types.setdefault(inst.venue, set()).add(str(inst.instrument_type))
 
         # Aave must produce A_TOKEN and DEBT_TOKEN
-        if "AAVE_V3_ETH" in venue_types:
-            assert "A_TOKEN" in venue_types["AAVE_V3_ETH"], "AAVE_V3_ETH missing A_TOKEN instruments"
-            assert "DEBT_TOKEN" in venue_types["AAVE_V3_ETH"], "AAVE_V3_ETH missing DEBT_TOKEN instruments"
+        if "AAVEV3-ETHEREUM" in venue_types:
+            assert "A_TOKEN" in venue_types["AAVEV3-ETHEREUM"], "AAVEV3-ETHEREUM missing A_TOKEN instruments"
+            assert "DEBT_TOKEN" in venue_types["AAVEV3-ETHEREUM"], "AAVEV3-ETHEREUM missing DEBT_TOKEN instruments"
 
         # Uniswap venues must produce POOL
-        for uni_venue in ("UNISWAPV3-ETH", "UNISWAPV2-ETH", "UNISWAPV4-ETH"):
+        for uni_venue in ("UNISWAPV3-ETHEREUM", "UNISWAPV2-ETHEREUM", "UNISWAPV4-ETHEREUM"):
             if uni_venue in venue_types:
                 assert "POOL" in venue_types[uni_venue], f"{uni_venue} missing POOL instruments"
 
         # Lido must produce LST
-        if "LIDO" in venue_types:
-            assert "LST" in venue_types["LIDO"], "LIDO missing LST instruments"
+        if "LIDO-ETHEREUM" in venue_types:
+            assert "LST" in venue_types["LIDO-ETHEREUM"], "LIDO missing LST instruments"
 
     def test_sports_venues_produce_correct_types(self, all_instruments: list[CanonicalInstrument]) -> None:
         """Sports/prediction venues must produce expected types."""
@@ -267,7 +267,7 @@ class TestDefiFieldAlignment:
         aave_a_tokens = [
             inst
             for inst in all_instruments
-            if inst.venue == "AAVE_V3_ETH" and inst.instrument_type == InstrumentType.A_TOKEN
+            if inst.venue == "AAVEV3-ETHEREUM" and inst.instrument_type == InstrumentType.A_TOKEN
         ]
         assert len(aave_a_tokens) > 0, "No Aave A_TOKEN instruments found"
         for inst in aave_a_tokens:
@@ -288,7 +288,7 @@ class TestDefiFieldAlignment:
         uni_v3_pools = [
             inst
             for inst in all_instruments
-            if inst.venue == "UNISWAPV3-ETH" and inst.instrument_type == InstrumentType.POOL
+            if inst.venue == "UNISWAPV3-ETHEREUM" and inst.instrument_type == InstrumentType.POOL
         ]
         assert len(uni_v3_pools) > 0, "No Uniswap V3 POOL instruments found"
         for inst in uni_v3_pools:
@@ -304,7 +304,7 @@ class TestDefiFieldAlignment:
         aave_eth_instruments = [
             inst
             for inst in all_instruments
-            if inst.venue == "AAVE_V3_ETH"
+            if inst.venue == "AAVEV3-ETHEREUM"
             and inst.base_asset is not None
             and inst.base_asset in ("ETH", "stETH", "eETH")
         ]

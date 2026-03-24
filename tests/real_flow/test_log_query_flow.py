@@ -1,6 +1,7 @@
 """Medium-priority journey: Log query — filter -> search -> paginate.
 
-Validates the log querying flow through logs-dashboard-ui + batch-audit-api:
+Validates the log querying flow through unified-trading-api (consolidated gateway;
+archived logs-dashboard-ui / batch-audit-api):
     1. GET logs with a filter (request sent)
     2. Verify response has structured log entries (response received)
     3. Paginate to confirm consistent total count (state updated)
@@ -53,16 +54,16 @@ def _extract_total(body: dict[str, object], fallback_items: list[object]) -> int
 
 
 @pytest.fixture(scope="module")
-def batch_audit_api(flow_urls: FlowServiceURLs) -> str:
-    """Batch audit API base URL, skipping if not reachable."""
-    url = flow_urls.batch_audit_api
+def unified_trading_api(flow_urls: FlowServiceURLs) -> str:
+    """unified-trading-api base URL, skipping if not reachable."""
+    url = flow_urls.unified_trading_api
     try:
         with httpx.Client(timeout=5.0) as probe:
             resp = probe.get(f"{url}/health")
             if resp.status_code != 200:
-                pytest.skip(f"batch-audit-api at {url} returned {resp.status_code}")
+                pytest.skip(f"unified-trading-api at {url} returned {resp.status_code}")
     except httpx.ConnectError:
-        pytest.skip(f"batch-audit-api not reachable at {url}")
+        pytest.skip(f"unified-trading-api not reachable at {url}")
     return url
 
 
@@ -74,7 +75,7 @@ def batch_audit_api(flow_urls: FlowServiceURLs) -> str:
 @pytest.mark.medium
 def test_log_filter_search_paginate(
     flow_client: httpx.Client,
-    batch_audit_api: str,
+    unified_trading_api: str,
     triad: TriadResult,
 ) -> None:
     """Query logs with filters, then paginate results.
@@ -86,7 +87,7 @@ def test_log_filter_search_paginate(
     """
     # Phase 1: Filtered search
     page1_params = {"service": "instruments-service", "level": "INFO", "limit": "5", "offset": "0"}
-    search_resp = _try_log_endpoint(flow_client, batch_audit_api, page1_params)
+    search_resp = _try_log_endpoint(flow_client, unified_trading_api, page1_params)
     triad.request_sent = True
 
     if search_resp is None:
@@ -101,7 +102,7 @@ def test_log_filter_search_paginate(
     triad.response_valid = True
 
     # Phase 3: Pagination consistency — request page 2
-    _verify_pagination(flow_client, batch_audit_api, total)
+    _verify_pagination(flow_client, unified_trading_api, total)
     triad.state_updated = True
     triad.assert_triad("log-query: filter -> search -> paginate")
 
@@ -128,10 +129,10 @@ def _verify_pagination(client: httpx.Client, base_url: str, page1_total: int) ->
 @pytest.mark.medium
 def test_log_query_health(
     flow_client: httpx.Client,
-    batch_audit_api: str,
+    unified_trading_api: str,
     triad: TriadResult,
 ) -> None:
-    """Verify the batch-audit-api is healthy and responds to basic queries.
+    """Verify unified-trading-api is healthy and responds to basic queries.
 
     Triad:
         1. Request sent: GET /health
@@ -139,7 +140,7 @@ def test_log_query_health(
         3. State updated: second health check consistent
     """
     # Phase 1
-    health_resp = flow_client.get(f"{batch_audit_api}/health", timeout=10.0)
+    health_resp = flow_client.get(f"{unified_trading_api}/health", timeout=10.0)
     triad.request_sent = True
 
     # Phase 2
@@ -150,7 +151,7 @@ def test_log_query_health(
     triad.response_valid = True
 
     # Phase 3: Consistency
-    health_resp2 = flow_client.get(f"{batch_audit_api}/health", timeout=10.0)
+    health_resp2 = flow_client.get(f"{unified_trading_api}/health", timeout=10.0)
     assert health_resp2.status_code == 200
     body2 = cast(dict[str, object], health_resp2.json())
     assert body2.get("status") == body.get("status"), "Health status changed between reads"

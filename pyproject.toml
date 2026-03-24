@@ -6,9 +6,6 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1,<1.0.0",
     "pytest>=9.0.1,<10.0.0",
-    "unified-internal-contracts>=0.1.0",
-    "unified-api-contracts>=0.1.0",
-    "unified-events-interface>=0.1.0",
     "unified-trading-library>=0.1.0",
     "market-data-processing-service",
     "pytest-cov>=7.0.0,<8.0.0",
@@ -22,18 +19,6 @@ dependencies = [
     "pip-audit>=2.7.0,<3.0.0",
     "bandit>=1.7.0,<2.0.0",
 ]
-[tool.uv.sources.unified-internal-contracts]
-path = "../unified-internal-contracts"
-editable = true
-
-[tool.uv.sources.unified-api-contracts]
-path = "../unified-api-contracts"
-editable = true
-
-[tool.uv.sources.unified-events-interface]
-path = "../unified-events-interface"
-editable = true
-
 [tool.uv.sources.unified-trading-library]
 path = "../unified-trading-library"
 editable = true

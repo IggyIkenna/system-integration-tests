@@ -205,10 +205,11 @@ def base_urls() -> dict[str, str]:
         if env_val:
             urls[key] = env_val
 
-    # Legacy aliases used by existing tests
-    urls.setdefault("era", urls.get("execution_results_api", "http://localhost:8006"))
+    # Legacy smoke-test aliases (execution-results-api consolidated into unified-trading-api)
+    urls.setdefault("era", urls.get("unified_trading_api", "http://localhost:8030"))
     urls.setdefault("mda", urls.get("market_data_api", "http://localhost:8016"))
     urls.setdefault("cra", urls.get("client_reporting_api", "http://localhost:8014"))
+    urls.setdefault("client_reporting", urls.get("client_reporting_api", "http://localhost:8014"))
 
     return urls
 

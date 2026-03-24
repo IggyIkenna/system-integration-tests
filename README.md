@@ -97,7 +97,7 @@ Which repos are gated by SIT for staging → main promotion.
 | risk-and-exposure-service         | L4   | Risk controls                   |
 | pnl-attribution-service           | L4   | PnL correctness                 |
 | alerting-service                  | L5   | Alert delivery                  |
-| execution-results-api             | L5   | API contract stability          |
+| unified-trading-api               | L5   | API contract stability          |
 | market-data-api                   | L5   | API contract stability          |
 | client-reporting-api              | L5   | API contract stability          |
 | deployment-api                    | L5   | Deployment control plane        |

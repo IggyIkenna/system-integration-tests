@@ -29,18 +29,18 @@ def test_execution_risk_chain_contract(base_urls: dict[str, str]) -> None:
 @pytest.mark.integration
 def test_alerting_cra_chain_contract(base_urls: dict[str, str]) -> None:
     """CRA /alerts must not 404."""
-    url = base_urls.get("client_reporting", "http://localhost:8003")
+    url = base_urls.get("client_reporting", "http://localhost:8014")
     try:
         resp = requests.get(f"{url}/alerts", timeout=3)
     except requests.ConnectionError:
-        pytest.skip("client-reporting-api not running")
+        pytest.skip("client-reporting-api not running (or wrong URL)")
     assert resp.status_code != 404
 
 
 @pytest.mark.integration
 def test_cra_report_generate_exists(base_urls: dict[str, str]) -> None:
     """CRA POST /api/reports/generate must not 404."""
-    url = base_urls.get("client_reporting", "http://localhost:8003")
+    url = base_urls.get("client_reporting", "http://localhost:8014")
     try:
         resp = requests.post(
             f"{url}/api/reports/generate",
@@ -48,18 +48,18 @@ def test_cra_report_generate_exists(base_urls: dict[str, str]) -> None:
             timeout=3,
         )
     except requests.ConnectionError:
-        pytest.skip("client-reporting-api not running")
+        pytest.skip("client-reporting-api not running (or wrong URL)")
     assert resp.status_code != 404
 
 
 @pytest.mark.integration
 def test_cra_pnl_exists(base_urls: dict[str, str]) -> None:
     """CRA GET /pnl must not 404."""
-    url = base_urls.get("client_reporting", "http://localhost:8003")
+    url = base_urls.get("client_reporting", "http://localhost:8014")
     try:
         resp = requests.get(f"{url}/pnl?client_id=test&period_month=2026-03", timeout=3)
     except requests.ConnectionError:
-        pytest.skip("client-reporting-api not running")
+        pytest.skip("client-reporting-api not running (or wrong URL)")
     assert resp.status_code != 404
 
 

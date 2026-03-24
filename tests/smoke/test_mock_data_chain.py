@@ -78,7 +78,9 @@ class TestInstrumentGenerationSmoke:
     def test_defi_uses_wrapped_tokens(self, gen: InstrumentGenerator) -> None:
         """Aave instruments use WETH/wstETH not ETH/stETH."""
         defi = gen.generate_defi(REF_DATE)
-        aave_a_tokens = [i for i in defi if i.venue == "AAVE_V3_ETH" and i.instrument_type == InstrumentType.A_TOKEN]
+        aave_a_tokens = [
+            i for i in defi if i.venue == "AAVEV3-ETHEREUM" and i.instrument_type == InstrumentType.A_TOKEN
+        ]
         assert len(aave_a_tokens) >= 1
         eth_related = [i for i in aave_a_tokens if i.base_asset in ("ETH", "stETH")]
         assert len(eth_related) == 0, (
