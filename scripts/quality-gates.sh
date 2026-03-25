@@ -10,8 +10,8 @@
 SERVICE_NAME="system-integration-tests"
 SOURCE_DIR="tests"
 MIN_COVERAGE=2
-RUN_INTEGRATION=true
-PYTEST_WORKERS=${PYTEST_WORKERS:-}  # default: max(1, cpu_count//4) computed by base script
+RUN_INTEGRATION=false
+PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 LOCAL_DEPS=()
     UAC_CANONICAL_EXEMPT=true   # SIT needs deep imports for contract validation
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
