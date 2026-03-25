@@ -76,7 +76,6 @@ SIT_SCOPE_REPOS = [
     "strategy-service",
     "market-data-processing-service",
     "market-tick-data-service",
-    "market-data-api",
     "instruments-service",
     "alerting-service",
     "risk-and-exposure-service",
