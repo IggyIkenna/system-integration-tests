@@ -500,7 +500,7 @@ class TestCrossComponentIntegration:
         self,
     ) -> None:
         """URDI factory adapter keys should cover the CeFi venues InstrumentGenerator uses."""
-        from unified_reference_data_interface.factory import _ADAPTERS
+        from instruments_service.reference_data.factory import _ADAPTERS
 
         adapter_venues = set(_ADAPTERS.keys())
 
