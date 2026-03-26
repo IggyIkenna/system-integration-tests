@@ -284,7 +284,7 @@ class TestDualCloudAuthCapable:
 
     def test_cloud_provider_enum_has_gcp_and_aws(self) -> None:
         """CloudProvider/CloudTarget enum in unified-internal-contracts has GCP and AWS members."""
-        uic = pytest.importorskip("unified_internal_contracts")
+        uic = pytest.importorskip("unified_api_contracts.internal")
         # Accept either CloudProvider or CloudTarget naming
         enum_cls = None
         for name in ("CloudProvider", "CloudTarget", "CloudProviderEnum"):
@@ -293,7 +293,7 @@ class TestDualCloudAuthCapable:
                 break
 
         if enum_cls is None:
-            pytest.skip("CloudProvider enum not found in unified_internal_contracts — check enum name")
+            pytest.skip("CloudProvider enum not found in unified_api_contracts.internal — check enum name")
 
         members = {m.value if hasattr(m, "value") else m.name for m in enum_cls}
         assert any(v in members for v in ("gcp", "GCP", "google")), f"GCP not in {members}"

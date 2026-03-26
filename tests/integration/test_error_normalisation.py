@@ -302,7 +302,7 @@ class TestCircuitBreakerConfigDrivenThreshold:
     def cb_threshold_3(self) -> Generator[object, None, None]:
         """Circuit breaker with failure_threshold=3 and a very long cooldown."""
         from execution_service.engine.circuit_breaker import _VenueCircuitBreaker
-        from unified_internal_contracts import VenueCircuitBreakerConfig
+        from unified_api_contracts.internal import VenueCircuitBreakerConfig
 
         config = VenueCircuitBreakerConfig(
             venue_type="test_cefi",
@@ -388,7 +388,7 @@ class TestCircuitBreakerConfigDrivenThreshold:
     def test_registry_injection_wires_config(self) -> None:
         """set_config_registry + get_circuit_breaker use the injected config."""
         import execution_service.engine.circuit_breaker as cb_module
-        from unified_internal_contracts import CircuitBreakerConfigRegistry, VenueCircuitBreakerConfig
+        from unified_api_contracts.internal import CircuitBreakerConfigRegistry, VenueCircuitBreakerConfig
 
         config = VenueCircuitBreakerConfig(
             venue_type="cefi_exchange",

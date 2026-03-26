@@ -18,7 +18,7 @@ def test_canonical_imports() -> None:
 
 def test_uic_canonical_exports_present() -> None:
     """UIC top-level exports include key ML and execution contracts."""
-    import unified_internal_contracts as uic
+    import unified_api_contracts.internal as uic
 
     assert hasattr(uic, "PredictionSnapshot")
     assert hasattr(uic, "CascadeConfig")

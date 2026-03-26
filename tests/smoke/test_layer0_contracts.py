@@ -41,42 +41,42 @@ def test_uac_facade_modules_non_empty() -> None:
 
 def test_uic_schemas_importable() -> None:
     """UIC top-level package must be importable without errors."""
-    import unified_internal_contracts
+    import unified_api_contracts.internal
 
-    assert unified_internal_contracts is not None
+    assert unified_api_contracts.internal is not None
 
 
 def test_uic_features_importable() -> None:
     """UIC features module must be importable."""
-    from unified_internal_contracts import features
+    from unified_api_contracts.internal import features
 
     assert features is not None
 
 
 def test_uic_execution_importable() -> None:
     """UIC execution module must be importable."""
-    from unified_internal_contracts import execution
+    from unified_api_contracts.internal import execution
 
     assert execution is not None
 
 
 def test_uic_market_data_importable() -> None:
     """UIC market_data subpackage must be importable."""
-    from unified_internal_contracts import market_data
+    from unified_api_contracts.internal import market_data
 
     assert market_data is not None
 
 
 def test_uic_events_importable() -> None:
     """UIC events module must be importable."""
-    from unified_internal_contracts import events
+    from unified_api_contracts.internal import events
 
     assert events is not None
 
 
 def test_uic_domain_instruments_schema() -> None:
     """UIC instruments domain schema must be present and non-None."""
-    from unified_internal_contracts.domain.instruments import INSTRUMENTS_SCHEMA
+    from unified_api_contracts.internal.domain.instruments import INSTRUMENTS_SCHEMA
 
     assert INSTRUMENTS_SCHEMA is not None
 
@@ -93,13 +93,13 @@ def test_events_interface_importable() -> None:
 
 def test_uic_pubsub_importable() -> None:
     """UIC pubsub schema module must be importable."""
-    from unified_internal_contracts import pubsub
+    from unified_api_contracts.internal import pubsub
 
     assert pubsub is not None
 
 
 def test_uic_positions_importable() -> None:
     """UIC positions subpackage must be importable."""
-    from unified_internal_contracts import positions
+    from unified_api_contracts.internal import positions
 
     assert positions is not None

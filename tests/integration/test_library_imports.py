@@ -7,7 +7,7 @@ pytestmark = pytest.mark.code_test
 
 def test_uac_uic_schema_compat() -> None:
     """UIC instruments schema is importable and non-empty."""
-    from unified_internal_contracts.domain.instruments import INSTRUMENTS_SCHEMA
+    from unified_api_contracts.internal.domain.instruments import INSTRUMENTS_SCHEMA
 
     assert INSTRUMENTS_SCHEMA is not None
 

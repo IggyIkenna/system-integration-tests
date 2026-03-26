@@ -44,8 +44,8 @@ def _seed_spec() -> dict[object, object]:
 )
 def test_all_scenarios_load(scenario_name: str) -> None:
     """Every named scenario YAML parses without error."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     scenario = MockScenario(scenario_name)
     cfg = ScenarioConfig.load(scenario)
@@ -57,9 +57,9 @@ def test_all_scenarios_load(scenario_name: str) -> None:
 
 def test_scenario_deterministic() -> None:
     """Same scenario produces byte-identical output across two generator instances."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
-    from unified_internal_contracts.testing.synthetic import SyntheticDataGenerator
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.testing.synthetic import SyntheticDataGenerator
 
     cfg = ScenarioConfig.load(MockScenario.NORMAL)
     spec = _seed_spec()
@@ -79,9 +79,9 @@ def test_scenario_deterministic() -> None:
 
 def test_scenario_different_seeds_differ() -> None:
     """Different scenarios (different seeds) produce different output."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
-    from unified_internal_contracts.testing.synthetic import SyntheticDataGenerator
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.testing.synthetic import SyntheticDataGenerator
 
     cfg_normal = ScenarioConfig.load(MockScenario.NORMAL)
     cfg_heavy = ScenarioConfig.load(MockScenario.HEAVY)
@@ -105,8 +105,8 @@ def test_delayed_scenario_fast_forwards() -> None:
     Effective sleep per tick = delay_ms / ff_factor / 1000 = 1.0s.
     4 ticks at 1s each = 4s total, under the 5s budget.
     """
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.DELAYED_DATA)
     assert cfg.delay_ms == 3_600_000, "delayed_data must have 1-hour delay (3600000ms)"
@@ -127,8 +127,8 @@ def test_delayed_scenario_fast_forwards() -> None:
 
 def test_bad_schema_has_instrument_overrides() -> None:
     """bad_schema scenario should have inject overrides for malformed instruments."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.BAD_SCHEMA)
     assert len(cfg.instrument_overrides) > 0, "bad_schema should have instrument overrides"
@@ -138,8 +138,8 @@ def test_bad_schema_has_instrument_overrides() -> None:
 
 def test_flash_crash_has_expire_overrides() -> None:
     """flash_crash scenario should have expire overrides for options."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.FLASH_CRASH)
     assert len(cfg.instrument_overrides) > 0, "flash_crash should have instrument overrides"
@@ -149,8 +149,8 @@ def test_flash_crash_has_expire_overrides() -> None:
 
 def test_normal_has_empty_instrument_overrides() -> None:
     """normal scenario should have no instrument overrides."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.NORMAL)
     assert len(cfg.instrument_overrides) == 0, "normal should have no instrument overrides"

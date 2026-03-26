@@ -2,7 +2,7 @@
 
 import pytest
 from unified_api_contracts import CanonicalBetOrder
-from unified_internal_contracts.schema_definition import SchemaDefinition
+from unified_api_contracts.internal.schema_definition import SchemaDefinition
 
 pytestmark = pytest.mark.code_test
 

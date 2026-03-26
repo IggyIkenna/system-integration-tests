@@ -80,7 +80,7 @@ def test_venue_to_tardis_matches_inverted_venue_mapping() -> None:
     mappings that were previously hardcoded.
     """
     from unified_api_contracts import VenueMapping
-    from unified_internal_contracts.reference.instrument_key import _VENUE_TO_TARDIS
+    from unified_api_contracts.internal.reference.instrument_key import _VENUE_TO_TARDIS
 
     mapping = VenueMapping()
 

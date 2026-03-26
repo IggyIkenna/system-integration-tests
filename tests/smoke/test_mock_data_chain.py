@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 from unified_api_contracts import CanonicalInstrument, InstrumentType, OptionType
-from unified_internal_contracts.testing.instrument_generator import InstrumentGenerator
+from unified_api_contracts.internal.testing.instrument_generator import InstrumentGenerator
 
 pytestmark = pytest.mark.code_test
 
@@ -307,7 +307,7 @@ class TestMockDataChain:
 
     def test_seed_writer_local_mode(self, gen: InstrumentGenerator, tmp_path: Path) -> None:
         """SeedDataWriter creates files at expected paths for OHLCV data."""
-        from unified_internal_contracts.testing.synthetic import SeedDataWriter, SyntheticDataGenerator
+        from unified_api_contracts.internal.testing.synthetic import SeedDataWriter, SyntheticDataGenerator
 
         spec: dict[object, object] = {
             "gbm_params": {
@@ -326,7 +326,7 @@ class TestMockDataChain:
 
     def test_seed_writer_defi_output(self, tmp_path: Path) -> None:
         """SeedDataWriter writes DeFi yield data to expected directory structure."""
-        from unified_internal_contracts.testing.synthetic import SeedDataWriter, SyntheticDataGenerator
+        from unified_api_contracts.internal.testing.synthetic import SeedDataWriter, SyntheticDataGenerator
 
         spec: dict[object, object] = {
             "gbm_params": {},
@@ -375,7 +375,7 @@ class TestMockDataChain:
 
     def test_seed_writer_manifest(self, tmp_path: Path) -> None:
         """SeedDataWriter.write_manifest creates a JSON manifest file."""
-        from unified_internal_contracts.testing.synthetic import SeedDataWriter
+        from unified_api_contracts.internal.testing.synthetic import SeedDataWriter
 
         writer = SeedDataWriter(tmp_path)
         manifest: dict[str, object] = {
@@ -415,7 +415,7 @@ class TestSchemaValidation:
 
     def test_ohlcv_schema_compliance(self) -> None:
         """Mock OHLCV data matches expected column set."""
-        from unified_internal_contracts.testing.synthetic import SyntheticDataGenerator
+        from unified_api_contracts.internal.testing.synthetic import SyntheticDataGenerator
 
         spec: dict[object, object] = {
             "gbm_params": {
@@ -439,7 +439,7 @@ class TestSchemaValidation:
 
     def test_defi_oracle_has_index_columns(self) -> None:
         """DeFi oracle mock data has liquidity_index, variable_borrow_index columns."""
-        from unified_internal_contracts.testing.synthetic import SyntheticDataGenerator
+        from unified_api_contracts.internal.testing.synthetic import SyntheticDataGenerator
 
         spec: dict[object, object] = {
             "gbm_params": {},
@@ -465,7 +465,7 @@ class TestSchemaValidation:
 
     def test_sports_odds_schema(self) -> None:
         """Sports odds mock data has expected columns."""
-        from unified_internal_contracts.testing.synthetic import SyntheticDataGenerator
+        from unified_api_contracts.internal.testing.synthetic import SyntheticDataGenerator
 
         spec: dict[object, object] = {
             "gbm_params": {},

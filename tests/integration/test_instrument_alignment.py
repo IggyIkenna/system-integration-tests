@@ -18,6 +18,8 @@ from datetime import UTC, date, datetime
 
 import pytest
 from unified_api_contracts import CanonicalInstrument, InstrumentType, OptionType
+from unified_api_contracts.internal import InstrumentDefinition, InstrumentKey, InstrumentRecord
+from unified_api_contracts.internal.testing.instrument_generator import InstrumentGenerator
 from unified_api_contracts.registry.representative_sample import (
     CEFI_BASE_ASSETS,
     DEFI_LENDING_ASSETS,
@@ -25,8 +27,6 @@ from unified_api_contracts.registry.representative_sample import (
     TRADFI_FUTURES,
 )
 from unified_config_interface import Venue
-from unified_internal_contracts import InstrumentDefinition, InstrumentKey, InstrumentRecord
-from unified_internal_contracts.testing.instrument_generator import InstrumentGenerator
 
 pytestmark = pytest.mark.code_test
 
@@ -710,7 +710,7 @@ class TestRegistryDrivenAlignment:
 
     def test_generator_imports_from_uac_registry(self) -> None:
         """InstrumentGenerator module should import from UAC representative_sample."""
-        import unified_internal_contracts.testing.instrument_generator as gen_mod
+        import unified_api_contracts.internal.testing.instrument_generator as gen_mod
 
         source_file = gen_mod.__file__
         assert source_file is not None

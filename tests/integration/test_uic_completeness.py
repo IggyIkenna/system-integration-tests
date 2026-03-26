@@ -61,9 +61,9 @@ _EXCLUDE_DIRS: frozenset[str] = frozenset(
 
 
 def _get_uic_package_root() -> Path:
-    import unified_internal_contracts
+    import unified_api_contracts.internal
 
-    return Path(unified_internal_contracts.__file__).parent
+    return Path(unified_api_contracts.internal.__file__).parent
 
 
 def _get_uic_all_set() -> set[str]:
@@ -71,7 +71,7 @@ def _get_uic_all_set() -> set[str]:
     src = pkg_init.read_text()
     all_match = re.search(r"__all__\s*=\s*\[(.*?)\]", src, re.DOTALL)
     if not all_match:
-        raise RuntimeError("Could not parse __all__ from unified_internal_contracts/__init__.py")
+        raise RuntimeError("Could not parse __all__ from unified_api_contracts.internal/__init__.py")
     return set(re.findall(r'"(\w+)"', all_match.group(1)))
 
 
@@ -114,9 +114,9 @@ _UIC_REQUIRED: list[str] = sorted(
 def test_uic_source_class_in_all(cls: str) -> None:
     """Public UIC class defined in source must be exported in __all__."""
     assert cls in _UIC_EXPORTED, (
-        f"unified_internal_contracts.{cls} is defined in "
+        f"unified_api_contracts.internal.{cls} is defined in "
         f"{_UIC_SOURCE_CLASSES[cls]} but is not in __all__. "
-        "Add it to unified_internal_contracts/__init__.py or mark it exempt."
+        "Add it to unified_api_contracts.internal/__init__.py or mark it exempt."
     )
 
 
@@ -129,7 +129,7 @@ def test_uic_completeness_all_size() -> None:
     """__all__ must have at least 150 entries — regression guard against accidental shrink."""
     assert len(_UIC_EXPORTED) >= 150, (
         f"UIC __all__ has only {len(_UIC_EXPORTED)} entries. "
-        "Something may have been accidentally removed from unified_internal_contracts/__init__.py"
+        "Something may have been accidentally removed from unified_api_contracts.internal/__init__.py"
     )
 
 

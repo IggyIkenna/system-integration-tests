@@ -19,6 +19,7 @@ import logging
 from unittest.mock import patch
 
 import pytest
+from unified_api_contracts.internal import DataFreshnessContract
 from unified_events_interface import (
     DATA_AVAILABILITY_RESTORED,
     DATA_GAP_DETECTED,
@@ -26,7 +27,6 @@ from unified_events_interface import (
     FEED_UNHEALTHY,
     setup_events,
 )
-from unified_internal_contracts import DataFreshnessContract
 from unified_trading_library import FreshnessMonitor
 
 pytestmark = pytest.mark.deployment_test
@@ -242,7 +242,7 @@ class TestCriticalityDeterminesBlockingBehaviour:
     """
 
     def test_critical_contract_has_low_max_age(self) -> None:
-        from unified_internal_contracts.reference.data_freshness import MARKET_TICK_FRESHNESS
+        from unified_api_contracts.internal.reference.data_freshness import MARKET_TICK_FRESHNESS
 
         binance = MARKET_TICK_FRESHNESS["binance"]
         assert binance.criticality == "critical"
@@ -250,7 +250,7 @@ class TestCriticalityDeterminesBlockingBehaviour:
         assert binance.max_age_seconds <= 60
 
     def test_informational_contract_allows_daily_cadence(self) -> None:
-        from unified_internal_contracts.reference.data_freshness import MARKET_TICK_FRESHNESS
+        from unified_api_contracts.internal.reference.data_freshness import MARKET_TICK_FRESHNESS
 
         openbb = MARKET_TICK_FRESHNESS["openbb"]
         assert openbb.criticality == "informational"

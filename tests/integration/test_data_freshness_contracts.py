@@ -21,6 +21,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from unified_api_contracts.internal.reference.data_freshness import (
+    ALL_FRESHNESS_CONTRACTS,
+    FEATURE_FRESHNESS,
+    MARKET_TICK_FRESHNESS,
+    DataFreshnessContract,
+)
 from unified_events_interface import (
     DATA_AVAILABILITY_EVENT_TYPES,
     DATA_AVAILABILITY_RESTORED,
@@ -29,12 +35,6 @@ from unified_events_interface import (
     DATA_STALE,
     FEED_UNHEALTHY,
     setup_events,
-)
-from unified_internal_contracts.reference.data_freshness import (
-    ALL_FRESHNESS_CONTRACTS,
-    FEATURE_FRESHNESS,
-    MARKET_TICK_FRESHNESS,
-    DataFreshnessContract,
 )
 from unified_trading_library import FreshnessMonitor
 

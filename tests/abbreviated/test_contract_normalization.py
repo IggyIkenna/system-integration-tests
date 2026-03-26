@@ -22,6 +22,25 @@ import pytest
 
 # UAC canonical execution schemas (UAC has py.typed; import directly from UAC)
 from unified_api_contracts import CanonicalFill, CanonicalOrder, OrderSide, OrderType
+from unified_api_contracts.internal.domain.ml_inference_service import (
+    CascadeConfig,
+    CascadePredictionEvent,
+    PredictionSnapshot,
+)
+from unified_api_contracts.internal.domain.pubsub_service import (
+    FillEventMessage,
+    PubSubMessageEnvelope,
+    RiskAlertMessage,
+)
+from unified_api_contracts.internal.domain.risk_service import RiskMetrics, RiskPosition, RiskStatus
+from unified_api_contracts.internal.events import (
+    EventMetadata,
+    EventSeverity,
+    LifecycleEventEnvelope,
+    LifecycleEventType,
+)
+from unified_api_contracts.internal.market_data import CanonicalOHLCV, OHLCVSource
+from unified_api_contracts.internal.ml import InferenceRequest, InferenceResult
 from unified_events_interface import (
     STANDARD_COORDINATION_EVENTS,
     STANDARD_LIFECYCLE_EVENTS,
@@ -31,25 +50,6 @@ from unified_events_interface import (
     CoordinationEvent,
     LifecycleEvent,
 )
-from unified_internal_contracts.domain.ml_inference_service import (
-    CascadeConfig,
-    CascadePredictionEvent,
-    PredictionSnapshot,
-)
-from unified_internal_contracts.domain.pubsub_service import (
-    FillEventMessage,
-    PubSubMessageEnvelope,
-    RiskAlertMessage,
-)
-from unified_internal_contracts.domain.risk_service import RiskMetrics, RiskPosition, RiskStatus
-from unified_internal_contracts.events import (
-    EventMetadata,
-    EventSeverity,
-    LifecycleEventEnvelope,
-    LifecycleEventType,
-)
-from unified_internal_contracts.market_data import CanonicalOHLCV, OHLCVSource
-from unified_internal_contracts.ml import InferenceRequest, InferenceResult
 
 pytestmark = pytest.mark.abbreviated_sit
 
