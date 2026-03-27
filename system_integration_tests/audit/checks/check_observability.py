@@ -28,7 +28,7 @@ def check_observability(repo_path: Path, workspace_root: Path) -> AuditResult:
     Verifies:
     1. Health endpoint exists (health.py or routes/health.py)
     2. Metrics module exists (metrics.py)
-    3. log_event usage from unified_events_interface
+    3. log_event usage from unified_trading_library.events_interface
     4. setup_events call in main/startup
 
     Args:
@@ -114,7 +114,7 @@ def check_observability(repo_path: Path, workspace_root: Path) -> AuditResult:
     if not has_log_event:
         findings.append(
             AuditFinding(
-                message="No log_event usage from unified_events_interface",
+                message="No log_event usage from unified_trading_library.events_interface",
                 severity=AuditSeverity.MEDIUM,
                 file_path=str(repo_path),
             )

@@ -70,7 +70,7 @@ def _build_workspace(tmp_path: Path) -> tuple[Path, Path]:
     (pkg / "health.py").write_text("# health\n")
     (pkg / "metrics.py").write_text("# metrics\n")
     (pkg / "main.py").write_text(
-        'from unified_events_interface import setup_events, log_event\nlog_event("SERVICE_STARTED")\nsetup_events()\n'
+        'from unified_trading_library.events_interface import setup_events, log_event\nlog_event("SERVICE_STARTED")\nsetup_events()\n'
     )
 
     # Build bad-service (minimal, missing most things)

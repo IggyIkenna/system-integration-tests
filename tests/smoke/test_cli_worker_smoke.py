@@ -14,7 +14,7 @@ pytestmark = pytest.mark.code_test
 @pytest.mark.smoke
 def test_uei_event_constants() -> None:
     """Regression guard: verify canonical event names are correct in UEI."""
-    from unified_events_interface import STANDARD_LIFECYCLE_EVENTS
+    from unified_trading_library.events_interface import STANDARD_LIFECYCLE_EVENTS
 
     # Must be present (canonical names)
     assert "MEMORY_THRESHOLD_REACHED" in STANDARD_LIFECYCLE_EVENTS, (

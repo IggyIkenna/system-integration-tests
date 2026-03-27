@@ -10,7 +10,7 @@ def test_instrument_type_not_reexported_from_uci() -> None:
     directly from the source. UCI should not create a false ownership
     illusion by re-exporting it.
     """
-    import unified_config_interface as uci
+    import unified_trading_library.config_interface as uci
 
     assert not hasattr(uci, "InstrumentType"), (
         "UCI should not export InstrumentType. Consumers must import from unified_api_contracts directly."

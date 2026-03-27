@@ -16,7 +16,7 @@ import os
 from decimal import Decimal
 
 import pytest
-from unified_events_interface import MockEventSink, setup_events
+from unified_trading_library.events_interface import MockEventSink, setup_events
 
 # Ensure credential-free execution throughout
 os.environ.setdefault("CLOUD_PROVIDER", "local")

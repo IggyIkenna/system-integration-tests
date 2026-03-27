@@ -60,9 +60,9 @@ class TestNoLiveHttpCalls:
         with patch("httpx.Client.send", side_effect=sentinel):
             with patch("httpx.AsyncClient.send", side_effect=sentinel):
                 # These imports must complete without triggering any HTTP call
-                import unified_cloud_interface  # type: ignore[import-not-found]
+                import unified_trading_library.cloud_interface  # type: ignore[import-not-found]
 
-                assert unified_cloud_interface is not None
+                assert unified_trading_library.cloud_interface is not None
 
     def test_requests_not_called_on_schema_import(self) -> None:
         """Importing instrument schemas must not fire any HTTP request."""
@@ -103,29 +103,29 @@ class TestBatchLiveSymmetry:
 
     def test_uci_importable_locally(self) -> None:
         """UCI factory must import with CLOUD_PROVIDER=local."""
-        uci = pytest.importorskip("unified_cloud_interface")
+        uci = pytest.importorskip("unified_trading_library.cloud_interface")
         assert uci is not None
 
     def test_uci_get_storage_client_local(self) -> None:
         """get_storage_client(provider='local') must not call GCS."""
-        pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_storage_client
+        pytest.importorskip("unified_trading_library.cloud_interface")
+        from unified_trading_library.cloud_interface import get_storage_client
 
         client = get_storage_client(provider="local")
         assert client is not None
 
     def test_uci_get_secret_client_local(self) -> None:
         """get_secret_client(provider='local') must not call Secret Manager."""
-        pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_secret_client
+        pytest.importorskip("unified_trading_library.cloud_interface")
+        from unified_trading_library.cloud_interface import get_secret_client
 
         client = get_secret_client(provider="local")
         assert client is not None
 
     def test_uci_get_pubsub_client_local(self) -> None:
         """get_pubsub_client(provider='local') must return LocalPubSubClient."""
-        pytest.importorskip("unified_cloud_interface")
-        from unified_cloud_interface import get_pubsub_client
+        pytest.importorskip("unified_trading_library.cloud_interface")
+        from unified_trading_library.cloud_interface import get_pubsub_client
 
         client = get_pubsub_client(provider="local")
         assert client is not None

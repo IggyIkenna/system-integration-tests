@@ -292,7 +292,7 @@ class TestCredentialConfigCoverage:
 
     def test_credential_configs_populated(self) -> None:
         try:
-            from unified_config_interface import (
+            from unified_trading_library.config_interface import (
                 SPORTS_VENUE_CREDENTIALS,
             )
 
@@ -304,7 +304,7 @@ class TestCredentialConfigCoverage:
 
     def test_kalshi_credential_config_exists(self) -> None:
         try:
-            from unified_config_interface import (
+            from unified_trading_library.config_interface import (
                 SPORTS_VENUE_CREDENTIALS,
             )
 

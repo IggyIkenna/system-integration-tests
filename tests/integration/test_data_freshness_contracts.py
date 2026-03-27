@@ -27,7 +27,8 @@ from unified_api_contracts.internal.reference.data_freshness import (
     MARKET_TICK_FRESHNESS,
     DataFreshnessContract,
 )
-from unified_events_interface import (
+from unified_trading_library import FreshnessMonitor
+from unified_trading_library.events_interface import (
     DATA_AVAILABILITY_EVENT_TYPES,
     DATA_AVAILABILITY_RESTORED,
     DATA_COMPLETENESS_CHECK,
@@ -36,7 +37,6 @@ from unified_events_interface import (
     FEED_UNHEALTHY,
     setup_events,
 )
-from unified_trading_library import FreshnessMonitor
 
 pytestmark = pytest.mark.deployment_test
 logger = logging.getLogger(__name__)

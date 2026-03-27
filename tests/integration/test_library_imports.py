@@ -14,7 +14,7 @@ def test_uac_uic_schema_compat() -> None:
 
 def test_uei_event_dispatch() -> None:
     """UEI log_event import chain is intact — should not raise."""
-    from unified_events_interface import log_event
+    from unified_trading_library.events_interface import log_event
 
     # Should not raise — just verifies the import chain works
     assert callable(log_event)

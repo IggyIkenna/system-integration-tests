@@ -34,7 +34,7 @@ from unified_api_contracts import (
     CanonicalUnknownVenueError,
     classify_venue_error,
 )
-from unified_events_interface import UNKNOWN_VENUE_ERROR_RECEIVED
+from unified_trading_library.events_interface import UNKNOWN_VENUE_ERROR_RECEIVED
 
 pytestmark = pytest.mark.code_test
 # ---------------------------------------------------------------------------
@@ -169,7 +169,7 @@ class TestMockAdapterCatchAllPattern:
             raw_message = str(exc)
             classification = classify_venue_error(venue, raw_code)
             if classification is None:
-                from unified_events_interface import log_event
+                from unified_trading_library.events_interface import log_event
 
                 log_event(
                     UNKNOWN_VENUE_ERROR_RECEIVED,
@@ -183,7 +183,7 @@ class TestMockAdapterCatchAllPattern:
             raise  # re-raise original exception
 
     def test_unknown_binance_code_emits_event_and_reraises(self) -> None:
-        with patch("unified_events_interface.log_event") as mock_log:
+        with patch("unified_trading_library.events_interface.log_event") as mock_log:
             with pytest.raises(RuntimeError):
                 self._mock_adapter_submit_order(
                     "binance",
@@ -196,7 +196,7 @@ class TestMockAdapterCatchAllPattern:
             assert call_kwargs[0][0] == UNKNOWN_VENUE_ERROR_RECEIVED
 
     def test_unknown_betfair_code_emits_event_and_reraises(self) -> None:
-        with patch("unified_events_interface.log_event") as mock_log:
+        with patch("unified_trading_library.events_interface.log_event") as mock_log:
             with pytest.raises(RuntimeError):
                 self._mock_adapter_submit_order(
                     "betfair",
@@ -207,7 +207,7 @@ class TestMockAdapterCatchAllPattern:
             mock_log.assert_called_once()
 
     def test_unknown_code_emits_correct_event_details(self) -> None:
-        with patch("unified_events_interface.log_event") as mock_log:
+        with patch("unified_trading_library.events_interface.log_event") as mock_log:
             with pytest.raises(RuntimeError):
                 self._mock_adapter_submit_order(
                     "binance",
@@ -223,7 +223,7 @@ class TestMockAdapterCatchAllPattern:
 
     def test_known_code_does_not_emit_unknown_event(self) -> None:
         """When classify_venue_error returns a classification, no unknown event is emitted."""
-        with patch("unified_events_interface.log_event") as mock_log:
+        with patch("unified_trading_library.events_interface.log_event") as mock_log:
             classification = classify_venue_error("binance", "TOTALLY_UNKNOWN_CODE_99999")
             # We are verifying the None-path guard — if it returned something, no event.
             # This test checks that when classify_venue_error IS None the event fires,
