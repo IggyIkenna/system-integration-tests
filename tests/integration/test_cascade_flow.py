@@ -82,7 +82,7 @@ class TestInvalidateCIStatusScript:
             [
                 "python3",
                 str(self.SCRIPT_PATH),
-                "unified-market-interface",
+                "market-tick-data-service",
                 "--dry-run",
             ],
             capture_output=True,
@@ -104,7 +104,7 @@ class TestInvalidateCIStatusScript:
 
         # Stdout or stderr should mention dry-run or the target repo
         combined = result.stdout + result.stderr
-        assert "dry" in combined.lower() or "unified-market-interface" in combined, (
+        assert "dry" in combined.lower() or "market-tick-data-service" in combined, (
             f"Dry-run output does not reference dry-run or target repo:\n{combined}"
         )
 

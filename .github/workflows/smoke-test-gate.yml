@@ -296,7 +296,7 @@ jobs:
             features-delta-one-service features-volatility-service
             features-cross-instrument-service features-onchain-service
             features-sports-service features-calendar-service
-            unified-market-interface unified-sports-execution-interface
+            unified-sports-execution-interface
           )
           OWNER="${{ github.repository_owner }}"
           for svc in "${SERVICES[@]}"; do
