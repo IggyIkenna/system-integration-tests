@@ -77,7 +77,7 @@ def test_alerting_system_status_exists(base_urls: dict[str, str]) -> None:
 @pytest.mark.integration
 def test_uei_config_loaded_fires_on_init() -> None:
     """CONFIG_LOADED must be in STANDARD_LIFECYCLE_EVENTS (UTL emits it on init)."""
-    from unified_trading_library.events_interface import STANDARD_LIFECYCLE_EVENTS
+    from unified_trading_library.events import STANDARD_LIFECYCLE_EVENTS
 
     assert "CONFIG_LOADED" in STANDARD_LIFECYCLE_EVENTS
 
@@ -85,6 +85,6 @@ def test_uei_config_loaded_fires_on_init() -> None:
 @pytest.mark.integration
 def test_uei_config_changed_in_standard_events() -> None:
     """CONFIG_CHANGED must be in STANDARD_LIFECYCLE_EVENTS."""
-    from unified_trading_library.events_interface import STANDARD_LIFECYCLE_EVENTS
+    from unified_trading_library.events import STANDARD_LIFECYCLE_EVENTS
 
     assert "CONFIG_CHANGED" in STANDARD_LIFECYCLE_EVENTS

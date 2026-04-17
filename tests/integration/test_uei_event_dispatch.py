@@ -1,7 +1,7 @@
 """UEI event dispatch structural test."""
 
 import pytest
-from unified_trading_library.events_interface import log_event, setup_events
+from unified_trading_library.events import log_event, setup_events
 
 pytestmark = pytest.mark.code_test
 

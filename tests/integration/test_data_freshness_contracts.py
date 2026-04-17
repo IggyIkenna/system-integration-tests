@@ -28,7 +28,7 @@ from unified_api_contracts.internal.reference.data_freshness import (
     DataFreshnessContract,
 )
 from unified_trading_library import FreshnessMonitor
-from unified_trading_library.events_interface import (
+from unified_trading_library.events import (
     DATA_AVAILABILITY_EVENT_TYPES,
     DATA_AVAILABILITY_RESTORED,
     DATA_COMPLETENESS_CHECK,

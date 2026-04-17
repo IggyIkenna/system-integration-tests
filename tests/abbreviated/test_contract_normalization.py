@@ -41,7 +41,7 @@ from unified_api_contracts.internal.events import (
 )
 from unified_api_contracts.internal.market_data import CanonicalOHLCV, OHLCVSource
 from unified_api_contracts.internal.ml import InferenceRequest, InferenceResult
-from unified_trading_library.events_interface import (
+from unified_trading_library.events import (
     STANDARD_COORDINATION_EVENTS,
     STANDARD_LIFECYCLE_EVENTS,
     TRADE_REPORTED_MIFID,

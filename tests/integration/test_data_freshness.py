@@ -21,7 +21,7 @@ from unittest.mock import patch
 import pytest
 from unified_api_contracts.internal import DataFreshnessContract
 from unified_trading_library import FreshnessMonitor
-from unified_trading_library.events_interface import (
+from unified_trading_library.events import (
     DATA_AVAILABILITY_RESTORED,
     DATA_GAP_DETECTED,
     DATA_STALE,

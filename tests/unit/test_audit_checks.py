@@ -59,7 +59,7 @@ def _make_full_repo(tmp_path: Path) -> Path:
     (pkg / "health.py").write_text("# health endpoint\n")
     (pkg / "metrics.py").write_text("# prometheus metrics\n")
     (pkg / "main.py").write_text(
-        'from unified_trading_library.events_interface import setup_events, log_event\nlog_event("STARTED")\nsetup_events()\n'
+        'from unified_trading_library.events import setup_events, log_event\nlog_event("STARTED")\nsetup_events()\n'
     )
 
     return repo
@@ -191,7 +191,7 @@ class TestCheckObservability:
         (pkg / "__init__.py").write_text("")
         (pkg / "metrics.py").write_text("# metrics\n")
         (pkg / "main.py").write_text(
-            'from unified_trading_library.events_interface import log_event, setup_events\nlog_event("X")\nsetup_events()\n'
+            'from unified_trading_library.events import log_event, setup_events\nlog_event("X")\nsetup_events()\n'
         )
         result = check_observability(repo, tmp_path)
         assert result.status == AuditStatus.WARN
@@ -208,7 +208,7 @@ class TestCheckObservability:
         (pkg / "__init__.py").write_text("")
         (pkg / "health.py").write_text("# health\n")
         (pkg / "main.py").write_text(
-            'from unified_trading_library.events_interface import log_event, setup_events\nlog_event("X")\nsetup_events()\n'
+            'from unified_trading_library.events import log_event, setup_events\nlog_event("X")\nsetup_events()\n'
         )
         result = check_observability(repo, tmp_path)
         metrics_findings = [f for f in result.findings if "metrics" in f.message.lower()]

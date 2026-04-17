@@ -10,7 +10,6 @@
     "../deployment-api",
     "../unified-api-contracts",
     "../unified-internal-contracts",
-    "../unified-events-interface",
     "../unified-trading-library",
     "../unified-cloud-interface"
   ],
