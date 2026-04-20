@@ -73,6 +73,45 @@ AWS S3 smoke tests live in `tests/e2e/test_aws_s3_smoke.py`. They require:
 
 Tests skip gracefully when credentials or bucket are not configured.
 
+## Coverage Matrix Smoke
+
+`tests/smoke/test_coverage_matrix_smoke.py` parametrises over representative
+`(service × category × venue × data_type)` cells and asserts that TEST-bucket
+state is internally consistent with the canonical per-category path layout
+and manifest v5 schema.
+
+Opt-in — the test skips by default:
+
+```bash
+export GCS_TEST_BUCKET_ENABLED=1
+export GCP_PROJECT_ID=central-element-323112     # your project
+# ADC / service-account creds must be present (gcloud auth application-default login)
+pytest -m smoke -v tests/smoke/test_coverage_matrix_smoke.py
+```
+
+Pre-condition: TEST buckets must already contain parquet + manifest rows from
+a prior run. Seed them by running the dev-local helper per service:
+
+```bash
+cd <service>
+IS_TEST_RUN=true python scripts/smoke_matrix.py --execute --category CEFI
+```
+
+The test enforces Steps 2 + 3 of the 3-step assertion contract (parquet
+exists under the category-specific prefix; manifest row has
+`capture_status in {captured, empty_confirmed}`). Step 1 (trigger) is
+assumed — SIT's canon is HTTP + GCS/PubSub assertions, not subprocess CLI.
+
+Pure-function helpers live in `tests/smoke/coverage_matrix_cells.py` and
+are unit-tested in `tests/unit/test_coverage_matrix_cells.py` (19 tests).
+Adding a new representative cell = append a row to `_CELLS`.
+
+SSOT references:
+
+- Per-category bucket + path layouts: `unified-trading-pm/codex/02-data/per-category-bucket-layouts.md`
+- Manifest v5 schema: `unified-trading-pm/codex/02-data/availability-manifest-and-data-status.md`
+- Playbook: `unified-trading-pm/codex/14-playbooks/smoke-testing-playbook.md`
+
 ## SIT Scope
 
 Which repos are gated by SIT for staging → main promotion.
