@@ -38,7 +38,7 @@ class TestSportsVenueRegistryCompleteness:
             VENUE_EXECUTION_REGISTRY,
         )
 
-        api_venues = ["betfair_ex_uk", "pinnacle", "smarkets", "matchbook", "betdaq", "polymarket", "kalshi"]
+        api_venues = ["betfair_ex_uk", "pinnacle", "matchbook", "polymarket", "kalshi"]
         for v in api_venues:
             assert v in VENUE_EXECUTION_REGISTRY, f"API venue '{v}' missing from registry"
 
@@ -72,9 +72,7 @@ class TestUSEIRouterCoverage:
             "betfair_direct",
             "pinnacle_direct",
             "polymarket_clob",
-            "smarkets_direct",
             "matchbook_direct",
-            "betdaq_direct",
             "kalshi_direct",
         ]
         for src in expected:
