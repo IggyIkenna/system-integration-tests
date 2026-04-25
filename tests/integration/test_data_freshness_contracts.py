@@ -127,7 +127,7 @@ class TestFreshnessMonitorEventEmission:
     def _make_monitor(self, max_age: int = 10, warn_age: int = 5) -> FreshnessMonitor:
         contract = DataFreshnessContract(
             source="test-source",
-            asset_class="crypto_cefi",
+            asset_group="crypto_cefi",
             max_age_seconds=max_age,
             warn_age_seconds=warn_age,
             expected_cadence_seconds=1,

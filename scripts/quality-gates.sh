@@ -17,10 +17,17 @@ LOCAL_DEPS=()
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-service.sh"
 
-# Codex enforcement: every entrypoint must emit STARTED, STOPPED, FAILED
-# See: unified-trading-codex/03-observability/lifecycle-events.md § Lifecycle Event QG Enforcement
+# Codex enforcement: lifecycle triple (STARTED / STOPPED / FAILED) via UTL — not duplicated in service code.
+# See: unified-trading-pm/codex/03-observability/lifecycle-events.md § Lifecycle Event QG Enforcement
 log_section "[5.X/6] UEI LIFECYCLE EVENT ENFORCEMENT (STARTED/STOPPED/FAILED)"
-for event in STARTED STOPPED FAILED; do
-    run_timeout 30 rg "log_event.*\"${event}\"" "${SOURCE_DIR}" --type py -q \
-        || log_warn "Missing log_event('${event}') in ${SERVICE_NAME} — see codex 03-observability/lifecycle-events.md"
-done
+if rg -q 'fastapi_uei_lifespan\s*\(' --type py "$SOURCE_DIR" 2>/dev/null; then
+    log_success "UEI lifecycle: fastapi_uei_lifespan (canonical HTTP wiring in UTL)"
+elif rg -q 'ServiceBootstrap\s*\(' --type py "$SOURCE_DIR" 2>/dev/null; then
+    log_success "UEI lifecycle: ServiceBootstrap (canonical CLI wiring in UTL)"
+else
+    for event in STARTED STOPPED FAILED; do
+        # -U: allow multiline call sites (e.g. log_event(\n  "STARTED", ...))
+        run_timeout 30 rg "log_event.*\"${event}\"" "${SOURCE_DIR}" --type py -U -q \
+            || log_warn "Missing log_event('${event}') in ${SERVICE_NAME} — see codex 03-observability/lifecycle-events.md"
+    done
+fi

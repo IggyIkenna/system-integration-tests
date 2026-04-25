@@ -53,7 +53,7 @@ def _make_contract(
 ) -> DataFreshnessContract:
     return DataFreshnessContract(
         source=source,
-        asset_class="crypto_cefi",
+        asset_group="crypto_cefi",
         max_age_seconds=max_age,
         warn_age_seconds=warn_age,
         expected_cadence_seconds=cadence,

@@ -207,7 +207,7 @@ class TestVenueTypeMatrix:
         """DeFi venues must produce the expected instrument types."""
         venue_types: dict[str, set[str]] = {}
         for inst in all_instruments:
-            if inst.asset_class == "crypto_defi":
+            if inst.asset_group == "crypto_defi":
                 venue_types.setdefault(inst.venue, set()).add(str(inst.instrument_type))
 
         # Aave must produce A_TOKEN and DEBT_TOKEN
@@ -228,7 +228,7 @@ class TestVenueTypeMatrix:
         """Sports/prediction venues must produce expected types."""
         venue_types: dict[str, set[str]] = {}
         for inst in all_instruments:
-            if inst.asset_class in ("sports", "prediction"):
+            if inst.asset_group in ("sports", "prediction"):
                 venue_types.setdefault(inst.venue, set()).add(str(inst.instrument_type))
 
         if "POLYMARKET" in venue_types:
@@ -638,18 +638,18 @@ class TestTradFiFieldAlignment:
             assert inst.trading_hours_close is not None, f"Missing trading_hours_close for {inst.instrument_key}"
             assert inst.holiday_calendar is not None, f"Missing holiday_calendar for {inst.instrument_key}"
 
-    def test_tradfi_asset_classes(self, all_instruments: list[CanonicalInstrument]) -> None:
-        """TradFi instruments should have correct asset_class values."""
+    def test_tradfi_asset_groupes(self, all_instruments: list[CanonicalInstrument]) -> None:
+        """TradFi instruments should have correct asset_group values."""
         tradfi_types = {
             InstrumentType.EQUITY,
             InstrumentType.ETF,
             InstrumentType.INDEX,
         }
         tradfi = [inst for inst in all_instruments if inst.instrument_type in tradfi_types]
-        valid_asset_classes = {"tradfi_equity", "tradfi_etf", "tradfi_index", "tradfi_futures"}
+        valid_asset_groupes = {"tradfi_equity", "tradfi_etf", "tradfi_index", "tradfi_futures"}
         for inst in tradfi:
-            assert inst.asset_class in valid_asset_classes, (
-                f"Unexpected asset_class {inst.asset_class!r} for TradFi instrument {inst.instrument_key}"
+            assert inst.asset_group in valid_asset_groupes, (
+                f"Unexpected asset_group {inst.asset_group!r} for TradFi instrument {inst.instrument_key}"
             )
 
     def test_cme_futures_have_contract_size(self, all_instruments: list[CanonicalInstrument]) -> None:
@@ -676,7 +676,7 @@ class TestRegistryDrivenAlignment:
         cefi_spot = [
             inst
             for inst in no_options_instruments
-            if inst.instrument_type == InstrumentType.SPOT_PAIR and inst.asset_class == "crypto_cefi"
+            if inst.instrument_type == InstrumentType.SPOT_PAIR and inst.asset_group == "crypto_cefi"
         ]
         base_assets = {inst.base_asset for inst in cefi_spot}
         for asset in CEFI_BASE_ASSETS:
