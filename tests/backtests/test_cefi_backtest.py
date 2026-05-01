@@ -86,10 +86,9 @@ def _simulate_cefi_momentum_backtest(
     entry_price: Decimal = Decimal("0")
     order_seq = 0
 
-    for i, (offset_h, open_p, _high, _low, close_p, _vol) in enumerate(ohlcv):
+    for i, (offset_h, _open_p, _high, _low, close_p, _vol) in enumerate(ohlcv):
         ts = _BASE_TS + timedelta(hours=offset_h)
         close = Decimal(close_p)
-        open_ = Decimal(open_p)
         closes.append(close)
 
         sma = _compute_sma(closes, sma_window)

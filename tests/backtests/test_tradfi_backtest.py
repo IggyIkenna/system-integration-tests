@@ -88,7 +88,7 @@ def _compute_sma(closes: list[Decimal], window: int) -> Decimal | None:
     return sum(closes[-window:]) / window
 
 
-def _simulate_tradfi_mean_reversion_backtest(
+def _simulate_tradfi_mean_reversion_backtest(  # noqa: C901
     ohlcv: list[tuple[int, str, str, str, str, str]],
     sma_window: int = 10,
     atr_window: int = 7,
@@ -118,12 +118,11 @@ def _simulate_tradfi_mean_reversion_backtest(
     entry_price: Decimal = Decimal("0")
     order_seq = 0
 
-    for i, (day_off, open_p, high_p, low_p, close_p, _vol) in enumerate(ohlcv):
+    for i, (day_off, _open_p, high_p, low_p, close_p, _vol) in enumerate(ohlcv):
         ts = _BASE_TS + timedelta(days=day_off)
         close = Decimal(close_p)
         high = Decimal(high_p)
         low = Decimal(low_p)
-        open_ = Decimal(open_p)
 
         closes.append(close)
         highs.append(high)
