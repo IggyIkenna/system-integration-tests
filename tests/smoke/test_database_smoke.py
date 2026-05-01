@@ -60,7 +60,7 @@ def _get_db_url(project_id: str) -> str | None:
         return None
     try:
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         client = get_secret_client(provider="gcp")
         secret = client.get_secret(project_id=project_id, secret_name="cloudsql-execution-db-url")

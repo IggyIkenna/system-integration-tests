@@ -66,7 +66,7 @@ class TestPubSubTopicsExist:
     def test_deployment_topics_exist(self, gcp_project_id: str) -> None:
         """deployment-events and deployment-status topics must exist."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         missing = [t for t in ["deployment-events", "deployment-status"] if not client.topic_exists(t)]
@@ -77,7 +77,7 @@ class TestPubSubTopicsExist:
     def test_required_topics_accessible(self, gcp_project_id: str) -> None:
         """All required system topics must exist (created by setup-pubsub.sh)."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         missing = [t for t in _REQUIRED_TOPICS if not client.topic_exists(t)]
@@ -102,7 +102,7 @@ class TestPubSubPublishSubscribe:
     def test_publish_to_deployment_events(self, gcp_project_id: str) -> None:
         """Publishing to deployment-events must succeed (fire-and-forget)."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         probe_id = uuid.uuid4().hex
@@ -118,7 +118,7 @@ class TestPubSubPublishSubscribe:
     def test_publish_subscribe_roundtrip(self, gcp_project_id: str) -> None:
         """Create ephemeral topic + subscription, publish, pull, ack, tear down."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="gcp", project_id=gcp_project_id)
         probe_id = uuid.uuid4().hex
@@ -168,7 +168,7 @@ class TestLocalPubSubCapable:
     def test_local_pubsub_client_instantiates(self) -> None:
         """UCI local Pub/Sub client must instantiate without credentials."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="local")
         assert client is not None
@@ -176,7 +176,7 @@ class TestLocalPubSubCapable:
     def test_local_pubsub_publish_subscribe_roundtrip(self) -> None:
         """Local provider publish/subscribe must work in-process."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="local")
         probe_id = uuid.uuid4().hex

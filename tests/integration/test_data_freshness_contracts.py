@@ -27,14 +27,14 @@ from unified_api_contracts.internal.reference.data_freshness import (
     MARKET_TICK_FRESHNESS,
     DataFreshnessContract,
 )
-from unified_trading_library import FreshnessMonitor
-from unified_trading_library.events import (
+from unified_trading_library import (
     DATA_AVAILABILITY_EVENT_TYPES,
     DATA_AVAILABILITY_RESTORED,
     DATA_COMPLETENESS_CHECK,
     DATA_GAP_DETECTED,
     DATA_STALE,
     FEED_UNHEALTHY,
+    FreshnessMonitor,
     setup_events,
 )
 

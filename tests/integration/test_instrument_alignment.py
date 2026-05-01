@@ -26,7 +26,7 @@ from unified_api_contracts.registry.representative_sample import (
     TRADFI_EQUITIES,
     TRADFI_FUTURES,
 )
-from unified_trading_library.config_interface import Venue
+from unified_trading_library import Venue
 
 pytestmark = pytest.mark.code_test
 

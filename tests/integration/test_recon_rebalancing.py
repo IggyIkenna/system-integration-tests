@@ -23,7 +23,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
-from unified_trading_library.events import setup_events
+from unified_trading_library import setup_events
 
 pytestmark = pytest.mark.deployment_test
 

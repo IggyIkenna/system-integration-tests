@@ -34,7 +34,7 @@ from unified_api_contracts import (
     CanonicalUnknownVenueError,
     classify_venue_error,
 )
-from unified_trading_library.events import UNKNOWN_VENUE_ERROR_RECEIVED
+from unified_trading_library import UNKNOWN_VENUE_ERROR_RECEIVED
 
 pytestmark = pytest.mark.code_test
 # ---------------------------------------------------------------------------
@@ -169,7 +169,7 @@ class TestMockAdapterCatchAllPattern:
             raw_message = str(exc)
             classification = classify_venue_error(venue, raw_code)
             if classification is None:
-                from unified_trading_library.events import log_event
+                from unified_trading_library import log_event
 
                 log_event(
                     UNKNOWN_VENUE_ERROR_RECEIVED,

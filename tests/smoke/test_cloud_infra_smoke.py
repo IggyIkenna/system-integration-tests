@@ -83,7 +83,7 @@ class TestGCSBucketsExist:
     def test_all_required_gcs_buckets_accessible(self, required_gcs_buckets: list[str]) -> None:
         """Every bucket in required_gcs_buckets must be accessible via UCI storage client."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="gcp")
         missing: list[str] = []
@@ -105,7 +105,7 @@ class TestGCSBucketsExist:
     def test_core_infra_buckets_accessible(self, gcp_project_id: str) -> None:
         """Core infrastructure buckets (terraform-state, config-store) must always be accessible."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="gcp")
         core_buckets = [
@@ -133,7 +133,7 @@ class TestGCSBucketPermissions:
     def test_gcs_write_read_delete(self, gcs_test_bucket: str) -> None:
         """Write a sentinel blob to test bucket, read it back, then delete it."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="gcp")
         blob_name = f"sit-probe/{uuid.uuid4().hex}"
@@ -153,7 +153,7 @@ class TestGCSBucketPermissions:
     def test_gcs_list_permission(self, gcs_test_bucket: str) -> None:
         """list_blobs must succeed on test bucket (requires storage.objects.list)."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="gcp")
         result = list(client.list_blobs(bucket=gcs_test_bucket, prefix="sit-probe/", max_results=5))
@@ -174,7 +174,7 @@ class TestSecretManagerAuth:
     def test_gcp_secret_client_instantiates(self, gcp_project_id: str) -> None:
         """get_secret_client(provider='gcp') must return a working client."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         client = get_secret_client(provider="gcp")
         assert client is not None
@@ -183,7 +183,7 @@ class TestSecretManagerAuth:
     def test_gcp_secret_manager_can_read_known_secret(self, gcp_project_id: str) -> None:
         """A known-good secret (github-automation-token) must be readable from SM."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         client = get_secret_client(provider="gcp")
         # github-automation-token is a known-good secret in test-project SM
@@ -197,7 +197,7 @@ class TestSecretManagerAuth:
     def test_gcp_secret_client_local_mode(self) -> None:
         """get_secret_client(provider='local') must not call Secret Manager (import-time safety)."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         client = get_secret_client(provider="local")
         assert client is not None
@@ -233,7 +233,7 @@ class TestAWSS3Buckets:
             pytest.skip("S3_TEST_BUCKET not set")
 
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="aws")
         blob_name = f"sit-probe/{uuid.uuid4().hex}"
@@ -261,7 +261,7 @@ class TestDualCloudAuthCapable:
     def test_gcp_storage_client_instantiates_local(self) -> None:
         """UCI GCP storage path importable without live credentials."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="local")
         assert client is not None
@@ -277,7 +277,7 @@ class TestDualCloudAuthCapable:
     def test_both_secret_clients_importable(self) -> None:
         """UCI secret client works for both provider='gcp' and provider='local'."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         local_client = get_secret_client(provider="local")
         assert local_client is not None

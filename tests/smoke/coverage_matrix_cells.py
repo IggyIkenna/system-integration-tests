@@ -123,7 +123,7 @@ CELLS: tuple[CellSpec, ...] = (
 def make_test_bucket_name(category: str, project_id: str) -> str:
     """Return the TEST-bucket name for *category* under *project_id*.
 
-    Template: ``instruments-store-{category_lower}-test-{project_id}``.
+    Template: ``instruments-store-{asset_group_lower}-test-{project_id}``.
     Matches the ``IS_TEST_RUN=true`` routing baked into every adapter's
     ``get_bucket_name`` path. SSOT: `codex/02-data/per-category-bucket-layouts.md`.
     """

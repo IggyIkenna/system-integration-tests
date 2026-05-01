@@ -131,7 +131,7 @@ def _check_cell(cell: CellSpec) -> _CellOutcome:
             f"TEST bucket {bucket_name!r} does not exist. Seed it by running "
             f"the dev-local smoke for {cell.category}: "
             f"`IS_TEST_RUN=true python <service>/scripts/smoke_matrix.py "
-            f"--execute --category {cell.category}`."
+            f"--execute --asset-group {cell.category}`."
         )
 
     blob_iter = client.list_blobs(bucket_name, prefix=prefix, max_results=5)  # pyright: ignore[reportAttributeAccessIssue, reportUnknownVariableType, reportUnknownMemberType]

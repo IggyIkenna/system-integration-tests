@@ -347,7 +347,7 @@ class TestMockDataChain:
         monkeypatch.setenv("DATA_MODE", "mock")
 
         # Force re-evaluation (function reads env directly)
-        from unified_trading_library.cloud_interface import get_data_path_prefix
+        from unified_trading_library import get_data_path_prefix
 
         result = get_data_path_prefix()
         assert result == "mock/", f"Expected 'mock/' prefix, got '{result}'"
@@ -356,7 +356,7 @@ class TestMockDataChain:
         """When DATA_MODE=real, get_data_path_prefix() returns empty string."""
         monkeypatch.setenv("DATA_MODE", "real")
 
-        from unified_trading_library.cloud_interface import get_data_path_prefix
+        from unified_trading_library import get_data_path_prefix
 
         result = get_data_path_prefix()
         assert result == "", f"Expected empty prefix for real mode, got '{result}'"
@@ -367,7 +367,7 @@ class TestMockDataChain:
         monkeypatch.setenv("CLOUD_PROVIDER", "local")
         monkeypatch.setenv("CLOUD_MOCK_MODE", "true")
 
-        from unified_trading_library.config_interface import UnifiedCloudConfig
+        from unified_trading_library import UnifiedCloudConfig
 
         # Create a fresh instance with mock env vars
         config = UnifiedCloudConfig()

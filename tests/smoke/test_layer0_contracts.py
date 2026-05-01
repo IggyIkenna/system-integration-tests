@@ -83,7 +83,7 @@ def test_uic_domain_instruments_schema() -> None:
 
 def test_events_interface_importable() -> None:
     """UEI setup_events and log_event must be importable."""
-    from unified_trading_library.events import log_event, setup_events
+    from unified_trading_library import log_event, setup_events
 
     assert setup_events is not None
     assert log_event is not None

@@ -99,7 +99,7 @@ def _get_service_categories(
 
 def _resolve_bucket(template: str, cat: str, project_id: str) -> str:
     return (
-        template.replace("{category_lower}", cat.lower())
+        template.replace("{asset_group_lower}", cat.lower())
         .replace("{project_id}", project_id)
         .replace("{domain}", cat.lower())
     )

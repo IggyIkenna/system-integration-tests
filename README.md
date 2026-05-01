@@ -94,7 +94,7 @@ a prior run. Seed them by running the dev-local helper per service:
 
 ```bash
 cd <service>
-IS_TEST_RUN=true python scripts/smoke_matrix.py --execute --category CEFI
+IS_TEST_RUN=true python scripts/smoke_matrix.py --execute --asset-group CEFI
 ```
 
 The test enforces Steps 2 + 3 of the 3-step assertion contract (parquet

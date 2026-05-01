@@ -109,7 +109,7 @@ class TestBatchLiveSymmetry:
     def test_uci_get_storage_client_local(self) -> None:
         """get_storage_client(provider='local') must not call GCS."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_storage_client
+        from unified_trading_library import get_storage_client
 
         client = get_storage_client(provider="local")
         assert client is not None
@@ -117,7 +117,7 @@ class TestBatchLiveSymmetry:
     def test_uci_get_secret_client_local(self) -> None:
         """get_secret_client(provider='local') must not call Secret Manager."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         client = get_secret_client(provider="local")
         assert client is not None
@@ -125,7 +125,7 @@ class TestBatchLiveSymmetry:
     def test_uci_get_pubsub_client_local(self) -> None:
         """get_pubsub_client(provider='local') must return LocalPubSubClient."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_pubsub_client
+        from unified_trading_library import get_pubsub_client
 
         client = get_pubsub_client(provider="local")
         assert client is not None

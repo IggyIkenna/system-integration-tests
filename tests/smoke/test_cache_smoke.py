@@ -52,7 +52,7 @@ def _get_redis_url(project_id: str) -> str | None:
         return None
     try:
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_secret_client
+        from unified_trading_library import get_secret_client
 
         client = get_secret_client(provider="gcp")
         secret = client.get_secret(project_id=project_id, secret_name="redis-url")
@@ -73,7 +73,7 @@ class TestLocalCacheCapable:
     def test_local_cache_client_instantiates(self) -> None:
         """get_cache_client(provider='local') must return a working client."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_cache_client
+        from unified_trading_library import get_cache_client
 
         client = get_cache_client(provider="local")
         assert client is not None
@@ -81,7 +81,7 @@ class TestLocalCacheCapable:
     def test_local_cache_set_get_delete(self) -> None:
         """Local cache must support set / get / delete round-trip."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_cache_client
+        from unified_trading_library import get_cache_client
 
         client = get_cache_client(provider="local")
         key = f"sit-probe:{uuid.uuid4().hex}"
@@ -97,7 +97,7 @@ class TestLocalCacheCapable:
     def test_local_cache_ttl_expiry(self) -> None:
         """Local cache set with ttl_seconds=1 must expire (or at minimum not error on ttl)."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_cache_client
+        from unified_trading_library import get_cache_client
 
         client = get_cache_client(provider="local")
         key = f"sit-ttl-probe:{uuid.uuid4().hex}"
@@ -173,7 +173,7 @@ class TestRedisMemorystore:
             pytest.skip("No Redis URL available")
 
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library.cloud_interface import get_cache_client
+        from unified_trading_library import get_cache_client
 
         client = get_cache_client(provider="gcp", url=url)
         key = f"sit-uci-probe:{uuid.uuid4().hex}"
