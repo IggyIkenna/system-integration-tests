@@ -159,7 +159,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Python CI tools
         uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
@@ -241,10 +241,10 @@ jobs:
           echo "SIT lock dispatched to PM."
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Checkout unified-trading-codex (readiness checklists)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           repository: IggyIkenna/unified-trading-codex
           token: ${{ secrets.GH_PAT }}
@@ -365,10 +365,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Checkout unified-trading-pm (docker-compose)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           repository: IggyIkenna/unified-trading-pm
           token: ${{ secrets.GH_PAT }}

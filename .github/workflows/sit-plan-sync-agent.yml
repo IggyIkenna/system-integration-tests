@@ -39,13 +39,13 @@ jobs:
 
     steps:
       - name: Checkout system-integration-tests
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
 
       - name: Checkout unified-trading-pm (active plans)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           repository: IggyIkenna/unified-trading-pm
           token: ${{ secrets.GH_PAT }}
