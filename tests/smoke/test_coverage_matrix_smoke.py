@@ -216,5 +216,5 @@ def test_coverage_matrix_cell_has_parquet_and_manifest(cell: CellSpec) -> None:
             f"(error_reason={outcome.manifest_error_reason!r}). Only "
             f"`captured` and `empty_confirmed` count as PASS; "
             f"`attempted_failed` is a triage signal — see playbook "
-            f"codex/14-playbooks/smoke-testing-playbook.md."
+            f"codex/15-runbooks/smoke-testing-playbook.md."
         )

@@ -110,7 +110,7 @@ SSOT references:
 
 - Per-category bucket + path layouts: `unified-trading-pm/codex/02-data/per-category-bucket-layouts.md`
 - Manifest v5 schema: `unified-trading-pm/codex/02-data/availability-manifest-and-data-status.md`
-- Playbook: `unified-trading-pm/codex/14-playbooks/smoke-testing-playbook.md`
+- Playbook: `unified-trading-pm/codex/15-runbooks/smoke-testing-playbook.md`
 
 ## SIT Scope
 
