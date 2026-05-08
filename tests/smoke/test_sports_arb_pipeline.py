@@ -126,11 +126,11 @@ class TestSportsStrategyComponents:
 
     def test_steam_detector_importable(self) -> None:
         try:
-            from features_sports_service.engine.steam_detector import SteamDetector
+            from features_service.sports.calculators.steam_detector import SteamDetector
 
             assert SteamDetector is not None
         except ImportError:
-            pytest.skip("features-sports-service not installed in this environment")
+            pytest.skip("features-service not installed in this environment")
 
 
 class TestSportsRiskAndPosition:

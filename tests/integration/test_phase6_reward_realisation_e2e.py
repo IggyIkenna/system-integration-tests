@@ -588,10 +588,10 @@ def test_phase6_with_real_parquet_dust_loader(tmp_path) -> None:
     import pathlib
 
     import polars as pl
-    from features_onchain_service.app.core.feature_writer import (
+    from features_service.onchain.app.core.feature_writer import (
         OnChainFeatureWriter,
     )
-    from features_onchain_service.collectors.parquet_dust_loader import (
+    from features_service.onchain.collectors.parquet_dust_loader import (
         ParquetDustLoader,
         lst_holding_wallet_from_params,
         lst_target_denom_from_params,
