@@ -58,7 +58,7 @@ _EXCLUDE_DIRS: frozenset[str] = frozenset(
 # NOTE: The 68 specialty classes (analytics, CEX withdrawals, latency,
 # prediction-market-arb, protocol-sdk-action, rate-limit, eth-transfer,
 # ws-internal) were promoted to __all__ in 2026-03-10 and are no longer exempt.
-# Service wiring: unified-trading-pm/plans/active/uac-exempt-class-adoption.plan.md
+# Service wiring: unified-trading-pm/plans/active/uac-exempt-class-adoption.md
 # ---------------------------------------------------------------------------
 _UAC_EXEMPT: frozenset[str] = frozenset(
     [

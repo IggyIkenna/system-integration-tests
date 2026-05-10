@@ -84,7 +84,7 @@ jobs:
 
           CONTEXT:
           You have access to:
-          1. unified-trading-pm/plans/active/*.plan.md — active PM plans with todos and statuses
+          1. unified-trading-pm/plans/active/*.md — active PM plans with todos and statuses
           2. sit-inventory.txt — all test files and test functions in this repo
           3. The current directory is system-integration-tests/
 
