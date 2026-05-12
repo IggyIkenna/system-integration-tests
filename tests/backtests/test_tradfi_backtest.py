@@ -88,7 +88,7 @@ def _compute_sma(closes: list[Decimal], window: int) -> Decimal | None:
     return sum(closes[-window:]) / window
 
 
-def _simulate_tradfi_mean_reversion_backtest(  # noqa: C901
+def _simulate_tradfi_mean_reversion_backtest(
     ohlcv: list[tuple[int, str, str, str, str, str]],
     sma_window: int = 10,
     atr_window: int = 7,

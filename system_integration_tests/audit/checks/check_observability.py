@@ -22,7 +22,7 @@ from system_integration_tests.audit.agent import (
 logger = logging.getLogger(__name__)
 
 
-def check_observability(repo_path: Path, workspace_root: Path) -> AuditResult:  # noqa: C901
+def check_observability(repo_path: Path, workspace_root: Path) -> AuditResult:
     """Check observability infrastructure for a repo.
 
     Verifies:

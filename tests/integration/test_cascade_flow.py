@@ -156,7 +156,7 @@ class TestTopologicalOrder:
 class TestDependencyGraph:
     """Validate dependency graph structure."""
 
-    def test_dependency_graph_is_acyclic(self) -> None:  # noqa: C901
+    def test_dependency_graph_is_acyclic(self) -> None:
         """Build dependency graph from manifest, verify no cycles via BFS
         topological sort (Kahn's algorithm)."""
         manifest = _load_manifest()

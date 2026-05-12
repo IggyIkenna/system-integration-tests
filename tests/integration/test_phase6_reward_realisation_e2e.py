@@ -173,7 +173,7 @@ def test_phase6_full_chain_end_to_end() -> None:
     # ─── Wire the orchestrator with both runner adapters ────────────
     dust_runner = DustRouterRunner(
         quote_source=_DeterministicQuoteSource(),
-        leg_id_resolver=lambda i, d, l: "lst_collateral",  # noqa: E741, ARG005
+        leg_id_resolver=lambda i, d, l: "lst_collateral",
     )
     leg_runner = LegControllerRunner(
         observation_provider=_make_observation_provider(),  # type: ignore[arg-type]
@@ -351,7 +351,7 @@ def test_phase6_multi_engine_dust_and_rar_per_engine() -> None:
     router for each, drains RAR rows for each. No cross-engine leakage."""
     dust_runner = DustRouterRunner(
         quote_source=_DeterministicQuoteSource(),
-        leg_id_resolver=lambda i, d, l: "lst_collateral",  # noqa: E741, ARG005
+        leg_id_resolver=lambda i, d, l: "lst_collateral",
     )
     orchestrator = V2EngineOrchestrator(dust_router_adapter=dust_runner)
 
@@ -484,7 +484,7 @@ def test_phase6_multi_engine_dust_and_rar_per_engine() -> None:
 def test_phase6_persister_failure_does_not_break_other_engines() -> None:
     dust_runner = DustRouterRunner(
         quote_source=_DeterministicQuoteSource(),
-        leg_id_resolver=lambda i, d, l: "lst_collateral",  # noqa: E741, ARG005
+        leg_id_resolver=lambda i, d, l: "lst_collateral",
     )
     orchestrator = V2EngineOrchestrator(dust_router_adapter=dust_runner)
 
@@ -666,7 +666,7 @@ def test_phase6_with_real_parquet_dust_loader(tmp_path) -> None:
     # ─── Wire the orchestrator + register an engine with matching wallet
     dust_runner = DustRouterRunner(
         quote_source=_DeterministicQuoteSource(),
-        leg_id_resolver=lambda i, d, l: "lst_collateral",  # noqa: E741, ARG005
+        leg_id_resolver=lambda i, d, l: "lst_collateral",
     )
     orchestrator = V2EngineOrchestrator(dust_router_adapter=dust_runner)
     engine = orchestrator.register_instance(
