@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Repo-specific settings only. Body: unified-trading-pm/scripts/quality-gates-base/base-service.sh
-# SSOT: unified-trading-codex/06-coding-standards/quality-gates-service-template.sh
+# SSOT: unified-trading-pm/codex/06-coding-standards/quality-gates-service-template.sh
 #
 # Instructions for a new service:
 #   1. Copy this to scripts/quality-gates.sh in your repo (rollout-quality-gates-unified.py does this)
@@ -14,15 +14,9 @@ RUN_INTEGRATION=false
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 LOCAL_DEPS=()
     UAC_CANONICAL_EXEMPT=true   # SIT needs deep imports for contract validation
-
-# 2026-05-01: bump 0 → 4 to absorb pre-existing rot surfaced by the QG sweep
-# (manifest import alignment drift, hardcoded prod project IDs in sibling
-# tests, RepoContext local dataclass in audit/repo_manager.py, pip-audit
-# CVE). None introduced by the LeveragedLegController e2e test added this
-# session. Ratchet target: tighten back to 0 as workspace cleanup lands.
-CODEX_MAX_VIOLATIONS=4
-export CODEX_MAX_VIOLATIONS
-
+# Pre-existing violations (manifest import alignment, hardcoded prod project IDs, schema provenance).
+# Ratcheted from 4 → 3 (2026-05-15: C901/E741 ruff fixes cleaned up 1). Track cleanup separately.
+CODEX_MAX_VIOLATIONS=3
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-service.sh"
 
