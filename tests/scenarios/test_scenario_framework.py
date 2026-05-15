@@ -287,9 +287,14 @@ def test_cefi_scenario_definitions() -> None:
 
 
 def test_defi_scenario_definitions() -> None:
-    """DeFi domain must have exactly 5 defined scenarios, all playable."""
+    """DeFi domain must have exactly 8 defined scenarios, all playable.
+
+    5 infrastructure-level (gas spike / slippage / MEV / reorg / oracle) + 3
+    May-23 critical path (carry_staked_basis_paper / apd_paper /
+    paper_to_live_early_gate). See ``defi_scenarios.py`` module docstring.
+    """
     scenarios = get_all_scenarios_for_domain(ScenarioDomain.DEFI)
-    assert len(scenarios) == 5, f"Expected 5 DeFi scenarios, got {len(scenarios)}"
+    assert len(scenarios) == 8, f"Expected 8 DeFi scenarios, got {len(scenarios)}"
     for scenario in scenarios:
         result = scenario.play()
         assert result.passed, f"DeFi scenario {scenario.name} failed: {result.errors}"
