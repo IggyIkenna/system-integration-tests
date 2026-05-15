@@ -152,6 +152,41 @@ class TestTopologicalOrder:
         assert not extra_in_topo, f"Repos in topologicalOrder but not in repositories{{}}: {extra_in_topo}"
 
 
+def _build_dependency_graph(
+    repositories: dict[str, object],
+) -> tuple[dict[str, list[str]], dict[str, int]]:
+    """Return (adjacency_list, in_degree) for Kahn's topological sort."""
+    all_repos = set(repositories.keys())
+    graph: dict[str, list[str]] = {repo: [] for repo in all_repos}
+    in_degree: dict[str, int] = {repo: 0 for repo in all_repos}
+    for repo_name, repo_data in repositories.items():
+        deps = repo_data.get("dependencies", []) if isinstance(repo_data, dict) else []
+        for dep in deps if isinstance(deps, list) else []:
+            dep_name = dep.get("name") if isinstance(dep, dict) else dep
+            if dep_name in all_repos:
+                graph[dep_name].append(repo_name)
+                in_degree[repo_name] += 1
+    return graph, in_degree
+
+
+def _kahn_visited_count(
+    graph: dict[str, list[str]],
+    in_degree: dict[str, int],
+) -> int:
+    """Return the number of nodes reachable by Kahn's BFS topological sort."""
+    queue: deque[str] = deque(repo for repo in in_degree if in_degree[repo] == 0)
+    visited = 0
+    local_in_degree = dict(in_degree)
+    while queue:
+        node = queue.popleft()
+        visited += 1
+        for neighbor in graph[node]:
+            local_in_degree[neighbor] -= 1
+            if local_in_degree[neighbor] == 0:
+                queue.append(neighbor)
+    return visited
+
+
 @pytest.mark.code_test
 class TestDependencyGraph:
     """Validate dependency graph structure."""
@@ -161,41 +196,13 @@ class TestDependencyGraph:
         topological sort (Kahn's algorithm)."""
         manifest = _load_manifest()
         repositories = manifest.get("repositories", {})
-
-        # Build adjacency list: repo -> list of repos it depends on
-        # and in-degree map for Kahn's algorithm
-        all_repos = set(repositories.keys())
-        graph: dict[str, list[str]] = {repo: [] for repo in all_repos}
-        in_degree: dict[str, int] = {repo: 0 for repo in all_repos}
-
-        for repo_name, repo_data in repositories.items():
-            deps = repo_data.get("dependencies", [])
-            for dep in deps:
-                dep_name = dep.get("name") if isinstance(dep, dict) else dep
-                if dep_name in all_repos:
-                    # dep_name -> repo_name (dep must come before dependent)
-                    graph[dep_name].append(repo_name)
-                    in_degree[repo_name] += 1
-
-        # Kahn's algorithm — BFS topological sort
-        queue: deque[str] = deque()
-        for repo in all_repos:
-            if in_degree[repo] == 0:
-                queue.append(repo)
-
-        visited_count = 0
-        while queue:
-            node = queue.popleft()
-            visited_count += 1
-            for neighbor in graph[node]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    queue.append(neighbor)
-
-        assert visited_count == len(all_repos), (
-            f"Dependency graph has a cycle: only {visited_count}/{len(all_repos)} "
+        assert isinstance(repositories, dict)
+        graph, in_degree = _build_dependency_graph(repositories)
+        visited_count = _kahn_visited_count(graph, in_degree)
+        assert visited_count == len(repositories), (
+            f"Dependency graph has a cycle: only {visited_count}/{len(repositories)} "
             f"repos reachable. Stuck repos: "
-            f"{[r for r in all_repos if in_degree[r] > 0]}"
+            f"{[r for r in repositories if in_degree[r] > 0]}"
         )
 
 

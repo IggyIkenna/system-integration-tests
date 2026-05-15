@@ -88,7 +88,20 @@ def _compute_sma(closes: list[Decimal], window: int) -> Decimal | None:
     return sum(closes[-window:]) / window
 
 
-def _simulate_tradfi_mean_reversion_backtest(  # noqa: C901
+def _compute_sharpe(daily_pnl: list[Decimal]) -> Decimal | None:
+    """Annualised Sharpe approximation from daily P&L series (252 trading days)."""
+    non_zero = [p for p in daily_pnl if p != Decimal("0")]
+    if len(non_zero) < 2:
+        return None
+    mean_ret = sum(non_zero) / len(non_zero)
+    variance = sum((r - mean_ret) ** 2 for r in non_zero) / len(non_zero)
+    std_dev = variance ** Decimal("0.5")
+    if std_dev <= Decimal("0"):
+        return None
+    return (mean_ret / std_dev) * Decimal("15.874")  # sqrt(252)
+
+
+def _simulate_tradfi_mean_reversion_backtest(
     ohlcv: list[tuple[int, str, str, str, str, str]],
     sma_window: int = 10,
     atr_window: int = 7,
@@ -242,15 +255,7 @@ def _simulate_tradfi_mean_reversion_backtest(  # noqa: C901
     total_equity = cash + mtm_value
     total_pnl = total_equity - Decimal("10000.00")
 
-    # Sharpe ratio approximation (annualised, daily returns, 252 trading days)
-    sharpe: Decimal | None = None
-    non_zero = [p for p in daily_pnl if p != Decimal("0")]
-    if len(non_zero) >= 2:
-        mean_ret = sum(non_zero) / len(non_zero)
-        variance = sum((r - mean_ret) ** 2 for r in non_zero) / len(non_zero)
-        std_dev = variance ** Decimal("0.5")
-        if std_dev > Decimal("0"):
-            sharpe = (mean_ret / std_dev) * Decimal("15.874")  # sqrt(252)
+    sharpe = _compute_sharpe(daily_pnl)
 
     buy_fills = [f for f in fills if f.side.value == "buy"]
     sell_fills = [f for f in fills if f.side.value == "sell"]
