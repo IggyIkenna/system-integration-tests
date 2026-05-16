@@ -8,6 +8,17 @@ dependencies = [
     "pytest<10.0.0,>=9.0.3",
     "unified-trading-library>=0.1.0",
     "market-data-processing-service",
+    "risk-and-exposure-service>=0.1.0,<1.0.0",
+    "features-service>=0.1.0,<1.0.0",
+    "strategy-service>=0.1.0,<1.0.0",
+    "unified-api-contracts>=0.1.0,<1.0.0",
+    "alerting-service>=0.1.0,<1.0.0",
+    "execution-service>=0.1.0,<1.0.0",
+    "deployment-api>=0.1.0,<1.0.0",
+    "instruments-service>=0.1.0,<1.0.0",
+    "position-balance-monitor-service>=0.1.0,<1.0.0",
+    "client-reporting-api>=0.1.0,<1.0.0",
+    "pnl-attribution-service>=0.1.0,<1.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.0",
@@ -25,6 +36,50 @@ editable = true
 
 [tool.uv.sources.market-data-processing-service]
 path = "../market-data-processing-service"
+editable = true
+
+[tool.uv.sources.risk-and-exposure-service]
+path = "../risk-and-exposure-service"
+editable = true
+
+[tool.uv.sources.features-service]
+path = "../features-service"
+editable = true
+
+[tool.uv.sources.strategy-service]
+path = "../strategy-service"
+editable = true
+
+[tool.uv.sources.unified-api-contracts]
+path = "../unified-api-contracts"
+editable = true
+
+[tool.uv.sources.alerting-service]
+path = "../alerting-service"
+editable = true
+
+[tool.uv.sources.execution-service]
+path = "../execution-service"
+editable = true
+
+[tool.uv.sources.deployment-api]
+path = "../deployment-api"
+editable = true
+
+[tool.uv.sources.instruments-service]
+path = "../instruments-service"
+editable = true
+
+[tool.uv.sources.position-balance-monitor-service]
+path = "../position-balance-monitor-service"
+editable = true
+
+[tool.uv.sources.client-reporting-api]
+path = "../client-reporting-api"
+editable = true
+
+[tool.uv.sources.pnl-attribution-service]
+path = "../pnl-attribution-service"
 editable = true
 
 [tool.ruff]
