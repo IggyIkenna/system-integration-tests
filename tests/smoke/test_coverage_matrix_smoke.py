@@ -117,7 +117,7 @@ def _check_cell(cell: CellSpec) -> _CellOutcome:
     # Late import keeps the module loadable in unit-only mode.
     from unified_trading_library import get_storage_client, read_availability_index
 
-    project_id: str = os.environ.get("GCP_PROJECT_ID", "central-element-323112")
+    project_id: str = os.environ.get("GCP_PROJECT_ID", "test-project")
     bucket_name: str = make_test_bucket_name(cell.category, project_id)
     prefix: str = expected_parquet_prefix(cell)
 
