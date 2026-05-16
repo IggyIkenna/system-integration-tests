@@ -36,7 +36,7 @@
 #
 # ## Substitution placeholders:
 #
-# - `unified-trading-library market-data-processing-service risk-and-exposure-service features-service strategy-service unified-api-contracts alerting-service execution-service deployment-api instruments-service position-balance-monitor-service client-reporting-api pnl-attribution-service` — rendered from workspace-manifest.json by rollout-workflow-templates.sh
+# - `unified-trading-library market-data-processing-service risk-and-exposure-service features-service strategy-service unified-api-contracts alerting-service execution-service deployment-api instruments-service position-balance-monitor-service client-reporting-api pnl-attribution-service market-tick-data-service deployment-service` — rendered from workspace-manifest.json by rollout-workflow-templates.sh
 # - `system-integration-tests` — repo name (e.g. alerting-service)
 # - `system_integration_tests` — Python source dir (e.g. alerting_service)
 
@@ -64,7 +64,7 @@ jobs:
     name: Quality Gates (system-integration-tests)
     uses: IggyIkenna/unified-trading-pm/.github/workflows/python-quality-gates.yml@live-defi-rollout
     with:
-      dep_repos: "unified-trading-library market-data-processing-service risk-and-exposure-service features-service strategy-service unified-api-contracts alerting-service execution-service deployment-api instruments-service position-balance-monitor-service client-reporting-api pnl-attribution-service"
+      dep_repos: "unified-trading-library market-data-processing-service risk-and-exposure-service features-service strategy-service unified-api-contracts alerting-service execution-service deployment-api instruments-service position-balance-monitor-service client-reporting-api pnl-attribution-service market-tick-data-service deployment-service"
     secrets: inherit
     # Note: reusable workflow inputs are intentionally minimal — service_name + source_dir
     # are derived inside the reusable workflow from github.repository (caller's repo name)
