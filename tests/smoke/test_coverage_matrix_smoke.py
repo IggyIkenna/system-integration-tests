@@ -196,7 +196,7 @@ def test_coverage_matrix_cell_has_parquet_and_manifest(cell: CellSpec) -> None:
     if not outcome.parquet_found:
         pytest.fail(
             f"[{cell.test_id}] no .parquet at prefix "
-            f"gs://{make_test_bucket_name(cell.category, os.environ.get('GCP_PROJECT_ID', 'central-element-323112'))}/"
+            f"gs://{make_test_bucket_name(cell.category, os.environ.get('GCP_PROJECT_ID', 'test-project'))}/"
             f"{expected_parquet_prefix(cell)} — "
             f"Step 2 failed. Re-run dev-local smoke for {cell.category}."
         )
