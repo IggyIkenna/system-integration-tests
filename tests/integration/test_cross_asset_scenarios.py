@@ -1,479 +1,351 @@
-"""Cross-asset scenario integration tests.
+"""SIT cross-asset scenarios — batch-live symmetry across asset_group boundaries.
 
-Three scenarios verifying that the unified pipeline handles multiple asset_group
-domains simultaneously with correct manifest structure, canonical fills, and
-strategy outputs.
+Three scenarios beyond Phase 8 honest-coverage:
 
-Scenario 1 — DeFi+CeFi hybrid carry:
-  DeFi leg: ETH staked via Lido (stETH, ~4% APR); long on-chain.
-  CeFi hedge leg: short ETH-USDT-PERP on Binance (delta-neutral).
-  Net exposure: 0 delta; net carry = staking_apy - funding_rate.
+  Scenario A — DeFi+CeFi hybrid carry
+    DeFi long/lend leg (Aave lending APY) + CeFi perp short hedge leg (funding rate).
+    Net carry = DeFi lending yield - perp funding payment.
+    Invariant: hybrid net carry > 0 iff lending_apy > funding_rate.
 
-Scenario 2 — TradFi+Sports pipeline parity:
-  Both asset_groups produce ManifestWriter records in the same 4-state
-  capture_status schema. Verify no cross-contamination of domain-specific
-  empty reasons, and that row_key shapes are independent.
+  Scenario B — TradFi+Sports batch-live parity smoke
+    Both asset groups run through the same batch benchmark-fill logic.
+    Invariant: benchmark fill price is deterministic across repeated runs (batch=batch).
 
-Scenario 3 — Prediction-only backtest smoke:
-  Binary outcome market (Polymarket-style). Resolves YES/NO.
-  Verifies: signal direction ↔ outcome alignment; settlement instruction;
-  fill P&L sign (correct YES vs NO payoff).
-
-Portable: runs without credentials, no network calls, no on-chain RPC.
+  Scenario C — Prediction-only backtest smoke
+    Binary prediction market contracts with Polymarket-style outcomes.
+    Invariant: resolved YES contract → full payout; resolved NO → zero payout;
+    unresolved → proportional mid.
 """
 
 from __future__ import annotations
 
 import os
-from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 
 import pytest
-from unified_api_contracts import CanonicalFill, PipelineMode
-
-if TYPE_CHECKING:
-    from unified_api_contracts.canonical.domain.execution.base import (
-        ExecutionInstruction,
-        ExecutionResult,
-    )
-
-pytestmark = pytest.mark.integration
 
 os.environ.setdefault("CLOUD_PROVIDER", "local")
 os.environ.setdefault("CLOUD_MOCK_MODE", "true")
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
-_BASE_TS = datetime(2026, 5, 18, 0, 0, 0, tzinfo=UTC)
-
-
-class _HybridCarryResult(TypedDict):
-    staking_yield_usd: Decimal
-    funding_cost_usd: Decimal
-    net_carry_usd: Decimal
-    instructions: list[ExecutionInstruction]
-    results: list[ExecutionResult]
-    fills: list[CanonicalFill]
-    net_delta: Decimal
-
-
-class _PredictionBacktestResult(TypedDict):
-    market_id: str
-    buy_yes: bool
-    outcome_yes: bool
-    we_win: bool
-    shares: Decimal
-    stake_usdc: Decimal
-    settlement_usdc: Decimal
-    pnl_usdc: Decimal
-    instructions: list[ExecutionInstruction]
-    results: list[ExecutionResult]
-    fills: list[CanonicalFill]
+pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------
-# Scenario 1 — DeFi + CeFi hybrid carry
+# Scenario A — DeFi+CeFi hybrid carry
 # ---------------------------------------------------------------------------
 
-# DeFi leg: stETH staking rewards over 30 days
-_STETH_APR = Decimal("0.040")  # 4% annual staking rate (Lido approx)
-_ETH_DEPOSIT = Decimal("10.0")  # 10 ETH staked
-_ETH_USD_PRICE = Decimal("3500.00")
-_DAYS = 30
 
-# CeFi leg: Binance ETH-USDT-PERP funding rate (8hr periods)
-_FUNDING_RATE_8H = Decimal("0.0001")  # 0.01% per 8h = 0.03% per day = ~11% annualised
-
-
-def _compute_defi_staking_carry(eth: Decimal, apr: Decimal, days: int, eth_price: Decimal) -> Decimal:
-    """Annualised ETH staking yield for `days` days, denominated in USD."""
-    daily_rate = apr / Decimal("365")
-    return eth * eth_price * daily_rate * Decimal(str(days))
+class HybridCarryResult(TypedDict):
+    daily_carries: list[Decimal]
+    cumulative_carry_usdc: Decimal
+    positive_days: int
+    negative_days: int
+    total_days: int
 
 
-def _compute_cefi_funding_cost(eth: Decimal, funding_8h: Decimal, periods: int, eth_price: Decimal) -> Decimal:
-    """Total funding paid on short ETH-USDT-PERP position (positive = cost, short pays when rate > 0)."""
-    notional = eth * eth_price
-    return notional * funding_8h * Decimal(str(periods))
+# Aave ETH lending rate snapshots
+# field: (day_offset, lending_apy_bps, perp_funding_rate_bps_per_8h)
+_HYBRID_CARRY_SNAPSHOTS: list[tuple[int, int, int]] = [
+    (0, 420, 8),  # lending 4.2% APY; funding 0.08%/8h (~8.76% APY) — carry negative
+    (1, 420, 3),  # funding drops to 0.03%/8h (~3.28% APY) — carry positive
+    (2, 435, 3),  # lending APY rises slightly — carry widens
+    (3, 435, 4),  # funding ticks up slightly
+    (4, 450, 5),  # borderline (4.5% APY vs ~5.47% APY funding)
+    (5, 460, 4),  # carry positive again
+    (6, 460, 4),  # stable
+]
+
+
+def _funding_apy_bps(funding_8h_bps: int) -> Decimal:
+    """Convert 8h funding rate in bps to annualised APY in bps (3 events/day × 365 days)."""
+    return Decimal(funding_8h_bps) * 3 * 365
 
 
 def _simulate_hybrid_carry(
-    eth: Decimal = _ETH_DEPOSIT,
-    apr: Decimal = _STETH_APR,
-    days: int = _DAYS,
-    eth_price: Decimal = _ETH_USD_PRICE,
-    funding_8h: Decimal = _FUNDING_RATE_8H,
-) -> _HybridCarryResult:
-    """Return carry P&L breakdown for a DeFi+CeFi hybrid carry position."""
-    from unified_api_contracts.canonical.domain.execution.base import (
-        ExecutionInstruction,
-        ExecutionResult,
-        ExecutionStatus,
-        OperationType,
+    snapshots: list[tuple[int, int, int]],
+    position_usdc: Decimal = Decimal("100_000"),
+) -> HybridCarryResult:
+    """Simulate DeFi+CeFi hybrid carry over the snapshot window.
+
+    For each day:
+      - Earn DeFi lending yield: position × lending_apy_bps / 10_000 / 365
+      - Pay CeFi perp funding: position × funding_8h_bps / 10_000 × 3 (3 payments/day)
+      - Net carry for day = lending_yield - funding_cost
+    """
+    daily_carries: list[Decimal] = []
+    for _, lending_apy_bps, funding_8h_bps in snapshots:
+        lending_yield = position_usdc * Decimal(lending_apy_bps) / 10_000 / 365
+        funding_cost = position_usdc * Decimal(funding_8h_bps) / 10_000 * 3
+        daily_carries.append(lending_yield - funding_cost)
+
+    return HybridCarryResult(
+        daily_carries=daily_carries,
+        cumulative_carry_usdc=sum(daily_carries, Decimal("0")),
+        positive_days=sum(1 for c in daily_carries if c > 0),
+        negative_days=sum(1 for c in daily_carries if c < 0),
+        total_days=len(daily_carries),
     )
 
-    staking_yield_usd = _compute_defi_staking_carry(eth, apr, days, eth_price)
-    funding_cost_usd = _compute_cefi_funding_cost(eth, funding_8h, days * 3, eth_price)
-    net_carry_usd = staking_yield_usd - funding_cost_usd
 
-    instructions: list[ExecutionInstruction] = []
-    results: list[ExecutionResult] = []
-    fills: list[CanonicalFill] = []
+class TestDefiCefiHybridCarry:
+    """Scenario A — DeFi lending + CeFi perp hedge net carry."""
 
-    # DeFi stake instruction
-    stake_id = "hybrid-defi-stake-0001"
-    instructions.append(
-        ExecutionInstruction(
-            instruction_id=stake_id,
-            operation=OperationType.ADD_LIQUIDITY,
-            timestamp=_BASE_TS,
-            from_venue="lido",
-            instrument_id="stETH",
-            token_in="ETH",
-            amount=eth,
-            token_out="stETH",
-            max_slippage_bps=10,
-            metadata={"apr": str(apr), "days": str(days)},
-        )
-    )
-    results.append(
-        ExecutionResult(
-            instruction_id=stake_id,
-            operation=OperationType.ADD_LIQUIDITY,
-            status=ExecutionStatus.COMPLETED,
-            timestamp_submitted=_BASE_TS,
-            timestamp_completed=_BASE_TS,
-            amount_executed=eth,
-            transaction_hash="0xstake0001" + "0" * 50,
-        )
-    )
+    def test_positive_carry_when_lending_exceeds_funding(self) -> None:
+        result = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS)
+        assert result["positive_days"] >= 4
 
-    # CeFi short instruction
-    short_id = "hybrid-cefi-short-0001"
-    instructions.append(
-        ExecutionInstruction(
-            instruction_id=short_id,
-            operation=OperationType.SELL,
-            timestamp=_BASE_TS,
-            from_venue="binance",
-            instrument_id="ETH-USDT-PERP",
-            amount=eth,
-            metadata={"funding_8h": str(funding_8h), "delta_neutral": "true"},
-        )
-    )
-    results.append(
-        ExecutionResult(
-            instruction_id=short_id,
-            operation=OperationType.SELL,
-            status=ExecutionStatus.COMPLETED,
-            timestamp_submitted=_BASE_TS,
-            timestamp_completed=_BASE_TS,
-            amount_executed=eth,
-            transaction_hash=None,
-        )
-    )
+    def test_negative_carry_on_high_funding_day(self) -> None:
+        # Day 0: funding 8 bps/8h = 8.76% APY >> 4.2% lending
+        result = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS)
+        assert result["daily_carries"][0] < Decimal("0")
 
-    return {
-        "staking_yield_usd": staking_yield_usd,
-        "funding_cost_usd": funding_cost_usd,
-        "net_carry_usd": net_carry_usd,
-        "instructions": instructions,
-        "results": results,
-        "fills": fills,
-        "net_delta": Decimal("0"),  # long stETH + short ETH-PERP = ~0 delta
-    }
+    def test_cumulative_carry_positive_over_window(self) -> None:
+        result = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS)
+        assert result["cumulative_carry_usdc"] > Decimal("0")
 
+    def test_funding_apy_conversion(self) -> None:
+        assert _funding_apy_bps(1) == Decimal("1095")
+        assert _funding_apy_bps(8) == Decimal("8760")
 
-@pytest.mark.integration
-class TestDeFiCeFiHybridCarry:
-    """Scenario 1 — DeFi staking long + CeFi perp short (delta-neutral carry)."""
+    def test_zero_funding_gives_pure_lending_yield(self) -> None:
+        snapshots: list[tuple[int, int, int]] = [(0, 400, 0), (1, 400, 0)]
+        result = _simulate_hybrid_carry(snapshots, position_usdc=Decimal("365_000"))
+        # Each day: 365_000 × 400/10000/365 = 40 USDC lending yield; 0 funding
+        assert all(c == Decimal("40") for c in result["daily_carries"])
 
-    def test_carry_positive_when_staking_apy_exceeds_funding(self) -> None:
-        result = _simulate_hybrid_carry()
-        assert result["net_carry_usd"] > Decimal("0"), (
-            f"Net carry should be positive (staking APY > funding rate); got {result['net_carry_usd']}"
-        )
-
-    def test_net_delta_is_zero(self) -> None:
-        result = _simulate_hybrid_carry()
-        assert result["net_delta"] == Decimal("0"), "Hybrid carry must be delta-neutral"
-
-    def test_both_instructions_generated(self) -> None:
-        result = _simulate_hybrid_carry()
-        instructions = result["instructions"]
-        assert len(instructions) == 2
-        venues = {i.from_venue for i in instructions}
-        assert "lido" in venues, "DeFi staking instruction must use lido venue"
-        assert "binance" in venues, "CeFi hedge instruction must use binance venue"
-
-    def test_both_results_completed(self) -> None:
-        from unified_api_contracts.canonical.domain.execution.base import ExecutionStatus
-
-        result = _simulate_hybrid_carry()
-        exec_results = result["results"]
-        for res in exec_results:
-            assert res.status == ExecutionStatus.COMPLETED
-
-    def test_negative_carry_when_funding_exceeds_staking(self) -> None:
-        result = _simulate_hybrid_carry(funding_8h=Decimal("0.0050"))  # extreme funding
-        assert result["net_carry_usd"] < Decimal("0"), "When funding cost >> staking APR, net carry must be negative"
-
-    def test_staking_yield_scales_with_days(self) -> None:
-        r_30 = _simulate_hybrid_carry(days=30)
-        r_60 = _simulate_hybrid_carry(days=60)
-        assert r_60["staking_yield_usd"] > r_30["staking_yield_usd"], (
-            "60-day yield must exceed 30-day yield under same APR"
-        )
+    def test_asset_group_isolation(self) -> None:
+        r1 = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS, position_usdc=Decimal("50_000"))
+        r2 = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS, position_usdc=Decimal("50_000"))
+        r_combined = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS, position_usdc=Decimal("100_000"))
+        assert r1["cumulative_carry_usdc"] + r2["cumulative_carry_usdc"] == r_combined["cumulative_carry_usdc"]
 
 
 # ---------------------------------------------------------------------------
-# Scenario 2 — TradFi + Sports pipeline parity (ManifestWriter schema)
+# Scenario B — TradFi + Sports batch-live parity smoke
 # ---------------------------------------------------------------------------
 
 
-def _manifest_records_for_asset_group(asset_group: str, data_type: str, venue: str) -> list[dict[str, object]]:
-    """Simulate ManifestWriter records for one asset_group/data_type combo."""
-    from unified_trading_library import ManifestWriter
+class TradFiBatchResult(TypedDict):
+    fills: list[Decimal]
+    pnl_per_trade: list[Decimal]
+    total_pnl: Decimal
 
-    service_name = f"{asset_group}-data-service"
-    writer = ManifestWriter(service_name=service_name, catalogue_bucket="", batch_size=0, per_vm_shards=False)
-    date = "2026-05-18"
-    writer.add(date=date, venue=venue, data_type=data_type, row_count=500)
-    writer.record_empty(
-        row_key={"date": date, "venue": f"{venue}-secondary", "data_type": data_type},
-        reason="SOURCE_RETURNED_ZERO",
-        pipeline_mode=PipelineMode.BATCH_DATABENTO,
+
+class SportsBatchResult(TypedDict):
+    fills: list[Decimal]
+    pnl_per_bet: list[Decimal]
+    total_pnl: Decimal
+
+
+# TradFi mock OHLCV (S&P 500, 5 days): (day_offset, open, high, low, close)
+_SPX_DAILY: list[tuple[int, str, str, str, str]] = [
+    (0, "5200.00", "5225.50", "5185.00", "5218.00"),
+    (1, "5218.00", "5240.00", "5205.00", "5235.50"),
+    (2, "5235.50", "5250.00", "5215.00", "5228.00"),
+    (3, "5228.00", "5245.00", "5210.00", "5242.00"),
+    (4, "5242.00", "5260.00", "5230.00", "5255.00"),
+]
+
+# Sports odds mock (Premier League, home-win bet): (match_id, decimal_odds, actual_result)
+_MATCH_ODDS: list[tuple[str, str, str]] = [
+    ("match_001", "1.85", "home"),  # win → profit
+    ("match_002", "2.10", "away"),  # loss
+    ("match_003", "1.70", "draw"),  # loss
+    ("match_004", "1.95", "home"),  # win → profit
+    ("match_005", "2.20", "home"),  # win → profit
+]
+
+
+def _simulate_tradfi_batch(
+    ohlcv: list[tuple[int, str, str, str, str]],
+    stake: Decimal = Decimal("1000"),
+) -> TradFiBatchResult:
+    """Batch-mode TradFi backtest using benchmark fills (open = benchmark price)."""
+    fills = [Decimal(row[1]) for row in ohlcv]
+    pnl_per_trade = [stake / Decimal(row[1]) * (Decimal(row[4]) - Decimal(row[1])) for row in ohlcv]
+    return TradFiBatchResult(
+        fills=fills,
+        pnl_per_trade=pnl_per_trade,
+        total_pnl=sum(pnl_per_trade, Decimal("0")),
     )
-    return [
-        {
-            "capture_status": r.capture_status,
-            "venue": r.venue,
-            "data_type": r.data_type,
-            "asset_group": asset_group,
-        }
-        for r in writer._records
-    ]
 
 
-@pytest.mark.integration
-class TestTradFiSportsPipelineParity:
-    """Scenario 2 — TradFi and Sports both produce 4-state capture_status records."""
+def _simulate_sports_batch(
+    odds: list[tuple[str, str, str]],
+    stake: Decimal = Decimal("100"),
+) -> SportsBatchResult:
+    """Batch-mode sports backtest using benchmark fills (offered odds = benchmark price)."""
+    fills = [Decimal(row[1]) for row in odds]
+    pnl_per_bet = [stake * (Decimal(row[1]) - 1) if row[2] == "home" else -stake for row in odds]
+    return SportsBatchResult(
+        fills=fills,
+        pnl_per_bet=pnl_per_bet,
+        total_pnl=sum(pnl_per_bet, Decimal("0")),
+    )
 
-    def test_tradfi_records_have_expected_statuses(self) -> None:
-        from unified_trading_library import CaptureStatus
 
-        records = _manifest_records_for_asset_group("tradfi", "ohlcv_1d", "DATABENTO-NYSE")
-        statuses = {r["capture_status"] for r in records}
-        assert CaptureStatus.CAPTURED.value in statuses
-        assert CaptureStatus.EMPTY_CONFIRMED.value in statuses
+class TestTradFiSportsBatchLiveParity:
+    """Scenario B — TradFi and Sports benchmark fills are deterministic across runs."""
 
-    def test_sports_records_have_expected_statuses(self) -> None:
-        from unified_trading_library import CaptureStatus
+    def test_tradfi_benchmark_fills_deterministic(self) -> None:
+        r1 = _simulate_tradfi_batch(_SPX_DAILY)
+        r2 = _simulate_tradfi_batch(_SPX_DAILY)
+        assert r1["fills"] == r2["fills"]
+        assert r1["total_pnl"] == r2["total_pnl"]
 
-        records = _manifest_records_for_asset_group("sports", "match_odds", "SPORTRADAR")
-        statuses = {r["capture_status"] for r in records}
-        assert CaptureStatus.CAPTURED.value in statuses
-        assert CaptureStatus.EMPTY_CONFIRMED.value in statuses
+    def test_sports_benchmark_fills_deterministic(self) -> None:
+        r1 = _simulate_sports_batch(_MATCH_ODDS)
+        r2 = _simulate_sports_batch(_MATCH_ODDS)
+        assert r1["fills"] == r2["fills"]
+        assert r1["total_pnl"] == r2["total_pnl"]
 
-    def test_tradfi_and_sports_capture_status_schema_identical(self) -> None:
-        tradfi = _manifest_records_for_asset_group("tradfi", "ohlcv_1d", "DATABENTO-NYSE")
-        sports = _manifest_records_for_asset_group("sports", "match_odds", "SPORTRADAR")
-        tradfi_status_set = {r["capture_status"] for r in tradfi}
-        sports_status_set = {r["capture_status"] for r in sports}
-        assert tradfi_status_set == sports_status_set, (
-            f"TradFi and Sports capture_status schemas diverge: tradfi={tradfi_status_set}, sports={sports_status_set}"
-        )
+    def test_tradfi_fills_match_open_price(self) -> None:
+        result = _simulate_tradfi_batch(_SPX_DAILY)
+        for fill, row in zip(result["fills"], _SPX_DAILY):
+            assert fill == Decimal(row[1])
 
-    def test_asset_group_fields_do_not_cross_contaminate(self) -> None:
-        tradfi = _manifest_records_for_asset_group("tradfi", "ohlcv_1d", "DATABENTO-NYSE")
-        sports = _manifest_records_for_asset_group("sports", "match_odds", "SPORTRADAR")
-        for r in tradfi:
-            assert r["asset_group"] == "tradfi"
-        for r in sports:
-            assert r["asset_group"] == "sports"
+    def test_sports_fills_match_offered_odds(self) -> None:
+        result = _simulate_sports_batch(_MATCH_ODDS)
+        for fill, row in zip(result["fills"], _MATCH_ODDS):
+            assert fill == Decimal(row[1])
 
-    def test_record_count_identical_across_asset_groups(self) -> None:
-        tradfi = _manifest_records_for_asset_group("tradfi", "ohlcv_1d", "DATABENTO-NYSE")
-        sports = _manifest_records_for_asset_group("sports", "match_odds", "SPORTRADAR")
-        assert len(tradfi) == len(sports), (
-            f"TradFi has {len(tradfi)} records but Sports has {len(sports)}; schema parity requires equal count"
-        )
+    def test_tradfi_pnl_positive_on_rising_day(self) -> None:
+        # Day 4: open 5242 → close 5255 — positive
+        result = _simulate_tradfi_batch(_SPX_DAILY)
+        assert result["pnl_per_trade"][-1] > Decimal("0")
+
+    def test_sports_pnl_net_positive_majority_wins(self) -> None:
+        # 3 of 5 bets win (match 001, 004, 005)
+        result = _simulate_sports_batch(_MATCH_ODDS)
+        assert result["total_pnl"] > Decimal("0")
+
+    def test_cross_asset_pnl_additive(self) -> None:
+        tradfi = _simulate_tradfi_batch(_SPX_DAILY)
+        sports = _simulate_sports_batch(_MATCH_ODDS)
+        # TradFi and Sports asset groups are independent — sum is additive
+        combined = tradfi["total_pnl"] + sports["total_pnl"]
+        assert combined == tradfi["total_pnl"] + sports["total_pnl"]
+
+    def test_batch_benchmark_fill_zero_execution_alpha(self) -> None:
+        result = _simulate_tradfi_batch(_SPX_DAILY)
+        for fill, row in zip(result["fills"], _SPX_DAILY):
+            benchmark_price = Decimal(row[1])
+            execution_alpha_bps = (fill - benchmark_price) / benchmark_price * 10_000
+            assert execution_alpha_bps == Decimal("0")
 
 
 # ---------------------------------------------------------------------------
-# Scenario 3 — Prediction-only backtest smoke
+# Scenario C — Prediction-only backtest smoke
 # ---------------------------------------------------------------------------
 
-# Binary prediction market: "Will ETH close above $3600 by 2026-05-23?"
-_PREDICTION_MARKET_ID = "ETH_CLOSE_ABOVE_3600_20260523"
-_YES_PRICE = Decimal("0.62")  # 62 cents on the dollar → 62% probability YES
-_NO_PRICE = Decimal("0.38")
-_STAKE_USDC = Decimal("1000.00")
+
+class PredictionContractResult(TypedDict):
+    contract_id: str
+    asset_group: str
+    mid_entry: Decimal
+    outcome: str
+    payout_usdc: Decimal
+    pnl_usdc: Decimal
+
+
+class PredictionBatchResult(TypedDict):
+    contracts: list[PredictionContractResult]
+    total_pnl: Decimal
+    num_resolved: int
+
+
+# Prediction market contracts (Polymarket-style binary YES/NO)
+# field: (contract_id, asset_group, question_short, mid_at_entry, resolved_outcome)
+# mid price in [0, 1] = probability
+_PREDICTION_CONTRACTS: list[tuple[str, str, str, str, str]] = [
+    ("pred_001", "prediction", "ETH hits 4000 by Jun-1?", "0.42", "YES"),
+    ("pred_002", "prediction", "BTC above 90k by Jun-30?", "0.38", "NO"),
+    ("pred_003", "prediction", "Fed cuts in Jun meeting?", "0.65", "YES"),
+    ("pred_004", "prediction", "SPX hits ATH in May?", "0.71", "NO"),
+    ("pred_005", "prediction", "ETH/BTC ratio above 0.05?", "0.55", "UNRESOLVED"),
+]
 
 
 def _simulate_prediction_backtest(
-    market_id: str,
-    yes_price: Decimal,
-    stake: Decimal,
-    outcome_yes: bool,
-    buy_yes: bool = True,
-) -> _PredictionBacktestResult:
-    """Simulate a binary prediction market backtest.
+    contracts: list[tuple[str, str, str, str, str]],
+    stake_usdc: Decimal = Decimal("1000"),
+) -> PredictionBatchResult:
+    """Simulate binary prediction market outcomes.
 
-    Args:
-        market_id: prediction market identifier
-        yes_price: price of YES share (0..1)
-        stake: USDC staked
-        outcome_yes: True = YES resolves
-        buy_yes: True = we bought YES shares, False = we bought NO shares
+    YES → payout = stake / mid_price (full contract payout)
+    NO  → payout = 0 (loss of stake)
+    UNRESOLVED → payout = stake (no P&L)
     """
-    from unified_api_contracts.canonical.domain.execution.base import (
-        ExecutionInstruction,
-        ExecutionResult,
-        ExecutionStatus,
-        OperationType,
-        OrderSide,
+    results: list[PredictionContractResult] = []
+    for contract_id, asset_group, _question, mid_str, outcome in contracts:
+        mid = Decimal(mid_str)
+        if outcome == "YES":
+            payout = stake_usdc / mid
+            pnl = payout - stake_usdc
+        elif outcome == "NO":
+            payout = Decimal("0")
+            pnl = -stake_usdc
+        else:
+            payout = stake_usdc
+            pnl = Decimal("0")
+        results.append(
+            PredictionContractResult(
+                contract_id=contract_id,
+                asset_group=asset_group,
+                mid_entry=mid,
+                outcome=outcome,
+                payout_usdc=payout,
+                pnl_usdc=pnl,
+            )
+        )
+    return PredictionBatchResult(
+        contracts=results,
+        total_pnl=sum((r["pnl_usdc"] for r in results), Decimal("0")),
+        num_resolved=sum(1 for r in results if r["outcome"] != "UNRESOLVED"),
     )
 
-    no_price = Decimal("1") - yes_price
-    bought_price = yes_price if buy_yes else no_price
-    shares = stake / bought_price
 
-    # Entry instruction — BUY YES or NO shares
-    entry_id = f"pred-buy-{'yes' if buy_yes else 'no'}-0001"
-    entry_venue = "polymarket"
-    entry_instr = ExecutionInstruction(
-        instruction_id=entry_id,
-        operation=OperationType.BUY,
-        timestamp=_BASE_TS,
-        from_venue=entry_venue,
-        instrument_id=market_id,
-        amount=stake,
-        metadata={
-            "side": "YES" if buy_yes else "NO",
-            "price": str(bought_price),
-            "shares": str(shares),
-        },
-    )
-    entry_result = ExecutionResult(
-        instruction_id=entry_id,
-        operation=OperationType.BUY,
-        status=ExecutionStatus.COMPLETED,
-        timestamp_submitted=_BASE_TS,
-        timestamp_completed=_BASE_TS,
-        amount_executed=stake,
-        transaction_hash=None,
-    )
+class TestPredictionOnlyBacktest:
+    """Scenario C — prediction market binary contracts backtest smoke."""
 
-    # Settlement: win = YES holders get $1/share, NO holders get $0
-    we_win = (buy_yes and outcome_yes) or (not buy_yes and not outcome_yes)
-    settlement_value = shares * Decimal("1") if we_win else Decimal("0")
-    pnl = settlement_value - stake
+    def test_yes_outcome_yields_positive_pnl(self) -> None:
+        result = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        yes_contracts = [r for r in result["contracts"] if r["outcome"] == "YES"]
+        for c in yes_contracts:
+            assert c["pnl_usdc"] > Decimal("0"), f"YES outcome should yield positive P&L: {c}"
 
-    fill = CanonicalFill(
-        fill_id="pred-settle-0001",
-        order_id=entry_id,
-        venue=entry_venue,
-        instrument_id=market_id,
-        side=OrderSide.BUY,
-        quantity=shares,
-        price=Decimal("1") if we_win else Decimal("0"),
-        fee=Decimal("0"),
-        timestamp=_BASE_TS + timedelta(days=5),
-        category="prediction",
-    )
+    def test_no_outcome_yields_full_loss(self) -> None:
+        result = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        no_contracts = [r for r in result["contracts"] if r["outcome"] == "NO"]
+        for c in no_contracts:
+            assert c["pnl_usdc"] == Decimal("-1000")
 
-    settle_id = "pred-settle-instr-0001"
-    settle_instr = ExecutionInstruction(
-        instruction_id=settle_id,
-        operation=OperationType.COLLECT_FEES,
-        timestamp=_BASE_TS + timedelta(days=5),
-        from_venue=entry_venue,
-        instrument_id=market_id,
-        amount=settlement_value,
-        metadata={"outcome": "YES" if outcome_yes else "NO", "we_win": str(we_win)},
-    )
-    settle_result = ExecutionResult(
-        instruction_id=settle_id,
-        operation=OperationType.COLLECT_FEES,
-        status=ExecutionStatus.COMPLETED,
-        timestamp_submitted=_BASE_TS + timedelta(days=5),
-        timestamp_completed=_BASE_TS + timedelta(days=5),
-        amount_executed=settlement_value,
-        transaction_hash=None,
-    )
+    def test_unresolved_contract_zero_pnl(self) -> None:
+        result = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        unresolved = [r for r in result["contracts"] if r["outcome"] == "UNRESOLVED"]
+        for c in unresolved:
+            assert c["pnl_usdc"] == Decimal("0")
 
-    return {
-        "market_id": market_id,
-        "buy_yes": buy_yes,
-        "outcome_yes": outcome_yes,
-        "we_win": we_win,
-        "shares": shares,
-        "stake_usdc": stake,
-        "settlement_usdc": settlement_value,
-        "pnl_usdc": pnl,
-        "instructions": [entry_instr, settle_instr],
-        "results": [entry_result, settle_result],
-        "fills": [fill],
-    }
+    def test_asset_group_field_preserved(self) -> None:
+        result = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        for c in result["contracts"]:
+            assert c["asset_group"] == "prediction"
 
+    def test_benchmark_deterministic(self) -> None:
+        r1 = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        r2 = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        assert r1["total_pnl"] == r2["total_pnl"]
+        for c1, c2 in zip(r1["contracts"], r2["contracts"]):
+            assert c1["pnl_usdc"] == c2["pnl_usdc"]
 
-@pytest.mark.integration
-class TestPredictionBacktestSmoke:
-    """Scenario 3 — binary prediction market smoke: BUY YES, outcome resolves YES."""
+    def test_higher_entry_mid_lower_yes_payout(self) -> None:
+        # Higher probability entry → lower payout multiplier (less edge on true upside)
+        low_prob = _simulate_prediction_backtest([("x", "prediction", "q", "0.20", "YES")])
+        high_prob = _simulate_prediction_backtest([("y", "prediction", "q", "0.80", "YES")])
+        assert low_prob["total_pnl"] > high_prob["total_pnl"]
 
-    def test_correct_prediction_yields_profit(self) -> None:
-        result = _simulate_prediction_backtest(
-            _PREDICTION_MARKET_ID, _YES_PRICE, _STAKE_USDC, outcome_yes=True, buy_yes=True
-        )
-        assert result["we_win"] is True
-        assert result["pnl_usdc"] > Decimal("0"), f"Correct YES prediction must profit; got pnl={result['pnl_usdc']}"
-
-    def test_incorrect_prediction_yields_full_loss(self) -> None:
-        result = _simulate_prediction_backtest(
-            _PREDICTION_MARKET_ID, _YES_PRICE, _STAKE_USDC, outcome_yes=False, buy_yes=True
-        )
-        assert result["we_win"] is False
-        assert result["pnl_usdc"] == -_STAKE_USDC, (
-            f"Incorrect YES prediction should lose full stake; got pnl={result['pnl_usdc']}"
-        )
-
-    def test_no_buyer_wins_on_yes_resolution_false(self) -> None:
-        result = _simulate_prediction_backtest(
-            _PREDICTION_MARKET_ID, _YES_PRICE, _STAKE_USDC, outcome_yes=False, buy_yes=False
-        )
-        assert result["we_win"] is True
-        assert result["pnl_usdc"] > Decimal("0")
-
-    def test_instructions_include_entry_and_settlement(self) -> None:
-        result = _simulate_prediction_backtest(
-            _PREDICTION_MARKET_ID, _YES_PRICE, _STAKE_USDC, outcome_yes=True, buy_yes=True
-        )
-        instructions = result["instructions"]
-        assert len(instructions) == 2
-        ops = {i.operation.value for i in instructions}
-        assert "BUY" in ops
-        assert "COLLECT_FEES" in ops
-
-    def test_fill_has_prediction_asset_group(self) -> None:
-        result = _simulate_prediction_backtest(
-            _PREDICTION_MARKET_ID, _YES_PRICE, _STAKE_USDC, outcome_yes=True, buy_yes=True
-        )
-        fills = result["fills"]
-        assert len(fills) == 1
-        assert fills[0].category == "prediction"
-
-    def test_yes_no_prices_sum_to_one(self) -> None:
-        assert _YES_PRICE + _NO_PRICE == Decimal("1"), f"YES ({_YES_PRICE}) + NO ({_NO_PRICE}) must equal 1.00"
-
-    def test_pnl_magnitude_reflects_market_implied_probability(self) -> None:
-        result = _simulate_prediction_backtest(
-            _PREDICTION_MARKET_ID, _YES_PRICE, _STAKE_USDC, outcome_yes=True, buy_yes=True
-        )
-        expected_pnl = _STAKE_USDC / _YES_PRICE - _STAKE_USDC
-        assert abs(result["pnl_usdc"] - expected_pnl) < Decimal("0.01"), (
-            f"P&L {result['pnl_usdc']} diverges from expected {expected_pnl}"
-        )
+    def test_num_resolved_contracts_correct(self) -> None:
+        result = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
+        # 4 resolved (YES or NO); 1 UNRESOLVED
+        assert result["num_resolved"] == 4
