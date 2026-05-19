@@ -85,6 +85,13 @@ editable = true
 path = "../pnl-attribution-service"
 editable = true
 
+# betfairlightweight (via execution-service) declares requests<2.33.0; workspace canonical is requests>=2.33.0
+# (CVE-2026-25645). Override forces the resolved version upward. SSOT: .cursor/rules/dependencies/requests-betfairlightweight-workspace-resolution.mdc
+[tool.uv]
+override-dependencies = [
+    "requests>=2.33.0,<3.0.0",
+]
+
 [tool.ruff]
 line-length = 120
 
