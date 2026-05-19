@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -54,7 +54,7 @@ def _read_manifest() -> dict[str, Any]:
     import base64
 
     content = base64.b64decode(out).decode()
-    return json.loads(content)  # type: ignore[no-any-return]
+    return cast("dict[str, Any]", json.loads(content))
 
 
 # ---------------------------------------------------------------------------
