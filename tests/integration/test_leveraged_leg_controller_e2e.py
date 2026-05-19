@@ -120,7 +120,7 @@ def test_pbm_builder_produces_post_pnl_snapshots() -> None:
     """PBM: LegSnapshotBuilder maps observed positions + PnL into LegSnapshots.
     Initial alloc = $250k each. ETH +8% => long +$32k, short -$32k. So
     snapshots equity = $282k (long) / $218k (short)."""
-    from position_balance_monitor_service.core.leg_snapshot_builder import build_leg_snapshots
+    from strategy_service.position.core.leg_snapshot_builder import build_leg_snapshots
 
     state = _basis_state()
     observations = {
@@ -210,7 +210,7 @@ def test_risk_detector_fires_when_post_rebalance_skipped() -> None:
     """risk-and-exposure-service: if the controller hadn't acted, drift
     would persist and the detector would fire a LEVERAGE_BREACH on the
     over-levered short leg. Confirms the safety overlay is wired correctly."""
-    from risk_and_exposure_service.core.leverage_breach_detector import (
+    from strategy_service.risk.core.leverage_breach_detector import (
         detect_leverage_breaches,
     )
     from unified_api_contracts.internal import AlertType
@@ -246,8 +246,8 @@ def test_full_e2e_chain_strategy_pbm_controller_risk() -> None:
     LegPortfolioState contract.
     """
     from execution_service.algo_library.leveraged_leg_controller import LeveragedLegController
-    from position_balance_monitor_service.core.leg_snapshot_builder import build_leg_snapshots
-    from risk_and_exposure_service.core.leverage_breach_detector import (
+    from strategy_service.position.core.leg_snapshot_builder import build_leg_snapshots
+    from strategy_service.risk.core.leverage_breach_detector import (
         detect_leverage_breaches,
     )
     from strategy_service.engine.strategies.v2.carry_and_yield.staked_basis import (

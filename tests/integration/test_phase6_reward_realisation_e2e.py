@@ -47,7 +47,7 @@ from decimal import Decimal
 from execution_service.algo_library.dust_conversion_router import RouteQuote
 from execution_service.algo_library.dust_router_runner import DustRouterRunner
 from execution_service.algo_library.leg_controller_runner import LegControllerRunner
-from pnl_attribution_service.engine.reward_attribution import (
+from strategy_service.pnl.engine.reward_attribution import (
     attribute_reward_realisation_from_rows,
 )
 from strategy_service.engine.strategies.v2.orchestrator import (

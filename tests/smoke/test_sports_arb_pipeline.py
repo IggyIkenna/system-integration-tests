@@ -131,44 +131,32 @@ class TestSportsRiskAndPosition:
     """Verify risk and position modules accept sports bet data."""
 
     def test_sports_risk_engine_importable(self) -> None:
-        try:
-            from risk_and_exposure_service.engine.sports_risk import SportsRiskEngine
+        from strategy_service.risk.engine.sports_risk import SportsRiskEngine
 
-            assert SportsRiskEngine is not None
-        except ImportError:
-            pytest.skip("risk-and-exposure-service not installed in this environment")
+        assert SportsRiskEngine is not None
 
     def test_sports_position_tracker_importable(self) -> None:
-        try:
-            from position_balance_monitor_service.engine.sports_position_tracker import (
-                SportsPositionTracker,
-            )
+        from strategy_service.position.engine.sports_position_tracker import (
+            SportsPositionTracker,
+        )
 
-            assert SportsPositionTracker is not None
-        except ImportError:
-            pytest.skip("position-balance-monitor-service not installed in this environment")
+        assert SportsPositionTracker is not None
 
 
 class TestSportsPnLAttribution:
     """Verify P&L attribution can process sports bets."""
 
     def test_sports_pnl_engine_importable(self) -> None:
-        try:
-            from pnl_attribution_service.engine.sports_pnl import SportsPnLEngine
+        from strategy_service.pnl.engine.sports_pnl import SportsPnLEngine
 
-            assert SportsPnLEngine is not None
-        except ImportError:
-            pytest.skip("pnl-attribution-service not installed in this environment")
+        assert SportsPnLEngine is not None
 
     def test_sports_pnl_engine_has_persist_method(self) -> None:
-        try:
-            from pnl_attribution_service.engine.sports_pnl import SportsPnLEngine
+        from strategy_service.pnl.engine.sports_pnl import SportsPnLEngine
 
-            engine = SportsPnLEngine()
-            assert hasattr(engine, "persist_to_gcs")
-            assert hasattr(engine, "to_dataframe")
-        except ImportError:
-            pytest.skip("pnl-attribution-service not installed in this environment")
+        engine = SportsPnLEngine()
+        assert hasattr(engine, "persist_to_gcs")
+        assert hasattr(engine, "to_dataframe")
 
 
 class TestSportsAlertingRules:
