@@ -136,9 +136,7 @@ class TestSportsRiskAndPosition:
         assert SportsRiskEngine is not None
 
     def test_sports_position_tracker_importable(self) -> None:
-        from strategy_service.position.engine.sports_position_tracker import (
-            SportsPositionTracker,
-        )
+        from strategy_service.position.core.sports_position_tracker import SportsPositionTracker
 
         assert SportsPositionTracker is not None
 
