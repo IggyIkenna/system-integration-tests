@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import cast
 
 import pytest
 
@@ -331,7 +332,7 @@ class TestTradFiBacktest:
         from unified_api_contracts import CanonicalFill
 
         result = _simulate_tradfi_mean_reversion_backtest(_SPY_OHLCV)
-        fills: list[CanonicalFill] = result["fills"]  # type: ignore[assignment]
+        fills = cast("list[CanonicalFill]", result["fills"])
         for fill in fills:
             assert isinstance(fill, CanonicalFill)
             assert fill.venue == "nasdaq"

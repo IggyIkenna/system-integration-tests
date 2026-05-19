@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import cast
 
 import pytest
 
@@ -253,7 +254,7 @@ class TestCeFiBacktest:
         from unified_api_contracts import CanonicalFill
 
         result = _simulate_cefi_momentum_backtest(_BTCUSDT_OHLCV)
-        fills: list[CanonicalFill] = result["fills"]  # type: ignore[assignment]
+        fills = cast("list[CanonicalFill]", result["fills"])
         for fill in fills:
             assert isinstance(fill, CanonicalFill)
             assert fill.venue == "binance"
@@ -267,7 +268,7 @@ class TestCeFiBacktest:
         from unified_api_contracts import CanonicalOrder
 
         result = _simulate_cefi_momentum_backtest(_BTCUSDT_OHLCV)
-        orders: list[CanonicalOrder] = result["orders"]  # type: ignore[assignment]
+        orders = cast("list[CanonicalOrder]", result["orders"])
         for order in orders:
             assert isinstance(order, CanonicalOrder)
             assert order.venue == "binance"

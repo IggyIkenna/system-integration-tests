@@ -16,6 +16,8 @@ Portable: runs identically on local, CI, Cloud Build, GHA.
 
 from __future__ import annotations
 
+from typing import cast
+
 import os
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -322,7 +324,7 @@ class TestDeFiBacktest:
         from unified_api_contracts.canonical.domain.execution.base import ExecutionInstruction
 
         result = _simulate_defi_lp_backtest(_ETH_USDC_POOL_SNAPSHOTS)
-        instructions: list[ExecutionInstruction] = result["instructions"]  # type: ignore[assignment]
+        instructions = cast("list[ExecutionInstruction]", result["instructions"])
         assert len(instructions) > 0, "Expected at least one LP instruction"
         for instr in instructions:
             assert isinstance(instr, ExecutionInstruction)
@@ -334,7 +336,7 @@ class TestDeFiBacktest:
         from unified_api_contracts.canonical.domain.execution.base import ExecutionInstruction, OperationType
 
         result = _simulate_defi_lp_backtest(_ETH_USDC_POOL_SNAPSHOTS)
-        instructions: list[ExecutionInstruction] = result["instructions"]  # type: ignore[assignment]
+        instructions = cast("list[ExecutionInstruction]", result["instructions"])
         add_instrs = [i for i in instructions if i.operation == OperationType.ADD_LIQUIDITY]
         assert len(add_instrs) >= 1, "Expected at least one ADD_LIQUIDITY instruction"
         first_add = add_instrs[0]
@@ -346,7 +348,7 @@ class TestDeFiBacktest:
         from unified_api_contracts.canonical.domain.execution.base import ExecutionResult, ExecutionStatus
 
         result = _simulate_defi_lp_backtest(_ETH_USDC_POOL_SNAPSHOTS)
-        exec_results: list[ExecutionResult] = result["execution_results"]  # type: ignore[assignment]
+        exec_results = cast("list[ExecutionResult]", result["execution_results"])
         for res in exec_results:
             assert isinstance(res, ExecutionResult)
             assert res.status == ExecutionStatus.COMPLETED, (
