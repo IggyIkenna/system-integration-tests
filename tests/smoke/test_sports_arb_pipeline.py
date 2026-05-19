@@ -27,25 +27,19 @@ class TestSportsVenueRegistryCompleteness:
     """Verify the UAC venue execution registry covers all expected venues."""
 
     def test_registry_has_minimum_venues(self) -> None:
-        from unified_api_contracts.canonical.domain.sports.venue_execution_registry import (
-            VENUE_EXECUTION_REGISTRY,
-        )
+        from unified_api_contracts import VENUE_EXECUTION_REGISTRY
 
         assert len(VENUE_EXECUTION_REGISTRY) >= 70, f"Expected >=70 venues, got {len(VENUE_EXECUTION_REGISTRY)}"
 
     def test_api_venues_present(self) -> None:
-        from unified_api_contracts.canonical.domain.sports.venue_execution_registry import (
-            VENUE_EXECUTION_REGISTRY,
-        )
+        from unified_api_contracts import VENUE_EXECUTION_REGISTRY
 
         api_venues = ["betfair_ex_uk", "pinnacle", "matchbook", "polymarket", "kalshi"]
         for v in api_venues:
             assert v in VENUE_EXECUTION_REGISTRY, f"API venue '{v}' missing from registry"
 
     def test_all_venues_have_execution_method(self) -> None:
-        from unified_api_contracts.canonical.domain.sports.venue_execution_registry import (
-            VENUE_EXECUTION_REGISTRY,
-        )
+        from unified_api_contracts import VENUE_EXECUTION_REGISTRY
 
         for key, profile in VENUE_EXECUTION_REGISTRY.items():
             assert profile.primary_execution_method is not None, f"Venue '{key}' has no execution method"

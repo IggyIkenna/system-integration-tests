@@ -76,8 +76,7 @@ def _simulate_cefi_momentum_backtest(
 
     Returns a result dict with fills, P&L, and diagnostics.
     """
-    from unified_api_contracts import CanonicalFill, CanonicalOrder
-    from unified_api_contracts.canonical.domain.execution.base import OrderSide, OrderStatus, OrderType
+    from unified_api_contracts import CanonicalFill, CanonicalOrder, OrderSide, OrderStatus, OrderType
 
     closes: list[Decimal] = []
     orders: list[CanonicalOrder] = []

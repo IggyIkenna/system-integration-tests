@@ -117,8 +117,7 @@ def _simulate_tradfi_mean_reversion_backtest(
 
     Returns a result dict with fills, P&L, Sharpe ratio, and position history.
     """
-    from unified_api_contracts import CanonicalFill, CanonicalOrder
-    from unified_api_contracts.canonical.domain.execution.base import OrderSide, OrderStatus, OrderType
+    from unified_api_contracts import CanonicalFill, CanonicalOrder, OrderSide, OrderStatus, OrderType
 
     closes: list[Decimal] = []
     highs: list[Decimal] = []

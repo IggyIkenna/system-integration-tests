@@ -16,11 +16,10 @@ Portable: runs identically on local, CI, Cloud Build, GHA.
 
 from __future__ import annotations
 
-from typing import cast
-
 import os
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import cast
 
 import pytest
 
@@ -126,8 +125,8 @@ def _simulate_defi_lp_backtest(
     - active_hours: number of hours where price was in LP range
     - out_of_range_hours: number of hours where price was outside LP range
     """
-    from unified_api_contracts import CanonicalFill
-    from unified_api_contracts.canonical.domain.execution.base import (
+    from unified_api_contracts import (
+        CanonicalFill,
         ExecutionInstruction,
         ExecutionResult,
         ExecutionStatus,
@@ -321,7 +320,7 @@ class TestDeFiBacktest:
 
     def test_instructions_are_execution_instruction_instances(self) -> None:
         """Every instruction must be a valid ExecutionInstruction Pydantic model."""
-        from unified_api_contracts.canonical.domain.execution.base import ExecutionInstruction
+        from unified_api_contracts import ExecutionInstruction
 
         result = _simulate_defi_lp_backtest(_ETH_USDC_POOL_SNAPSHOTS)
         instructions = cast("list[ExecutionInstruction]", result["instructions"])
@@ -333,7 +332,7 @@ class TestDeFiBacktest:
 
     def test_add_liquidity_instruction_present(self) -> None:
         """ADD_LIQUIDITY instruction must be generated for first in-range bar."""
-        from unified_api_contracts.canonical.domain.execution.base import ExecutionInstruction, OperationType
+        from unified_api_contracts import ExecutionInstruction, OperationType
 
         result = _simulate_defi_lp_backtest(_ETH_USDC_POOL_SNAPSHOTS)
         instructions = cast("list[ExecutionInstruction]", result["instructions"])
@@ -345,7 +344,7 @@ class TestDeFiBacktest:
 
     def test_execution_results_are_completed(self) -> None:
         """All ExecutionResult records must have COMPLETED status."""
-        from unified_api_contracts.canonical.domain.execution.base import ExecutionResult, ExecutionStatus
+        from unified_api_contracts import ExecutionResult, ExecutionStatus
 
         result = _simulate_defi_lp_backtest(_ETH_USDC_POOL_SNAPSHOTS)
         exec_results = cast("list[ExecutionResult]", result["execution_results"])
