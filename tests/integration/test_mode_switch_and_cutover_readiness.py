@@ -130,8 +130,7 @@ class TestManifestModeParity:
             if not full_path.exists():
                 missing.append(f"{s.get('strategy_id')} → {full_path}")
         assert not missing, (
-            "DeFi strategies with maturity.code.class_exists=true but missing module files:\n"
-            + "\n".join(missing)
+            "DeFi strategies with maturity.code.class_exists=true but missing module files:\n" + "\n".join(missing)
         )
 
 
