@@ -1,8 +1,17 @@
 {
   "pythonVersion": "3.13",
   "typeCheckingMode": "strict",
-  "include": ["tests"],
-  "exclude": ["tests/e2e/test_aws_s3_smoke.py"],
+  "include": [
+    "tests"
+  ],
+  "exclude": [
+    "tests/e2e/test_aws_s3_smoke.py",
+    "node_modules",
+    "dist",
+    "build",
+    ".venv*",
+    "**/__pycache__"
+  ],
   "reportAny": "error",
   "reportMissingTypeStubs": false,
   "extraPaths": [
