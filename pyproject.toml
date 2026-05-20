@@ -8,7 +8,6 @@ dependencies = [
     "pytest<10.0.0,>=9.0.3",
     "unified-trading-library>=0.1.0",
     "market-data-processing-service",
-    "risk-and-exposure-service>=0.1.0,<1.0.0",
     "features-service>=0.0.1,<1.0.0",
     "strategy-service>=0.1.0,<1.0.0",
     "unified-api-contracts>=0.1.0,<1.0.0",
@@ -16,9 +15,7 @@ dependencies = [
     "execution-service>=0.1.0,<1.0.0",
     "deployment-api>=0.1.0,<1.0.0",
     "instruments-service>=0.1.0,<1.0.0",
-    "position-balance-monitor-service>=0.1.0,<1.0.0",
     "client-reporting-api>=0.1.0,<1.0.0",
-    "pnl-attribution-service>=0.1.0,<1.0.0",
     "cryptography>=46.0.7,<47.0.0",
     "urllib3>=2.7.0,<3.0.0",
     "python-dotenv>=1.2.2,<2.0.0",
@@ -39,10 +36,6 @@ editable = true
 
 [tool.uv.sources.market-data-processing-service]
 path = "../market-data-processing-service"
-editable = true
-
-[tool.uv.sources.risk-and-exposure-service]
-path = "../risk-and-exposure-service"
 editable = true
 
 [tool.uv.sources.features-service]
@@ -73,16 +66,8 @@ editable = true
 path = "../instruments-service"
 editable = true
 
-[tool.uv.sources.position-balance-monitor-service]
-path = "../position-balance-monitor-service"
-editable = true
-
 [tool.uv.sources.client-reporting-api]
 path = "../client-reporting-api"
-editable = true
-
-[tool.uv.sources.pnl-attribution-service]
-path = "../pnl-attribution-service"
 editable = true
 
 # betfairlightweight (via execution-service) declares requests<2.33.0; workspace canonical is requests>=2.33.0
