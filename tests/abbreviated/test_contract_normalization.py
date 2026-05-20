@@ -468,13 +468,13 @@ def test_uic_lifecycle_event_envelope_round_trip() -> None:
     ts = datetime(2026, 1, 15, 10, 30, 0, tzinfo=UTC)
     metadata = EventMetadata(
         timestamp=ts,
-        service_name="risk-and-exposure-service",
+        service_name="strategy-service",
         severity=EventSeverity.INFO,
         correlation_id="corr-risk-001",
     )
     original = LifecycleEventEnvelope(
         event=LifecycleEventType.STARTED,
-        service="risk-and-exposure-service",
+        service="strategy-service",
         timestamp=ts,
         metadata=metadata,
     )

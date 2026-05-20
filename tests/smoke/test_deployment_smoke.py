@@ -175,7 +175,7 @@ def test_services_have_correct_names(http_client: httpx.Client, api: str) -> Non
         "instruments-service",
         "execution-service",
         "market-tick-data-service",
-        "ml-training-service",
+        "strategy-service",
     }
     overlap = known_services & set(names)
     assert len(overlap) >= 1, f"None of {known_services} found in service list: {names[:10]}"

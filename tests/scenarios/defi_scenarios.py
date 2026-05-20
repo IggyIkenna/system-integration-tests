@@ -285,7 +285,7 @@ def _carry_staked_basis_paper() -> ScenarioPlaybook:
                 timestamp_offset_ms=2000,
                 event_type="manifest_row_written",
                 data={
-                    "service_name": "position-balance-monitor-service",
+                    "service_name": "strategy-service",
                     "feature_group": "carry_staked_basis",
                     "capture_status": "captured",
                     "row_count": 1,
@@ -385,7 +385,7 @@ def _apd_paper() -> ScenarioPlaybook:
                 timestamp_offset_ms=1400,
                 event_type="manifest_row_written",
                 data={
-                    "service_name": "position-balance-monitor-service",
+                    "service_name": "strategy-service",
                     "feature_group": "arbitrage_price_dispersion",
                     "capture_status": "captured",
                     "row_count": 1,

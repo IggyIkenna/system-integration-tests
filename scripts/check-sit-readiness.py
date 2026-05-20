@@ -78,8 +78,6 @@ SIT_SCOPE_REPOS = [
     "market-tick-data-service",
     "instruments-service",
     "alerting-service",
-    "ml-inference-service",
-    "ml-training-service",
     "features-delta-one-service",
     "features-volatility-service",
     "features-cross-instrument-service",

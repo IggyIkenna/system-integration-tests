@@ -84,32 +84,11 @@ _SERVICE_MATRIX: list[tuple[str, str, str | None, str | None, str]] = [
         "batch / live — LiveHandler facade added (p1-todo-13)",
     ),
     (
-        "ml-inference-service",
-        "ml_inference_service",
-        "ml_inference_service/cli/handlers/batch_handler.py",
-        "ml_inference_service/cli/handlers/live_handler.py",
-        "batch / live — pre-existing handlers",
-    ),
-    (
-        "ml-training-service",
-        "ml_training_service",
-        "ml_training_service/cli/handlers/train_handler.py",
-        None,  # EXEMPT — batch-only by design
-        "EXEMPT — batch-only training job; live mode architecturally excluded",
-    ),
-    (
         "execution-service",
         "execution_service",
         None,  # live-only; no batch mode
         "execution_service/cli/handlers/live_execution_handler.py",
         "live-only — execution is always live; batch mode N/A",
-    ),
-    (
-        "risk-and-exposure-service",
-        "strategy_service.risk",
-        "strategy_service/risk/cli/handlers/compute_handler.py",
-        "strategy_service/risk/cli/handlers/compute_handler.py",  # same file, has run_batch + run_live
-        "combined handler — ComputeHandler.run_batch() + run_live()",
     ),
     (
         "alerting-service",
