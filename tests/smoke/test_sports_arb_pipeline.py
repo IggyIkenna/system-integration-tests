@@ -110,21 +110,13 @@ class TestSportsStrategyComponents:
     """Verify strategy modules are importable and functional."""
 
     def test_kelly_criterion_positive_edge(self) -> None:
-        try:
-            from strategy_service.engine.sports.kelly import kelly_fraction
-        except ImportError:
-            pytest.skip("strategy-service not installed in this environment")
-
+        kelly_fraction = pytest.importorskip("strategy_service.engine.sports.kelly").kelly_fraction
         fraction = kelly_fraction(probability=0.55, odds=2.0)
         assert fraction > 0, "Positive edge should yield positive Kelly fraction"
 
     def test_steam_detector_importable(self) -> None:
-        try:
-            from features_service.sports.calculators.steam_detector import SteamDetector
-
-            assert SteamDetector is not None
-        except ImportError:
-            pytest.skip("features-service not installed in this environment")
+        SteamDetector = pytest.importorskip("features_service.sports.calculators.steam_detector").SteamDetector
+        assert SteamDetector is not None
 
 
 class TestSportsRiskAndPosition:
@@ -161,42 +153,24 @@ class TestSportsAlertingRules:
     """Verify alerting-service has sports-specific alert types."""
 
     def test_sports_alert_rules_importable(self) -> None:
-        try:
-            from alerting_service.rules.sports_alerts import SportsAlertRules
-
-            assert SportsAlertRules is not None
-        except ImportError:
-            pytest.skip("alerting-service not installed in this environment")
+        SportsAlertRules = pytest.importorskip("alerting_service.rules.sports_alerts").SportsAlertRules
+        assert SportsAlertRules is not None
 
 
 class TestClientReportingAPISportsEndpoints:
     """Verify CRA has sports endpoints wired."""
 
     def test_sports_router_importable(self) -> None:
-        try:
-            from client_reporting_api.api.routes.sports import router
-
-            assert router is not None
-        except ImportError:
-            pytest.skip("client-reporting-api not installed in this environment")
+        router = pytest.importorskip("client_reporting_api.api.routes.sports").router
+        assert router is not None
 
     def test_sports_pnl_reader_importable(self) -> None:
-        try:
-            from client_reporting_api.core.sports_pnl_reader import (
-                generate_clv_report,
-                generate_sports_pnl_report,
-                generate_venue_performance_report,
-                read_sports_positions,
-                read_sports_risk,
-            )
-
-            assert generate_sports_pnl_report is not None
-            assert generate_clv_report is not None
-            assert generate_venue_performance_report is not None
-            assert read_sports_positions is not None
-            assert read_sports_risk is not None
-        except ImportError:
-            pytest.skip("client-reporting-api not installed in this environment")
+        mod = pytest.importorskip("client_reporting_api.core.sports_pnl_reader")
+        assert mod.generate_sports_pnl_report is not None
+        assert mod.generate_clv_report is not None
+        assert mod.generate_venue_performance_report is not None
+        assert mod.read_sports_positions is not None
+        assert mod.read_sports_risk is not None
 
 
 class TestBrowserAdapterCoverage:
@@ -269,24 +243,12 @@ class TestCredentialConfigCoverage:
     """Verify credential configs cover all venues."""
 
     def test_credential_configs_populated(self) -> None:
-        try:
-            from unified_trading_library import (
-                SPORTS_VENUE_CREDENTIALS,
-            )
-
-            assert len(SPORTS_VENUE_CREDENTIALS) >= 70, (
-                f"Expected >=70 credential configs, got {len(SPORTS_VENUE_CREDENTIALS)}"
-            )
-        except ImportError:
-            pytest.skip("unified-config-interface not installed in this environment")
+        SPORTS_VENUE_CREDENTIALS = pytest.importorskip("unified_trading_library").SPORTS_VENUE_CREDENTIALS
+        assert len(SPORTS_VENUE_CREDENTIALS) >= 70, (
+            f"Expected >=70 credential configs, got {len(SPORTS_VENUE_CREDENTIALS)}"
+        )
 
     def test_kalshi_credential_config_exists(self) -> None:
-        try:
-            from unified_trading_library import (
-                SPORTS_VENUE_CREDENTIALS,
-            )
-
-            kalshi_configs = [c for c in SPORTS_VENUE_CREDENTIALS if c.venue_key == "kalshi"]
-            assert len(kalshi_configs) == 1, "Kalshi credential config should exist"
-        except ImportError:
-            pytest.skip("unified-config-interface not installed in this environment")
+        SPORTS_VENUE_CREDENTIALS = pytest.importorskip("unified_trading_library").SPORTS_VENUE_CREDENTIALS
+        kalshi_configs = [c for c in SPORTS_VENUE_CREDENTIALS if c.venue_key == "kalshi"]
+        assert len(kalshi_configs) == 1, "Kalshi credential config should exist"

@@ -106,9 +106,9 @@ _SERVICE_MATRIX: list[tuple[str, str, str | None, str | None, str]] = [
     ),
     (
         "risk-and-exposure-service",
-        "risk_and_exposure_service",
-        "risk_and_exposure_service/cli/handlers/compute_handler.py",
-        "risk_and_exposure_service/cli/handlers/compute_handler.py",  # same file, has run_batch + run_live
+        "strategy_service.risk",
+        "strategy_service/risk/cli/handlers/compute_handler.py",
+        "strategy_service/risk/cli/handlers/compute_handler.py",  # same file, has run_batch + run_live
         "combined handler — ComputeHandler.run_batch() + run_live()",
     ),
     (

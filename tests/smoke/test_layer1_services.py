@@ -32,11 +32,11 @@ pytestmark = pytest.mark.code_test
         "features_sports_service.cli.main",
         "features_onchain_service.cli.main",
         "features_cross_instrument_service.cli.main",
-        "pnl_attribution_service.config",
+        "strategy_service.pnl.config",
         "market_tick_data_service.config",
         "alerting_service.config",
-        "risk_and_exposure_service.config",
-        "position_balance_monitor_service.config",
+        "strategy_service.risk.config",
+        "strategy_service.position.config",
     ],
 )
 def test_service_module_importable(module: str) -> None:
