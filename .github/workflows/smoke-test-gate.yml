@@ -291,8 +291,7 @@ jobs:
           SERVICES=(
             execution-service strategy-service market-data-processing-service
             market-tick-data-service market-data-api instruments-service
-            alerting-service risk-and-exposure-service position-balance-monitor-service
-            pnl-attribution-service ml-inference-service ml-training-service
+            alerting-service strategy-service ml-inference-service ml-training-service
             features-delta-one-service features-volatility-service
             features-cross-instrument-service features-onchain-service
             features-sports-service features-calendar-service

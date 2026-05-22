@@ -132,9 +132,9 @@ Which repos are gated by SIT for staging → main promotion.
 | ml-inference-service              | L4   | Model inference pipeline        |
 | strategy-service                  | L4   | Signal generation               |
 | execution-service                 | L4   | Order execution                 |
-| position-balance-monitor-service  | L4   | Position tracking               |
-| risk-and-exposure-service         | L4   | Risk controls                   |
-| pnl-attribution-service           | L4   | PnL correctness                 |
+| strategy-service                  | L4   | Position tracking               |
+| strategy-service                  | L4   | Risk controls                   |
+| strategy-service                  | L4   | PnL correctness                 |
 | alerting-service                  | L5   | Alert delivery                  |
 | unified-trading-api               | L5   | API contract stability          |
 | market-data-api                   | L5   | API contract stability          |

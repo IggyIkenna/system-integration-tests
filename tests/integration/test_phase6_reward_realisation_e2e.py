@@ -11,7 +11,7 @@ Validates the full chain end-to-end across 4 repos:
                                   set_pending_dust / drain_reward_attribution_rows
   execution-service          ->  DustRouterRunner, LegControllerRunner,
                                   convert_dust(), LeveragedLegController
-  pnl-attribution-service    ->  attribute_reward_realisation_from_rows,
+  strategy-service           ->  attribute_reward_realisation_from_rows,
                                   drain_and_persist (RAR rows -> PnLBreakdown)
 
 Reference scenario: CARRY_RECURSIVE_STAKED on weETH with 8.7 ETHFI dust
@@ -23,7 +23,7 @@ Phase6Driver brackets the orchestrator tick:
      simulated 12.5bps slippage; leg controller receives the realised
      inflow and rebalances both legs.
   3. RAR rows drain after on_tick; persister forwards to
-     pnl-attribution-service which projects to PnLBreakdown rows.
+     strategy-service which projects to PnLBreakdown rows.
 
 Asserted invariants:
   - ConvertDustInstruction emitted with action=CONVERT_DUST, identity
@@ -213,7 +213,7 @@ def test_phase6_full_chain_end_to_end() -> None:
 
     def persister(eng: object, rows: object, day: str) -> None:
         del eng, day
-        # Bridge into pnl-attribution-service's pure-function consumer.
+        # Bridge into strategy-service's pure-function consumer.
         breakdowns = attribute_reward_realisation_from_rows(rows=rows)  # type: ignore[arg-type]
         captured_pnl_rows.extend(breakdowns)
 

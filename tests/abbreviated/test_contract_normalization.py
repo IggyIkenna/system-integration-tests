@@ -1,7 +1,7 @@
 """
 Abbreviated SIT: Contract normalization checks for the three runtime communication paths.
 
-Runtime path:  execution-service <-> alerting-service <-> risk-and-exposure-service
+Runtime path:  execution-service <-> alerting-service <-> strategy-service
 Pilot path:    strategy-service <-> ml-inference-service
 Pipeline path: instruments-service -> market-data-processing-service -> features-*-service
 
@@ -227,7 +227,7 @@ def test_uic_canonical_ohlcv_round_trip() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Runtime path: UIC risk schemas (execution <-> risk-and-exposure-service boundary)
+# Runtime path: UIC risk schemas (execution <-> strategy-service boundary)
 # ---------------------------------------------------------------------------
 
 

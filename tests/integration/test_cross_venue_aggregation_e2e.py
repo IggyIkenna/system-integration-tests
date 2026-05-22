@@ -30,11 +30,11 @@ setup_events(
 
 pytestmark = pytest.mark.integration
 
-# Guard: position-balance-monitor-service may not be cloned/installed in all
+# Guard: strategy-service may not be cloned/installed in all
 # SIT environments.  Skip the entire module gracefully instead of crashing.
 pbms_aggregator = pytest.importorskip(  # pyright: ignore[reportUnknownMemberType]
     "strategy_service.position.core.cross_venue_aggregator",
-    reason="position-balance-monitor-service not installed — skipping cross-venue aggregation e2e tests",
+    reason="strategy-service not installed — skipping cross-venue aggregation e2e tests",
 )
 CrossVenueAggregator = pbms_aggregator.CrossVenueAggregator
 _VenueData = pbms_aggregator._VenueData

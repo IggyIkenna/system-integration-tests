@@ -6,7 +6,7 @@ Phase 6 hardening: validates the full chain end-to-end across 5 repos:
    strategy-service        ->  CarryStakedBasisEngine.declare_leg_portfolio_state()
    PBM                     ->  LegSnapshotBuilder.build_leg_snapshots()
    execution-service       ->  LeveragedLegController.compute_drift / emit_rebalance
-   risk-and-exposure-service -> detect_leverage_breaches()
+   strategy-service -> detect_leverage_breaches()
 
 The test fires the same state through every layer in sequence and asserts
 each repo's contract holds against its siblings.
@@ -207,7 +207,7 @@ def test_controller_rebalance_emits_atomic_with_correct_instruction_shape() -> N
 
 
 def test_risk_detector_fires_when_post_rebalance_skipped() -> None:
-    """risk-and-exposure-service: if the controller hadn't acted, drift
+    """strategy-service: if the controller hadn't acted, drift
     would persist and the detector would fire a LEVERAGE_BREACH on the
     over-levered short leg. Confirms the safety overlay is wired correctly."""
     from strategy_service.risk.core.leverage_breach_detector import (
