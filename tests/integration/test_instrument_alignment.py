@@ -211,12 +211,12 @@ class TestVenueTypeMatrix:
                 venue_types.setdefault(inst.venue, set()).add(str(inst.instrument_type))
 
         # Aave must produce A_TOKEN and DEBT_TOKEN
-        if "AAVEV3-ETHEREUM" in venue_types:
-            assert "A_TOKEN" in venue_types["AAVEV3-ETHEREUM"], "AAVEV3-ETHEREUM missing A_TOKEN instruments"
-            assert "DEBT_TOKEN" in venue_types["AAVEV3-ETHEREUM"], "AAVEV3-ETHEREUM missing DEBT_TOKEN instruments"
+        if "AAVE_V3-ETHEREUM" in venue_types:
+            assert "A_TOKEN" in venue_types["AAVE_V3-ETHEREUM"], "AAVE_V3-ETHEREUM missing A_TOKEN instruments"
+            assert "DEBT_TOKEN" in venue_types["AAVE_V3-ETHEREUM"], "AAVE_V3-ETHEREUM missing DEBT_TOKEN instruments"
 
         # Uniswap venues must produce POOL
-        for uni_venue in ("UNISWAPV3-ETHEREUM", "UNISWAPV2-ETHEREUM", "UNISWAPV4-ETHEREUM"):
+        for uni_venue in ("UNISWAP_V3-ETHEREUM", "UNISWAP_V2-ETHEREUM", "UNISWAP_V4-ETHEREUM"):
             if uni_venue in venue_types:
                 assert "POOL" in venue_types[uni_venue], f"{uni_venue} missing POOL instruments"
 
@@ -267,7 +267,7 @@ class TestDefiFieldAlignment:
         aave_a_tokens = [
             inst
             for inst in all_instruments
-            if inst.venue == "AAVEV3-ETHEREUM" and inst.instrument_type == InstrumentType.A_TOKEN
+            if inst.venue == "AAVE_V3-ETHEREUM" and inst.instrument_type == InstrumentType.A_TOKEN
         ]
         assert len(aave_a_tokens) > 0, "No Aave A_TOKEN instruments found"
         for inst in aave_a_tokens:
@@ -288,7 +288,7 @@ class TestDefiFieldAlignment:
         uni_v3_pools = [
             inst
             for inst in all_instruments
-            if inst.venue == "UNISWAPV3-ETHEREUM" and inst.instrument_type == InstrumentType.POOL
+            if inst.venue == "UNISWAP_V3-ETHEREUM" and inst.instrument_type == InstrumentType.POOL
         ]
         assert len(uni_v3_pools) > 0, "No Uniswap V3 POOL instruments found"
         for inst in uni_v3_pools:
@@ -304,7 +304,7 @@ class TestDefiFieldAlignment:
         aave_eth_instruments = [
             inst
             for inst in all_instruments
-            if inst.venue == "AAVEV3-ETHEREUM"
+            if inst.venue == "AAVE_V3-ETHEREUM"
             and inst.base_asset is not None
             and inst.base_asset in ("ETH", "stETH", "eETH")
         ]

@@ -85,7 +85,7 @@ class _DeterministicQuoteSource:
         if token.token_symbol != "ETHFI":
             return None
         return RouteQuote(
-            route_hops=["BINANCE:ETHFI-USDC", "UNISWAPV3-ETHEREUM:USDC-WETH"],
+            route_hops=["BINANCE:ETHFI-USDC", "UNISWAP_V3-ETHEREUM:USDC-WETH"],
             target_amount_at_mark=token.amount * Decimal("0.0004"),
             target_amount_realised=token.amount * Decimal("0.000395"),
             slippage_target=token.amount * Decimal("0.000005"),
