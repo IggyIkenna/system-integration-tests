@@ -1,0 +1,94 @@
+# full-workspace-sit.yml — Tier B: the continuous cross-repo SIT layer.
+#
+# WHY (full_cicd_sit_target_state_2026_05_24.md § Tier B): per-repo workspace-qg renders a
+# partial dep_repos set, so cross-repo invariants (feature-DAG SSOT, cassette↔consumer linkage,
+# data_type canonicalization) SKIP — they run NOWHERE continuously. This job assembles the FULL
+# active workspace (all repos from workspace-manifest.json topologicalOrder as siblings) and runs
+# the cross-repo invariant suite (scripts/run_cross_repo_invariants.sh), which fails on any
+# invariant failure OR on a skip (a skip == workspace not assembled == the bug this layer catches).
+#
+# Cadence: nightly (03:00 UTC, offset from performance-test's 02:00) + manual + on-promotion
+# (repository_dispatch [full-workspace-sit] fired by the Tier C promotion bot before it advances a
+# live-defi-rollout → staging PR). A repo must not promote to staging while this is RED for its layer.
+name: full-workspace-sit
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC nightly
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [full-workspace-sit]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cross-repo-invariants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout system-integration-tests
+        uses: actions/checkout@v4
+        with:
+          path: system-integration-tests
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Clone all active repos as siblings (topologicalOrder)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_ORG: IggyIkenna
+          DEP_BRANCH: live-defi-rollout
+        run: |
+          set -euo pipefail
+          # PM holds the manifest; clone it first.
+          git clone --depth=1 -b "$DEP_BRANCH" \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GH_ORG}/unified-trading-pm.git" \
+            unified-trading-pm 2>/dev/null \
+            || git clone --depth=1 -b main \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GH_ORG}/unified-trading-pm.git" \
+            unified-trading-pm
+          # Enumerate every active repo from the manifest topologicalOrder (skip PM + this repo).
+          mapfile -t REPOS < <(python3 - <<'PY'
+          import json
+          m = json.load(open("unified-trading-pm/workspace-manifest.json"))
+          seen = []
+          for lvl in m.get("topologicalOrder", {}).get("levels", []):
+              for r in lvl.get("repos", []):
+                  if r not in ("unified-trading-pm", "system-integration-tests") and r not in seen:
+                      seen.append(r)
+          print("\n".join(seen))
+          PY
+          )
+          echo "Cloning ${#REPOS[@]} sibling repos @ ${DEP_BRANCH} (fallback main)..."
+          for r in "${REPOS[@]}"; do
+            git clone --depth=1 -b "$DEP_BRANCH" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GH_ORG}/${r}.git" "$r" 2>/dev/null \
+              || git clone --depth=1 -b main \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GH_ORG}/${r}.git" "$r" 2>/dev/null \
+              || echo "WARN: could not clone $r (skipping — runner will fail loudly if it is a required sibling)"
+          done
+          echo "Assembled workspace:" && ls -d */
+
+      - name: Install unified-api-contracts (invariant tests import it)
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet uv
+          uv venv unified-api-contracts/.venv
+          uv pip install --python unified-api-contracts/.venv/bin/python \
+            -e unified-api-contracts pytest pyyaml
+
+      - name: Run cross-repo invariant suite
+        env:
+          WORKSPACE_ROOT: ${{ github.workspace }}
+          UAC_PYTHON: ${{ github.workspace }}/unified-api-contracts/.venv/bin/python
+        run: |
+          set -uo pipefail
+          bash system-integration-tests/scripts/run_cross_repo_invariants.sh
