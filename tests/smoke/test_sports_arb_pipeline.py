@@ -51,7 +51,7 @@ class TestUSEIRouterCoverage:
     def test_supported_data_sources_include_kalshi(self) -> None:
         import typing
 
-        from unified_sports_execution_interface.routing import SupportedDataSource
+        from execution_service.sports_execution.routing import SupportedDataSource
 
         sources = typing.get_args(SupportedDataSource)
         assert "kalshi_direct" in sources
@@ -59,7 +59,7 @@ class TestUSEIRouterCoverage:
     def test_supported_data_sources_include_all_exchanges(self) -> None:
         import typing
 
-        from unified_sports_execution_interface.routing import SupportedDataSource
+        from execution_service.sports_execution.routing import SupportedDataSource
 
         sources = typing.get_args(SupportedDataSource)
         expected = [
@@ -73,7 +73,7 @@ class TestUSEIRouterCoverage:
             assert src in sources, f"Data source '{src}' missing from SupportedDataSource"
 
     def test_router_paper_adapter_works(self) -> None:
-        from unified_sports_execution_interface.routing import (
+        from execution_service.sports_execution.routing import (
             SportsExecutionDataSourceConfig,
             SportsExecutionRouter,
         )
@@ -88,8 +88,8 @@ class TestUSEIRouterCoverage:
         assert adapter is not None
 
     def test_router_kalshi_adapter_builds(self) -> None:
-        from unified_sports_execution_interface.adapters.exchanges.kalshi import KalshiAdapter
-        from unified_sports_execution_interface.routing import (
+        from execution_service.sports_execution.adapters.exchanges.kalshi import KalshiAdapter
+        from execution_service.sports_execution.routing import (
             SportsExecutionDataSourceConfig,
             SportsExecutionRouter,
         )
@@ -177,13 +177,13 @@ class TestBrowserAdapterCoverage:
     """Verify browser adapter coverage for scraper venues."""
 
     def test_venue_key_to_adapter_mapping_populated(self) -> None:
-        from unified_sports_execution_interface.adapters.browser import VENUE_KEY_TO_ADAPTER
+        from execution_service.sports_execution.adapters.browser import VENUE_KEY_TO_ADAPTER
 
         assert len(VENUE_KEY_TO_ADAPTER) >= 50, f"Expected >=50 browser venue mappings, got {len(VENUE_KEY_TO_ADAPTER)}"
 
     def test_all_browser_adapters_have_venue_key(self) -> None:
-        from unified_sports_execution_interface.adapters.browser import VENUE_KEY_TO_ADAPTER
-        from unified_sports_execution_interface.adapters.browser.base import BrowserBettingAdapter
+        from execution_service.sports_execution.adapters.browser import VENUE_KEY_TO_ADAPTER
+        from execution_service.sports_execution.adapters.browser.base import BrowserBettingAdapter
 
         for key, cls in VENUE_KEY_TO_ADAPTER.items():
             assert issubclass(cls, BrowserBettingAdapter), (
@@ -197,7 +197,7 @@ class TestPaperTradingEndToEnd:
 
     @pytest.mark.asyncio()
     async def test_paper_place_and_cancel(self) -> None:
-        from unified_sports_execution_interface.adapters.paper.paper_betting import (
+        from execution_service.sports_execution.adapters.paper.paper_betting import (
             PaperBettingAdapter,
         )
 
@@ -223,7 +223,7 @@ class TestPaperTradingEndToEnd:
 
     @pytest.mark.asyncio()
     async def test_paper_adapter_via_router(self) -> None:
-        from unified_sports_execution_interface.routing import (
+        from execution_service.sports_execution.routing import (
             SportsExecutionDataSourceConfig,
             SportsExecutionRouter,
         )
