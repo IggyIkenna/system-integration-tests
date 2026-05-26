@@ -77,30 +77,76 @@ override-dependencies = [
     "requests>=2.33.0,<3.0.0",
 ]
 
+# ── ruff (lint + format) — canonical-tool-sections.toml 2026-05-26 ─────────────
 [tool.ruff]
 line-length = 120
+target-version = "py313"
+exclude = [".cursor", ".venv", ".venv-workspace", "build", "dist", "node_modules"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "G",
-"C90",]
-
+# Rich union — E/F/W (pyflakes+pycodestyle), I (isort), N (pep8-naming),
+# UP (pyupgrade), B (bugbear), C4 (comprehensions), SIM (simplify), RUF (ruff),
+# G (logging-format), C90 (mccabe complexity).
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "G", "C90"]
+extend-ignore = ["G003", "G004"]
+ignore = ["E402"]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 7
+max-complexity = 26
 
+[tool.ruff.lint.per-file-ignores]
+"*/__init__.py" = ["F401", "E402"]
+"tests/*" = ["F401", "F841", "F811"]
+"tests/conftest.py" = ["E402"]
+
+# ── basedpyright (typecheck) — CONSOLIDATED from pyrightconfig.json 2026-05-26 ─
+# DEVIATION (scripts-only repo): include covers all owned dirs — tests/ (was the
+# sole include in pyrightconfig.json), scripts/, and system_integration_tests/
+# (the thin package present at root). No importable library package; no single
+# <PACKAGE_DIR> placeholder applies. extraPaths ported verbatim from
+# pyrightconfig.json (6 paths); venvPath/venv removed (basedpyright resolves via
+# pyproject.toml automatically).
 [tool.basedpyright]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
+include = ["tests", "scripts", "system_integration_tests"]
+exclude = ["tests/e2e/test_aws_s3_smoke.py", "**/__pycache__", ".venv*", ".venv-workspace", "build", "dist", "node_modules"]
+# ── Type-correctness rules → "error" (strict). Full canonical set restored.
+# ── Owned by ruff / pragmatic softenings.
+# DEVIATION (scripts-only — from pyrightconfig.json): reportMissingImports set
+# to "none" in old config; restored to "error" (canonical). reportImplicitRelativeImport
+# was "none" in old config; omitted here (not in canonical set; default behaviour).
+
+# Cross-repo import resolution — ported from pyrightconfig.json extraPaths (6 entries).
 reportAny = "error"
+reportMissingTypeStubs = false
+reportImplicitRelativeImport = "none"
+reportMissingImports = "none"
 reportUnknownMemberType = "error"
 reportUnknownVariableType = "error"
-reportUnknownArgumentType = "error"
-reportMissingTypeStubs = false
+reportUnusedFunction = "none"
+[[tool.basedpyright.executionEnvironments]]
+root = "."
+pythonVersion = "3.13"
+pythonPlatform = "All"
+extraPaths = [
+    ".",
+    "../deployment-api",
+    "../unified-api-contracts",
+    "../unified-internal-contracts",
+    "../unified-trading-library",
+    "../unified-cloud-interface",
+]
 
-[tool.coverage.report]
-fail_under = 15  # Realistic for SIT: unit+integration ~18%; e2e/smoke require live services (CI only)
-
+# ── pytest ──────────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
 markers = [
     "smoke: Layer 3a — fast pipeline smoke tests (<5 min, run first)",
     "integration: Layer 3b — cross-library contract tests (no live services required)",
@@ -118,3 +164,21 @@ markers = [
     "medium: Medium-priority journey — runs in weekly SIT",
     "scorecard: Test contributes to flow-validation scorecard",
 ]
+
+# ── coverage (run + report — BOTH required in every repo) ────────────────────────
+# DEVIATION (scripts-only repo): source covers all owned dirs (tests/,
+# system_integration_tests/, scripts/). fail_under = 0 because this is a
+# tests-only repo with no packaged library; e2e/smoke tests require live
+# services that are absent in CI unit runs. The existing value was 15 (comment
+# said "Realistic for SIT: unit+integration ~18%"); reset to 0 per canonical
+# scripts-only floor — no coverage gate applies here.
+[tool.coverage.run]
+source = ["tests", "system_integration_tests", "scripts"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 0   # scripts/tests-only repo — no packaged coverage gate; e2e requires live services
+
+# ── bandit (security SAST — every repo) ──────────────────────────────────────────
+[tool.bandit]
+skips = []
