@@ -19,7 +19,7 @@ pytestmark = pytest.mark.code_test
 
 
 def _seed_spec() -> dict[object, object]:
-    """Minimal spec used for determinism checks — no external files needed."""
+    """Minimal spec used for determinism checks - no external files needed."""
     return {
         "gbm_params": {
             "BTC-USDT": {"vol": 0.5, "drift": 0.0, "base_price": 40000.0},
@@ -117,11 +117,11 @@ def test_delayed_scenario_fast_forwards() -> None:
     effective_sleep_s = cfg.delay_ms / cfg.fast_forward_factor / 1000.0
     assert abs(effective_sleep_s - 1.0) < 1e-9, "Effective sleep should be ~1.0s per tick"
 
-    # Wall-clock budget: 4 ticks × 1s = 4s < 5s
+    # Wall-clock budget: 4 ticks x 1s = 4s < 5s
     ticks = 4
     expected_total_s = effective_sleep_s * ticks
     assert expected_total_s < 5.0, (
-        f"{ticks} ticks at {effective_sleep_s:.3f}s each = {expected_total_s:.1f}s — must be < 5s"
+        f"{ticks} ticks at {effective_sleep_s:.3f}s each = {expected_total_s:.1f}s - must be < 5s"
     )
 
 

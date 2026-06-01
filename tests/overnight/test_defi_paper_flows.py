@@ -1,14 +1,14 @@
 """Mocked end-to-end DeFi paper-flow scenarios for the two May-23 archetypes.
 
 Tests the full paper-trading signal → execution pipeline using in-process mocks.
-No credentials, no network, no on-chain calls — runs in CI and locally.
+No credentials, no network, no on-chain calls - runs in CI and locally.
 
 Scenarios:
-  1. ``carry_staked_basis`` — LST staking yield vs Aave borrow rate spread; DeFi
+  1. ``carry_staked_basis`` - LST staking yield vs Aave borrow rate spread; DeFi
      long-stake leg + CeFi short-perp hedge.  Paper mode uses MockExecutionAlwaysFill
      for both legs.
 
-  2. ``arbitrage_price_dispersion`` — DEX vs CEX price dispersion; buy the cheap
+  2. ``arbitrage_price_dispersion`` - DEX vs CEX price dispersion; buy the cheap
      venue / sell the expensive venue.  Paper mode uses MockExecutionAlwaysFill for
      both legs.
 
@@ -85,7 +85,7 @@ def _build_state(
 
 
 # ---------------------------------------------------------------------------
-# Scenario 1 — carry_staked_basis
+# Scenario 1 - carry_staked_basis
 # ---------------------------------------------------------------------------
 
 
@@ -130,7 +130,7 @@ def _run_carry_staked_basis_paper(*, run_id: str) -> _CarryResult:
     defi_fill = executor.fills[0]
     cefi_fill = executor.fills[1]
 
-    # Unrealized P&L: funding income (spread × notional, annualized 1-day)
+    # Unrealized P&L: funding income (spread x notional, annualized 1-day)
     spread_annual = Decimal("0.014")
     notional = quantity * steth_price_usdc
     pnl_unrealized = notional * spread_annual / Decimal("365")
@@ -209,7 +209,7 @@ class TestCarryStakedBasisPaperFlow:
 
 
 # ---------------------------------------------------------------------------
-# Scenario 2 — arbitrage_price_dispersion
+# Scenario 2 - arbitrage_price_dispersion
 # ---------------------------------------------------------------------------
 
 
@@ -219,7 +219,7 @@ def _run_arbitrage_price_dispersion_paper(*, run_id: str) -> _ApdResult:
     Signal: ETH/USDC price on Uniswap V3 (DEX) vs Binance spot (CEX).
     DEX price:   3_481.50 USDC
     CEX price:   3_487.80 USDC
-    Spread:        6.30 USDC (18 bps) — above 5 bps minimum threshold.
+    Spread:        6.30 USDC (18 bps) - above 5 bps minimum threshold.
 
     Execution (paper mode):
       Leg 1: BUY  0.3 ETH on Uniswap V3 (cheaper venue)
@@ -256,7 +256,7 @@ def _run_arbitrage_price_dispersion_paper(*, run_id: str) -> _ApdResult:
     dex_fill = executor.fills[0]
     cex_fill = executor.fills[1]
 
-    # Gross P&L: (sell_price - buy_price) × quantity
+    # Gross P&L: (sell_price - buy_price) x quantity
     gross_pnl = (cex_price - dex_price) * quantity
     spread_bps = int(((cex_price - dex_price) / dex_price * 10_000).to_integral_value())
 
@@ -309,7 +309,7 @@ class TestArbitragePriceDispersionPaperFlow:
         assert result["spread_bps"] >= 5, f"Spread {result['spread_bps']} bps below 5 bps minimum threshold"
 
     def test_gross_pnl_is_positive(self) -> None:
-        """Gross P&L must be positive: (sell_price - buy_price) × quantity > 0."""
+        """Gross P&L must be positive: (sell_price - buy_price) x quantity > 0."""
         result = _run_arbitrage_price_dispersion_paper(run_id="test-apd-pnl")
         assert result["gross_pnl"] > Decimal("0"), f"Expected positive gross P&L; got {result['gross_pnl']}"
 
@@ -317,7 +317,7 @@ class TestArbitragePriceDispersionPaperFlow:
         """Two independent paper runs must produce identical state hash (batch=live parity).
 
         Validates that arb spread capture is deterministic when fills are always at the
-        requested price — execution alpha = 0 in paper mode.
+        requested price - execution alpha = 0 in paper mode.
         """
         result_a = _run_arbitrage_price_dispersion_paper(run_id="test-apd-hash-a")
         result_b = _run_arbitrage_price_dispersion_paper(run_id="test-apd-hash-b")

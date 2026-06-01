@@ -28,7 +28,7 @@ def _has_aws_creds() -> bool:
 
 
 @pytest.fixture(autouse=True)
-def _skip_aws_without_creds(request: pytest.FixtureRequest, s3_bucket: str | None) -> Generator[None, None, None]:
+def _skip_aws_without_creds(request: pytest.FixtureRequest, s3_bucket: str | None) -> Generator[None]:
     """Skip AWS integration tests when no creds or S3_TEST_BUCKET."""
     if "integration" in request.keywords and (not _boto3_available() or s3_bucket is None or not _has_aws_creds()):
         pytest.skip(

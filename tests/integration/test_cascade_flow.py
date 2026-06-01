@@ -15,6 +15,7 @@ import os
 import subprocess
 from collections import deque
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 import yaml
@@ -158,7 +159,7 @@ def _build_dependency_graph(
     """Return (adjacency_list, in_degree) for Kahn's topological sort."""
     all_repos = set(repositories.keys())
     graph: dict[str, list[str]] = {repo: [] for repo in all_repos}
-    in_degree: dict[str, int] = {repo: 0 for repo in all_repos}
+    in_degree: dict[str, int] = dict.fromkeys(all_repos, 0)
     for repo_name, repo_data in repositories.items():
         deps = repo_data.get("dependencies", []) if isinstance(repo_data, dict) else []
         for dep in deps if isinstance(deps, list) else []:
@@ -191,7 +192,7 @@ def _kahn_visited_count(
 class TestDependencyGraph:
     """Validate dependency graph structure."""
 
-    def test_dependency_graph_is_acyclic(self) -> None:  # noqa: C901
+    def test_dependency_graph_is_acyclic(self) -> None:
         """Build dependency graph from manifest, verify no cycles via BFS
         topological sort (Kahn's algorithm)."""
         manifest = _load_manifest()
@@ -210,7 +211,7 @@ class TestDependencyGraph:
 class TestCascadeWorkflowTelegram:
     """Verify cascade workflows have Telegram notification wiring."""
 
-    WORKFLOW_NAMES = [
+    WORKFLOW_NAMES: ClassVar[list[str]] = [
         "cascade-qg-ordering.yml",
         "downstream-fix-agent.yml",
         "fix-approval-timeout.yml",

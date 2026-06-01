@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import cast
 
@@ -62,9 +62,7 @@ class ScorecardRun:
         scores_raw = data.get("scores")
         if isinstance(scores_raw, dict):
             for k, v in scores_raw.items():
-                if isinstance(v, (int, float)):
-                    scores[str(k)] = float(v)
-                elif isinstance(v, str):
+                if isinstance(v, (int, float, str)):
                     scores[str(k)] = float(v)
                 else:
                     scores[str(k)] = 0.0
@@ -124,7 +122,7 @@ class ScorecardTracker:
             delta = total - previous_total
 
         run = ScorecardRun(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             scores=dict(scores),
             total_score=total,
             delta_from_previous=delta,

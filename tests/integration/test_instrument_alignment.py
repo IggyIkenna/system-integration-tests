@@ -558,7 +558,7 @@ class TestCrossComponentIntegration:
         instruments2 = gen2.generate_all(ref_date=_REF_DATE, include_options_chain=False)
 
         assert len(instruments1) == len(instruments2)
-        for i1, i2 in zip(instruments1, instruments2):
+        for i1, i2 in zip(instruments1, instruments2, strict=False):
             assert i1.instrument_key == i2.instrument_key
             assert i1.model_dump() == i2.model_dump()
 

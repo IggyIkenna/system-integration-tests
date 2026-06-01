@@ -128,7 +128,7 @@ class TestAuditAgentEndToEnd:
         assert len(report.results_for_repo("bad-service")) == 4
 
     def test_repo_context_has_path(self, tmp_path: Path) -> None:
-        workspace, manifest_path = _build_workspace(tmp_path)
+        _workspace, manifest_path = _build_workspace(tmp_path)
         repos = discover_repos(str(manifest_path))
         good_ctx = get_repo_context("good-service", repos)
         assert Path(good_ctx["path"]).is_dir()

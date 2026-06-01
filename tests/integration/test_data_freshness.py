@@ -213,7 +213,7 @@ class TestDataGapDetectedCondition:
         # cadence=1, max_age=5 — age of 3 > 2*1 triggers critical
         contract = _make_contract(max_age=5, warn_age=2, cadence=1, criticality="critical")
         monitor = FreshnessMonitor(contract=contract)
-        status, detail = monitor.check(last_update_seconds_ago=3.0)
+        status, _detail = monitor.check(last_update_seconds_ago=3.0)
         # age=3 > warn=2 → warn or critical; either qualifies for gap detection
         assert status in {"warn", "critical"}
 

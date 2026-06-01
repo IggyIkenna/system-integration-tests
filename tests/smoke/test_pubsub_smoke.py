@@ -12,6 +12,7 @@ Tests skip gracefully without credentials.
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import time
 import uuid
@@ -146,14 +147,10 @@ class TestPubSubPublishSubscribe:
 
         finally:
             # Tear down ephemeral resources
-            try:
+            with contextlib.suppress(Exception):
                 client.delete_subscription(sub_name)
-            except Exception:
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 client.delete_topic(topic_name)
-            except Exception:
-                pass
 
 
 # ---------------------------------------------------------------------------
