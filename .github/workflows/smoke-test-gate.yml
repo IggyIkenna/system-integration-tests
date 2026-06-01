@@ -1,10 +1,27 @@
 name: Smoke Test Gate
 
-# Triggers on push to staging branch; on success dispatches staging-validated
-# to unified-trading-pm so PM can promote repos staging→main in tier order.
+# Triggered by PM's debounced `staging-changed` repository_dispatch (NOT raw push:staging).
+# On success dispatches staging-validated to unified-trading-pm so PM can promote repos
+# staging→main in tier order.
 #
 # Part of the staging-to-main automation:
-#   service repo → staging → (this workflow) → PM staging-to-main.yml → main
+#   service repo → staging → PM sit-debounce-trigger.yml (60s quiet-period debounce, batches
+#   rapid staging merges into ONE run) → repository_dispatch `staging-changed` → (this workflow)
+#   → code-tests dispatches `sit-lock` → PM sit-gate.yml locks staging →
+#   → on pass dispatch fires `staging-validated` → PM staging-to-main.yml → main
+#
+# TRIGGER MODEL (revived 2026-06-01, cicd P1 #257):
+#   PM's sit-debounce-trigger.yml is the SINGLE debouncer. This gate is dispatch-driven only.
+#   The old `push:[staging]` trigger + in-job `sleep 600` quiet-period was removed: it
+#   double-debounced against PM and, combined with `concurrency: cancel-in-progress: true`,
+#   the 600s sleep was cancelled mid-wait by any second trigger in the group → the gate NEVER
+#   reached its dispatch steps → PM sit-gate got zero runs → staging-to-main never fired.
+#   PM's `staging-changed` dispatch was previously ORPHANED (no listener); it is now wired here.
+#   `cancel-in-progress: false` so a queued dispatch never cancels a run that already locked staging.
+#
+# repository_dispatch ALWAYS runs the workflow definition from the DEFAULT branch (main) and
+# resolves github.sha/github.ref to main — so SIT-repo checkouts pin `ref: staging` explicitly
+# to test the staging code, and the staging-validated payload resolves the real staging SHA.
 #
 # SIT VERSION SCOPE: Only repos with staging_versions[repo] >= 0.1.0 are tested.
 # If no such repos exist on staging, the workflow exits immediately (no lock dispatched).
@@ -13,6 +30,7 @@ name: Smoke Test Gate
 #   full (default) — code-tests + deployment-tests; full contract + integration suite
 #   abbreviated    — tests/abbreviated/ only (<2 min schema checks); used for hotfix path
 #                    and repos with sit_level=abbreviated in PM manifest (e.g. PM, Codex)
+#   Requested via client_payload.sit_mode (dispatch) or workflow_dispatch input; defaults full.
 #
 # Hotfix detection: PM manifest staging_status.hotfix_mode=true (set by quickmerge --hotfix)
 # sit_level detection: PM manifest repositories[repo].sit_level (abbreviated|standard)
@@ -25,8 +43,8 @@ name: Smoke Test Gate
 #   dispatch            — fires staging-validated to PM; clears hotfix_mode if set
 
 on:
-  push:
-    branches: [staging]
+  repository_dispatch:
+    types: [staging-changed]
   workflow_dispatch:
     inputs:
       reason:
@@ -40,7 +58,10 @@ on:
 
 concurrency:
   group: sit-staging
-  cancel-in-progress: true
+  # false: never cancel an in-flight run — a cancelled run that already dispatched sit-lock
+  # would leave staging locked forever. PM's sit-debounce-trigger already batches upstream and
+  # skips dispatch while staging_status.locked, so queueing (not cancelling) is safe.
+  cancel-in-progress: false
 
 jobs:
   setup:
@@ -55,21 +76,14 @@ jobs:
       sit_mode: ${{ steps.filter.outputs.sit_mode }}
 
     steps:
-      - name: SIT debounce (10-min quiet period — skipped for abbreviated/hotfix)
-        run: |
-          # Skip debounce if workflow_dispatch with sit_mode=abbreviated
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.sit_mode }}" = "abbreviated" ]; then
-            echo "Abbreviated mode — skipping debounce."
-          else
-            echo "Waiting 600s quiet period — new staging push will cancel this run via concurrency group."
-            sleep 600
-          fi
-
+      # No in-job debounce: PM's sit-debounce-trigger.yml is the single debouncer (60s quiet
+      # period + rapid-merge batching). The old `sleep 600` here double-debounced and self-
+      # cancelled via the concurrency group — see TRIGGER MODEL header (cicd P1 #257).
       - name: Clone PM manifest and filter v1 repos + detect SIT mode
         id: filter
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
-          DISPATCH_SIT_MODE: ${{ inputs.sit_mode || 'full' }}
+          DISPATCH_SIT_MODE: ${{ github.event.client_payload.sit_mode || inputs.sit_mode || 'full' }}
         run: |
           set -euo pipefail
           OWNER="${{ github.repository_owner }}"
@@ -160,6 +174,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Pin staging: repository_dispatch/workflow_dispatch default to the repo default branch
+          # (main); we always test the staging code that PM is gating for promotion.
+          ref: staging
 
       - name: Setup Python CI tools
         uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
@@ -242,6 +260,10 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Pin staging: repository_dispatch/workflow_dispatch default to the repo default branch
+          # (main); we always test the staging code that PM is gating for promotion.
+          ref: staging
 
       - name: Checkout unified-trading-codex (readiness checklists)
         uses: actions/checkout@v4
@@ -365,6 +387,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Pin staging: repository_dispatch/workflow_dispatch default to the repo default branch
+          # (main); we always test the staging code that PM is gating for promotion.
+          ref: staging
 
       - name: Checkout unified-trading-pm (docker-compose)
         uses: actions/checkout@v4
@@ -491,19 +517,31 @@ jobs:
             echo "clear-hotfix-mode dispatched to PM."
           fi
 
+      - name: Resolve staging commit SHA (dispatch runs from default branch)
+        id: staging_sha
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          SHA=$(gh api "repos/${{ github.repository }}/commits/staging" -q .sha)
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "Resolved staging SHA: ${SHA}"
+
       - name: Dispatch staging-validated to unified-trading-pm
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GH_PAT }}
           repository: IggyIkenna/unified-trading-pm
           event-type: staging-validated
+          # branch/commit are informational (staging-to-main is manifest-driven). Pinned to the
+          # real staging SHA because github.sha resolves to main under repository_dispatch.
           client-payload: |
             {
               "source_repo": "${{ github.repository }}",
-              "branch": "${{ github.ref_name }}",
-              "commit": "${{ github.sha }}",
+              "branch": "staging",
+              "commit": "${{ steps.staging_sha.outputs.sha }}",
               "run_id": "${{ github.run_id }}",
-              "timestamp": "${{ github.event.head_commit.timestamp }}",
+              "trigger_event": "${{ github.event_name }}",
               "sit_mode": "${{ needs.setup.outputs.sit_mode }}"
             }
 
