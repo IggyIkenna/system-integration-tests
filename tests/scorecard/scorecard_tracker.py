@@ -62,7 +62,7 @@ class ScorecardRun:
         scores_raw = data.get("scores")
         if isinstance(scores_raw, dict):
             for k, v in scores_raw.items():
-                if isinstance(v, (int, float)) or isinstance(v, str):
+                if isinstance(v, (int, float, str)):
                     scores[str(k)] = float(v)
                 else:
                     scores[str(k)] = 0.0
