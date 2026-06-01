@@ -37,10 +37,10 @@ permissions:
 
 jobs:
   quality-gates-v2:
-    name: Quality Gates (alerting-service)
+    name: Quality Gates (system-integration-tests)
     uses: IggyIkenna/unified-trading-pm/.github/workflows/python-quality-gates-v2.yml@live-defi-rollout
     with:
-      dep_repos: "unified-trading-library unified-api-contracts"
+      dep_repos: "alerting-service client-reporting-api deployment-api execution-service features-service instruments-service market-data-processing-service strategy-service unified-api-contracts unified-trading-library"
     secrets: inherit
     # Note: reusable workflow inputs are intentionally minimal — service_name + source_dir
     # are derived inside the reusable workflow from github.repository (caller's repo name)
