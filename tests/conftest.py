@@ -190,7 +190,7 @@ def base_urls() -> dict[str, str]:
 
         with open(mapping_file) as f:
             mapping = json.load(f)
-        for stack_name, stack in mapping.get("stacks", {}).items():
+        for _stack_name, stack in mapping.get("stacks", {}).items():
             api_port = stack.get("api_port")
             api_name = stack.get("api")
             if api_port and api_name:

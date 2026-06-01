@@ -145,7 +145,7 @@ def _simulate_defi_lp_backtest(
 
     instr_seq = 0
 
-    for i, (hour_off, price_str, fee_bps_str, vol_str, tvl_str) in enumerate(snapshots):
+    for _i, (hour_off, price_str, fee_bps_str, vol_str, tvl_str) in enumerate(snapshots):
         ts = _BASE_TS + timedelta(hours=hour_off)
         price = Decimal(price_str)
         fee_bps = int(fee_bps_str)

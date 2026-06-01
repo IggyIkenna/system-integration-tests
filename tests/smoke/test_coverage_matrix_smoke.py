@@ -1,6 +1,6 @@
-"""Layer 3a smoke — coverage-matrix GCS state assertions.
+"""Layer 3a smoke - coverage-matrix GCS state assertions.
 
-Verifies that TEST-bucket state across representative (category × venue ×
+Verifies that TEST-bucket state across representative (category x venue x
 data_type) cells is internally consistent with the per-category path layout
 SSOT and manifest v5 schema. Runs against real GCS when
 ``GCS_TEST_BUCKET_ENABLED=1`` and ADC / service-account creds are available;
@@ -10,39 +10,39 @@ Design
 ------
 
 The prior TRIGGER step (CLI invocation that wrote the data) is NOT exercised
-here — SIT's canon is HTTP + GCS/PubSub assertions, not subprocess CLI calls
+here - SIT's canon is HTTP + GCS/PubSub assertions, not subprocess CLI calls
 into services (see ``system-integration-tests/README.md``). Instead this test
 verifies that whatever populated the TEST buckets (dev-local
 ``<service>/scripts/smoke_matrix.py`` or staging CI) left consistent state:
 
-* Step 1 (trigger) — performed elsewhere. Pre-condition is assumed.
-* Step 2 (parquet on disk) — enforced here: at least one ``.parquet`` exists
+* Step 1 (trigger) - performed elsewhere. Pre-condition is assumed.
+* Step 2 (parquet on disk) - enforced here: at least one ``.parquet`` exists
   under the cell's category-specific prefix (see SSOT
   ``codex/02-data/per-category-bucket-layouts.md``).
-* Step 3 (manifest row) — enforced here: a row in
+* Step 3 (manifest row) - enforced here: a row in
   ``_index/availability_index.parquet`` matches the cell and has
   ``capture_status in {captured, empty_confirmed}``. ``empty_confirmed`` is
-  a PASS — "we tried, legitimately zero rows" is valuable signal.
+  a PASS - "we tried, legitimately zero rows" is valuable signal.
 
 Representative cells
 --------------------
 
 One cell per distinct partition shape, covering every category:
 
-* **CEFI** × BINANCE-SPOT × trades — standard venue-partitioned
-* **TRADFI** × CME × trades — standard venue-partitioned
-* **DEFI** × UNISWAP × trades — standard (chain= partition enforced in MTDS
+* **CEFI** x BINANCE-SPOT x trades - standard venue-partitioned
+* **TRADFI** x CME x trades - standard venue-partitioned
+* **DEFI** x UNISWAP x trades - standard (chain= partition enforced in MTDS
   layer; here we only assert instruments-store which has no chain partition)
-* **SPORTS** × ODDS_API × odds — SPORTS-specific ``sports_reference/`` tree
+* **SPORTS** x ODDS_API x odds - SPORTS-specific ``sports_reference/`` tree
   + ``entity=`` partition (no venue= segment)
-* **PREDICTION** × POLYMARKET × trades — PREDICTION-specific (no venue=
+* **PREDICTION** x POLYMARKET x trades - PREDICTION-specific (no venue=
   segment, shards by ``instrument_type=``)
 
 Extending coverage
 ------------------
 
 Add a row to ``_CELLS`` and parametrisation expands automatically. Tests are
-independent — each cell skips individually if its TEST bucket is missing.
+independent - each cell skips individually if its TEST bucket is missing.
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ __all__ = ["test_coverage_matrix_cell_has_parquet_and_manifest"]
 # the coverage matrix smoke via ``GCS_TEST_BUCKET_ENABLED=1``.
 #
 # When enabled, individual cells still skip cleanly if their specific TEST
-# bucket is missing — that just means no dev-local smoke has seeded that
+# bucket is missing - that just means no dev-local smoke has seeded that
 # category yet.
 # ---------------------------------------------------------------------------
 
@@ -123,7 +123,7 @@ def _check_cell(cell: CellSpec) -> _CellOutcome:
 
     # google-cloud-storage SDK types Client/Bucket/Blob as Unknown under strict
     # basedpyright. Same pattern as every other smoke_matrix.py in the
-    # workspace — scoped pyright ignores at the SDK boundary only.
+    # workspace - scoped pyright ignores at the SDK boundary only.
     client = get_storage_client()  # pyright: ignore[reportAny]
     bucket = client.bucket(bucket_name)  # pyright: ignore[reportAttributeAccessIssue, reportUnknownVariableType, reportUnknownMemberType]
     if not bucket.exists():  # pyright: ignore[reportUnknownMemberType]
@@ -176,7 +176,7 @@ def _cell_test_id(c: CellSpec) -> str:
 
 @pytest.mark.parametrize("cell", CELLS, ids=_cell_test_id)
 def test_coverage_matrix_cell_has_parquet_and_manifest(cell: CellSpec) -> None:
-    """3-step assertion contract — steps 2 & 3 on TEST-bucket state.
+    """3-step assertion contract - steps 2 & 3 on TEST-bucket state.
 
     Step 1 (trigger) is a pre-condition satisfied by dev-local smoke runs or
     staging CI. Step 2 (parquet) + Step 3 (manifest row with
@@ -197,7 +197,7 @@ def test_coverage_matrix_cell_has_parquet_and_manifest(cell: CellSpec) -> None:
         pytest.fail(
             f"[{cell.test_id}] no .parquet at prefix "
             f"gs://{make_test_bucket_name(cell.category, os.environ.get('GCP_PROJECT_ID', 'test-project'))}/"
-            f"{expected_parquet_prefix(cell)} — "
+            f"{expected_parquet_prefix(cell)} - "
             f"Step 2 failed. Re-run dev-local smoke for {cell.category}."
         )
 
@@ -205,7 +205,7 @@ def test_coverage_matrix_cell_has_parquet_and_manifest(cell: CellSpec) -> None:
         pytest.fail(
             f"[{cell.test_id}] parquet at {outcome.parquet_example!r} but no "
             f"manifest row in _index/availability_index.parquet matching "
-            f"{cell.manifest_filter()!r} — Step 3 failed. Adapter may not be "
+            f"{cell.manifest_filter()!r} - Step 3 failed. Adapter may not be "
             f"calling ManifestWriter.record_captured/record_empty/record_failed."
         )
 
@@ -215,6 +215,6 @@ def test_coverage_matrix_cell_has_parquet_and_manifest(cell: CellSpec) -> None:
             f"capture_status={outcome.manifest_capture_status!r} "
             f"(error_reason={outcome.manifest_error_reason!r}). Only "
             f"`captured` and `empty_confirmed` count as PASS; "
-            f"`attempted_failed` is a triage signal — see playbook "
+            f"`attempted_failed` is a triage signal - see playbook "
             f"codex/15-runbooks/smoke-testing-playbook.md."
         )

@@ -57,12 +57,14 @@ class TestNoLiveHttpCalls:
 
         sentinel = RuntimeError("Live HTTP call detected in unit-test mode — not allowed")
 
-        with patch("httpx.Client.send", side_effect=sentinel):
-            with patch("httpx.AsyncClient.send", side_effect=sentinel):
-                # These imports must complete without triggering any HTTP call
-                import unified_trading_library.cloud_interface  # type: ignore[import-not-found]
+        with (
+            patch("httpx.Client.send", side_effect=sentinel),
+            patch("httpx.AsyncClient.send", side_effect=sentinel),
+        ):
+            # These imports must complete without triggering any HTTP call
+            import unified_trading_library.cloud_interface  # type: ignore[import-not-found]
 
-                assert unified_trading_library.cloud_interface is not None
+            assert unified_trading_library.cloud_interface is not None
 
     def test_requests_not_called_on_schema_import(self) -> None:
         """Importing instrument schemas must not fire any HTTP request."""

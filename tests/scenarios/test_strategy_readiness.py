@@ -187,10 +187,9 @@ def test_config_yaml_exists_when_declared(
     """If has_config_yaml is True, the config file must exist."""
     missing_configs: list[str] = []
     for strat in strategy_manifest:
-        if not strat.get("has_config_yaml"):
-            # Also check config_file in new schema
-            if not strat.get("config_file"):
-                continue
+        # Skip only when not config-backed in either the legacy (has_config_yaml) or new (config_file) schema
+        if not strat.get("has_config_yaml") and not strat.get("config_file"):
+            continue
         display_name = str(strat.get("name", strat.get("display_name", strat.get("strategy_id", "unknown"))))
         config_path_str = strat.get("config_yaml_path") or strat.get("config_file")
         if config_path_str is None:

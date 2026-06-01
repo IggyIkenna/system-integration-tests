@@ -15,6 +15,7 @@ import os
 import subprocess
 from collections import deque
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 import yaml
@@ -210,7 +211,7 @@ class TestDependencyGraph:
 class TestCascadeWorkflowTelegram:
     """Verify cascade workflows have Telegram notification wiring."""
 
-    WORKFLOW_NAMES = [
+    WORKFLOW_NAMES: ClassVar[list[str]] = [
         "cascade-qg-ordering.yml",
         "downstream-fix-agent.yml",
         "fix-approval-timeout.yml",

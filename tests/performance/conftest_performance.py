@@ -1,12 +1,12 @@
 """Shared fixtures and utilities for system-level performance tests.
 
-All fixtures use mocks — no real GCS, PubSub, or venue connections are made.
+All fixtures use mocks - no real GCS, PubSub, or venue connections are made.
 This ensures performance tests are deterministic and runnable in CI without infra.
 
 Load scenarios (applied per test via LOAD_SCENARIOS):
-- normal:    1× load, 60s   — runs in every PR CI
-- peak:      5× load, 600s  — runs in nightly CI (@pytest.mark.slow)
-- sustained: 5× load, 3600s — runs in weekly CI (@pytest.mark.slow)
+- normal:    1x load, 60s   - runs in every PR CI
+- peak:      5x load, 600s  - runs in nightly CI (@pytest.mark.slow)
+- sustained: 5x load, 3600s - runs in weekly CI (@pytest.mark.slow)
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def mock_venue() -> MockVenue:
 def mock_gcs() -> MagicMock:
     """Mock GCS client for storage benchmarks.
 
-    Returns in-memory data immediately — no network overhead.
+    Returns in-memory data immediately - no network overhead.
     """
     mock = MagicMock()
     mock.download.return_value = b"mock-data" * 100
@@ -178,7 +178,7 @@ def resource_monitor() -> Generator[ResourceMonitor]:
     """Fixture that provides a ResourceMonitor and asserts no leak after test."""
     monitor = ResourceMonitor()
     yield monitor
-    # Soft check — warns but does not fail by default in fixtures
+    # Soft check - warns but does not fail by default in fixtures
     growth = monitor.growth_pct()
     if growth > 10.0:
         import warnings

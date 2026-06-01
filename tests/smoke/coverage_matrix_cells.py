@@ -8,11 +8,11 @@ unit-tested without GCP credentials.
 SSOT references
 ---------------
 
-* Per-category bucket + path layouts —
+* Per-category bucket + path layouts -
   ``unified-trading-pm/codex/02-data/per-category-bucket-layouts.md``.
-* Manifest v5 schema —
+* Manifest v5 schema -
   ``unified-trading-pm/codex/02-data/availability-manifest-and-data-status.md``.
-* TEST-bucket naming convention — adapters set
+* TEST-bucket naming convention - adapters set
   ``IS_TEST_RUN=true`` to route writes to ``<name>-test-<project_id>``
   buckets with 7-day lifecycle.
 """
@@ -25,7 +25,7 @@ from datetime import UTC, datetime, timedelta
 
 @dataclass(frozen=True)
 class CellSpec:
-    """A single (service × category × venue × data_type) coverage cell.
+    """A single (service x category x venue x data_type) coverage cell.
 
     ``chain`` + ``league`` + ``instrument_type`` carry the category-specific
     extra partition levels when they apply (DeFi, SPORTS, PREDICTION
@@ -75,7 +75,7 @@ class CellSpec:
 
 
 # ---------------------------------------------------------------------------
-# Representative cells — one per distinct partition shape / category.
+# Representative cells - one per distinct partition shape / category.
 #
 # We deliberately keep this list SMALL (5 rows) so the parametrised test
 # remains a smoke layer (<5 min) rather than a full matrix run. The per-
@@ -139,7 +139,7 @@ def expected_parquet_prefix(cell: CellSpec, date_str: str | None = None) -> str:
       (different tree, ``entity=`` replaces ``venue=``)
     * **everything else** → ``instrument_availability/by_date/day={date}/venue={venue}/``
 
-    Default *date_str* is "yesterday UTC" — picked because instruments-service
+    Default *date_str* is "yesterday UTC" - picked because instruments-service
     runs in batch nightly and "today" is often incomplete. Pass an explicit
     ISO date for deterministic tests.
     """
