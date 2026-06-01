@@ -8,9 +8,9 @@ Tests run in normal-load scenario by default (PR CI).
 Peak/sustained scenarios are marked @pytest.mark.slow (nightly/weekly CI only).
 
 Load scenarios (see conftest_performance.py):
-  normal:    1× load  — always runs
-  peak:      5× load  — @pytest.mark.slow (nightly)
-  sustained: 5× load  — @pytest.mark.slow (weekly)
+  normal:    1x load  - always runs
+  peak:      5x load  - @pytest.mark.slow (nightly)
+  sustained: 5x load  - @pytest.mark.slow (weekly)
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     pass
 
 # ---------------------------------------------------------------------------
-# Targets (ms) — sourced from performance-targets.md
+# Targets (ms) - sourced from performance-targets.md
 # ---------------------------------------------------------------------------
 
 TARGET_ORDER_SUBMISSION_P99_MS: float = 500.0
@@ -67,7 +67,7 @@ def _simulate_order_submission(client: MagicMock, venue: str = "mock") -> dict[s
 
 
 # ---------------------------------------------------------------------------
-# Normal load scenario (always runs — no @pytest.mark.slow)
+# Normal load scenario (always runs - no @pytest.mark.slow)
 # ---------------------------------------------------------------------------
 
 
@@ -116,15 +116,15 @@ def test_order_submission_no_memory_leak_normal_load() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Peak load scenario (nightly CI only — @pytest.mark.slow)
+# Peak load scenario (nightly CI only - @pytest.mark.slow)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.slow
 def test_order_submission_p99_peak_load() -> None:
-    """Order submission p99 <= 500ms under peak load (500 iterations, 5× multiplier).
+    """Order submission p99 <= 500ms under peak load (500 iterations, 5x multiplier).
 
-    Nightly CI only. Same target as normal load — system must not degrade under peak.
+    Nightly CI only. Same target as normal load - system must not degrade under peak.
     """
     client = _make_mock_http_client()
     scenario = LOAD_SCENARIOS["peak"]

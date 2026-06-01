@@ -160,7 +160,7 @@ def _blocked_connect(self: socket.socket, address: object) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None]:
     if not request.config.getoption("--block-network", default=False):
         yield
         return
@@ -190,7 +190,7 @@ def base_urls() -> dict[str, str]:
 
         with open(mapping_file) as f:
             mapping = json.load(f)
-        for stack_name, stack in mapping.get("stacks", {}).items():
+        for _stack_name, stack in mapping.get("stacks", {}).items():
             api_port = stack.get("api_port")
             api_name = stack.get("api")
             if api_port and api_name:
@@ -215,7 +215,7 @@ def base_urls() -> dict[str, str]:
 
 
 @pytest.fixture(scope="session")
-def http_client() -> Generator[httpx.Client, None, None]:
+def http_client() -> Generator[httpx.Client]:
     with httpx.Client(timeout=30.0) as client:
         yield client
 
@@ -329,7 +329,7 @@ def pubsub_emulator_host() -> str | None:
 def with_pubsub_emulator(
     pubsub_emulator_host: str | None,
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """Activate the Pub/Sub emulator for a single SIT test.
 
     Sets ``PUBSUB_EMULATOR_HOST`` via *monkeypatch* so the ``google-cloud-pubsub``
@@ -372,7 +372,7 @@ def _is_gcs_emulator_reachable(url: str) -> bool:
 
 
 @pytest.fixture(scope="session")
-def gcs_emulator() -> Generator[str, None, None]:
+def gcs_emulator() -> Generator[str]:
     """Yield the GCS emulator URL when ``STORAGE_EMULATOR_HOST`` is set and reachable.
 
     Tests that request this fixture are **skipped automatically** when the env var
@@ -417,7 +417,7 @@ def gcs_emulator() -> Generator[str, None, None]:
 def with_gcs_emulator(
     gcs_emulator: str,
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """Activate the GCS emulator for a single SIT test via ``STORAGE_EMULATOR_HOST``.
 
     Sets ``STORAGE_EMULATOR_HOST`` via *monkeypatch* so the ``google-cloud-storage``

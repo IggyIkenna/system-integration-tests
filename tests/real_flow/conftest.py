@@ -69,7 +69,7 @@ def flow_urls() -> FlowServiceURLs:
 
 
 @pytest.fixture(scope="session")
-def flow_client() -> Generator[httpx.Client, None, None]:
+def flow_client() -> Generator[httpx.Client]:
     """Dedicated httpx client for real-flow tests with generous timeout."""
     with httpx.Client(timeout=30.0) as client:
         yield client

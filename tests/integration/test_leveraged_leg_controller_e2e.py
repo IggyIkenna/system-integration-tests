@@ -246,12 +246,12 @@ def test_full_e2e_chain_strategy_pbm_controller_risk() -> None:
     LegPortfolioState contract.
     """
     from execution_service.algo_library.leveraged_leg_controller import LeveragedLegController
+    from strategy_service.engine.strategies.v2.carry_and_yield.staked_basis import (
+        CarryStakedBasisEngine,
+    )
     from strategy_service.position.core.leg_snapshot_builder import build_leg_snapshots
     from strategy_service.risk.core.leverage_breach_detector import (
         detect_leverage_breaches,
-    )
-    from strategy_service.engine.strategies.v2.carry_and_yield.staked_basis import (
-        CarryStakedBasisEngine,
     )
 
     # Layer 1: strategy declares

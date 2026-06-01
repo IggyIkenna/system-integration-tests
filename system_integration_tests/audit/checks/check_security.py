@@ -76,19 +76,17 @@ def check_security(repo_path: Path, workspace_root: Path) -> AuditResult:
                         )
                     )
 
-            # Check os.getenv()
-            if _OS_GETENV_PATTERN.search(line):
-                # Allow config-bootstrap exceptions
-                if "# config-bootstrap:" not in line:
-                    findings.append(
-                        AuditFinding(
-                            message="os.getenv() usage -- use UnifiedCloudConfig instead",
-                            severity=AuditSeverity.HIGH,
-                            file_path=rel_path,
-                            line_number=line_num,
-                            evidence=line.strip()[:80],
-                        )
+            # Check os.getenv() (allow config-bootstrap exceptions)
+            if _OS_GETENV_PATTERN.search(line) and "# config-bootstrap:" not in line:
+                findings.append(
+                    AuditFinding(
+                        message="os.getenv() usage -- use UnifiedCloudConfig instead",
+                        severity=AuditSeverity.HIGH,
+                        file_path=rel_path,
+                        line_number=line_num,
+                        evidence=line.strip()[:80],
                     )
+                )
 
             # Check try/except ImportError
             if _IMPORT_FALLBACK_PATTERN.search(line):

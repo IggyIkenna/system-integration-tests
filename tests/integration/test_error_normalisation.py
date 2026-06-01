@@ -1,24 +1,24 @@
 """SIT integration tests for error normalisation and circuit breaker pathways.
 
-Plan reference: error_normalisation_unknown_exchanges (P4.1–P4.3)
+Plan reference: error_normalisation_unknown_exchanges (P4.1-P4.3)
 
-P4.1 — Unknown error pathway
+P4.1 - Unknown error pathway
     Verifies that unrecognised venue error codes are classified as None by
     classify_venue_error(), that CanonicalUnknownVenueError can be raised with
     correct field values, and that a mock adapter applying the catch-all pattern
     emits UNKNOWN_VENUE_ERROR_RECEIVED via log_event.
 
-P4.2 — Non-triggering error (rate-limit)
+P4.2 - Non-triggering error (rate-limit)
     Verifies that injecting CanonicalRateLimitError into the circuit breaker
-    does NOT advance the failure counter — the breaker stays CLOSED even after
+    does NOT advance the failure counter - the breaker stays CLOSED even after
     many rate-limit errors.
 
-P4.3 — Config-driven threshold
+P4.3 - Config-driven threshold
     Verifies that a circuit breaker wired with failure_threshold=3 opens
     after exactly 3 triggering (CanonicalNetworkError) failures.
 
 All tests run credential-free (CLOUD_PROVIDER=local CLOUD_MOCK_MODE=true).
-No real network calls — mocks are applied via unittest.mock.patch.
+No real network calls - mocks are applied via unittest.mock.patch.
 """
 
 from __future__ import annotations
@@ -66,12 +66,12 @@ def _make_unknown_error_with_endpoint(
 
 
 # ---------------------------------------------------------------------------
-# P4.1 — Unknown error pathway
+# P4.1 - Unknown error pathway
 # ---------------------------------------------------------------------------
 
 
 class TestClassifyVenueErrorUnknownCode:
-    """P4.1 — classify_venue_error() returns None for unmapped codes."""
+    """P4.1 - classify_venue_error() returns None for unmapped codes."""
 
     def test_binance_totally_unknown_code_returns_none(self) -> None:
         """An invented Binance error code not in VENUE_ERROR_MAP returns None."""
@@ -102,7 +102,7 @@ class TestClassifyVenueErrorUnknownCode:
 
 
 class TestCanonicalUnknownVenueErrorFields:
-    """P4.1 — CanonicalUnknownVenueError carries correct structured fields."""
+    """P4.1 - CanonicalUnknownVenueError carries correct structured fields."""
 
     def test_error_code_is_unknown_venue_error(self) -> None:
         err = _make_unknown_error("binance", "99999", "Unknown error from exchange")
@@ -146,7 +146,7 @@ class TestCanonicalUnknownVenueErrorFields:
 
 
 class TestMockAdapterCatchAllPattern:
-    """P4.1 — A mock adapter applying the catch-all pattern emits UNKNOWN_VENUE_ERROR_RECEIVED
+    """P4.1 - A mock adapter applying the catch-all pattern emits UNKNOWN_VENUE_ERROR_RECEIVED
     via log_event and re-raises the original exception."""
 
     def _mock_adapter_submit_order(
@@ -225,23 +225,23 @@ class TestMockAdapterCatchAllPattern:
         """When classify_venue_error returns a classification, no unknown event is emitted."""
         with patch("unified_trading_library.events.log_event") as mock_log:
             classification = classify_venue_error("binance", "TOTALLY_UNKNOWN_CODE_99999")
-            # We are verifying the None-path guard — if it returned something, no event.
+            # We are verifying the None-path guard - if it returned something, no event.
             # This test checks that when classify_venue_error IS None the event fires,
             # and verifies the guard logic independently.
-            assert classification is None  # confirmed — the guard would fire
+            assert classification is None  # confirmed - the guard would fire
             mock_log.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# P4.2 — Non-triggering error: rate-limit does NOT trip the circuit breaker
+# P4.2 - Non-triggering error: rate-limit does NOT trip the circuit breaker
 # ---------------------------------------------------------------------------
 
 
 class TestCircuitBreakerRateLimitNonTriggering:
-    """P4.2 — CanonicalRateLimitError must NOT advance the failure counter."""
+    """P4.2 - CanonicalRateLimitError must NOT advance the failure counter."""
 
     @pytest.fixture()
-    def cb(self) -> Generator[object, None, None]:
+    def cb(self) -> Generator[object]:
         """Fresh _VenueCircuitBreaker instance isolated from the module registry."""
         from execution_service.engine.circuit_breaker import _VenueCircuitBreaker
 
@@ -291,15 +291,15 @@ class TestCircuitBreakerRateLimitNonTriggering:
 
 
 # ---------------------------------------------------------------------------
-# P4.3 — Config-driven threshold: opens after exactly N triggering failures
+# P4.3 - Config-driven threshold: opens after exactly N triggering failures
 # ---------------------------------------------------------------------------
 
 
 class TestCircuitBreakerConfigDrivenThreshold:
-    """P4.3 — failure_threshold from VenueCircuitBreakerConfig controls when OPEN occurs."""
+    """P4.3 - failure_threshold from VenueCircuitBreakerConfig controls when OPEN occurs."""
 
     @pytest.fixture()
-    def cb_threshold_3(self) -> Generator[object, None, None]:
+    def cb_threshold_3(self) -> Generator[object]:
         """Circuit breaker with failure_threshold=3 and a very long cooldown."""
         from execution_service.engine.circuit_breaker import _VenueCircuitBreaker
         from unified_api_contracts.internal import VenueCircuitBreakerConfig
@@ -410,7 +410,7 @@ class TestCircuitBreakerConfigDrivenThreshold:
 
             cb = cb_module.get_circuit_breaker(_UNIQUE_VENUE)
             # The registry key is looked up by venue string; since "cefi_exchange_test_registry_p4_3"
-            # is not in the registry, it falls back to defaults — verify defaults used gracefully.
+            # is not in the registry, it falls back to defaults - verify defaults used gracefully.
             assert cb is not None
         finally:
             cb_module._config_registry = original_registry

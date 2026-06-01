@@ -1,17 +1,17 @@
-"""SIT cross-asset scenarios — batch-live symmetry across asset_group boundaries.
+"""SIT cross-asset scenarios - batch-live symmetry across asset_group boundaries.
 
 Three scenarios beyond Phase 8 honest-coverage:
 
-  Scenario A — DeFi+CeFi hybrid carry
+  Scenario A - DeFi+CeFi hybrid carry
     DeFi long/lend leg (Aave lending APY) + CeFi perp short hedge leg (funding rate).
     Net carry = DeFi lending yield - perp funding payment.
     Invariant: hybrid net carry > 0 iff lending_apy > funding_rate.
 
-  Scenario B — TradFi+Sports batch-live parity smoke
+  Scenario B - TradFi+Sports batch-live parity smoke
     Both asset groups run through the same batch benchmark-fill logic.
     Invariant: benchmark fill price is deterministic across repeated runs (batch=batch).
 
-  Scenario C — Prediction-only backtest smoke
+  Scenario C - Prediction-only backtest smoke
     Binary prediction market contracts with Polymarket-style outcomes.
     Invariant: resolved YES contract → full payout; resolved NO → zero payout;
     unresolved → proportional mid.
@@ -32,7 +32,7 @@ pytestmark = pytest.mark.integration
 
 
 # ---------------------------------------------------------------------------
-# Scenario A — DeFi+CeFi hybrid carry
+# Scenario A - DeFi+CeFi hybrid carry
 # ---------------------------------------------------------------------------
 
 
@@ -47,9 +47,9 @@ class HybridCarryResult(TypedDict):
 # Aave ETH lending rate snapshots
 # field: (day_offset, lending_apy_bps, perp_funding_rate_bps_per_8h)
 _HYBRID_CARRY_SNAPSHOTS: list[tuple[int, int, int]] = [
-    (0, 420, 8),  # lending 4.2% APY; funding 0.08%/8h (~8.76% APY) — carry negative
-    (1, 420, 3),  # funding drops to 0.03%/8h (~3.28% APY) — carry positive
-    (2, 435, 3),  # lending APY rises slightly — carry widens
+    (0, 420, 8),  # lending 4.2% APY; funding 0.08%/8h (~8.76% APY) - carry negative
+    (1, 420, 3),  # funding drops to 0.03%/8h (~3.28% APY) - carry positive
+    (2, 435, 3),  # lending APY rises slightly - carry widens
     (3, 435, 4),  # funding ticks up slightly
     (4, 450, 5),  # borderline (4.5% APY vs ~5.47% APY funding)
     (5, 460, 4),  # carry positive again
@@ -58,7 +58,7 @@ _HYBRID_CARRY_SNAPSHOTS: list[tuple[int, int, int]] = [
 
 
 def _funding_apy_bps(funding_8h_bps: int) -> Decimal:
-    """Convert 8h funding rate in bps to annualised APY in bps (3 events/day × 365 days)."""
+    """Convert 8h funding rate in bps to annualised APY in bps (3 events/day x 365 days)."""
     return Decimal(funding_8h_bps) * 3 * 365
 
 
@@ -69,8 +69,8 @@ def _simulate_hybrid_carry(
     """Simulate DeFi+CeFi hybrid carry over the snapshot window.
 
     For each day:
-      - Earn DeFi lending yield: position × lending_apy_bps / 10_000 / 365
-      - Pay CeFi perp funding: position × funding_8h_bps / 10_000 × 3 (3 payments/day)
+      - Earn DeFi lending yield: position x lending_apy_bps / 10_000 / 365
+      - Pay CeFi perp funding: position x funding_8h_bps / 10_000 x 3 (3 payments/day)
       - Net carry for day = lending_yield - funding_cost
     """
     daily_carries: list[Decimal] = []
@@ -89,7 +89,7 @@ def _simulate_hybrid_carry(
 
 
 class TestDefiCefiHybridCarry:
-    """Scenario A — DeFi lending + CeFi perp hedge net carry."""
+    """Scenario A - DeFi lending + CeFi perp hedge net carry."""
 
     def test_positive_carry_when_lending_exceeds_funding(self) -> None:
         result = _simulate_hybrid_carry(_HYBRID_CARRY_SNAPSHOTS)
@@ -111,7 +111,7 @@ class TestDefiCefiHybridCarry:
     def test_zero_funding_gives_pure_lending_yield(self) -> None:
         snapshots: list[tuple[int, int, int]] = [(0, 400, 0), (1, 400, 0)]
         result = _simulate_hybrid_carry(snapshots, position_usdc=Decimal("365_000"))
-        # Each day: 365_000 × 400/10000/365 = 40 USDC lending yield; 0 funding
+        # Each day: 365_000 x 400/10000/365 = 40 USDC lending yield; 0 funding
         assert all(c == Decimal("40") for c in result["daily_carries"])
 
     def test_asset_group_isolation(self) -> None:
@@ -122,7 +122,7 @@ class TestDefiCefiHybridCarry:
 
 
 # ---------------------------------------------------------------------------
-# Scenario B — TradFi + Sports batch-live parity smoke
+# Scenario B - TradFi + Sports batch-live parity smoke
 # ---------------------------------------------------------------------------
 
 
@@ -186,7 +186,7 @@ def _simulate_sports_batch(
 
 
 class TestTradFiSportsBatchLiveParity:
-    """Scenario B — TradFi and Sports benchmark fills are deterministic across runs."""
+    """Scenario B - TradFi and Sports benchmark fills are deterministic across runs."""
 
     def test_tradfi_benchmark_fills_deterministic(self) -> None:
         r1 = _simulate_tradfi_batch(_SPX_DAILY)
@@ -202,16 +202,16 @@ class TestTradFiSportsBatchLiveParity:
 
     def test_tradfi_fills_match_open_price(self) -> None:
         result = _simulate_tradfi_batch(_SPX_DAILY)
-        for fill, row in zip(result["fills"], _SPX_DAILY):
+        for fill, row in zip(result["fills"], _SPX_DAILY, strict=False):
             assert fill == Decimal(row[1])
 
     def test_sports_fills_match_offered_odds(self) -> None:
         result = _simulate_sports_batch(_MATCH_ODDS)
-        for fill, row in zip(result["fills"], _MATCH_ODDS):
+        for fill, row in zip(result["fills"], _MATCH_ODDS, strict=False):
             assert fill == Decimal(row[1])
 
     def test_tradfi_pnl_positive_on_rising_day(self) -> None:
-        # Day 4: open 5242 → close 5255 — positive
+        # Day 4: open 5242 → close 5255 - positive
         result = _simulate_tradfi_batch(_SPX_DAILY)
         assert result["pnl_per_trade"][-1] > Decimal("0")
 
@@ -223,20 +223,20 @@ class TestTradFiSportsBatchLiveParity:
     def test_cross_asset_pnl_additive(self) -> None:
         tradfi = _simulate_tradfi_batch(_SPX_DAILY)
         sports = _simulate_sports_batch(_MATCH_ODDS)
-        # TradFi and Sports asset groups are independent — sum is additive
+        # TradFi and Sports asset groups are independent - sum is additive
         combined = tradfi["total_pnl"] + sports["total_pnl"]
         assert combined == tradfi["total_pnl"] + sports["total_pnl"]
 
     def test_batch_benchmark_fill_zero_execution_alpha(self) -> None:
         result = _simulate_tradfi_batch(_SPX_DAILY)
-        for fill, row in zip(result["fills"], _SPX_DAILY):
+        for fill, row in zip(result["fills"], _SPX_DAILY, strict=False):
             benchmark_price = Decimal(row[1])
             execution_alpha_bps = (fill - benchmark_price) / benchmark_price * 10_000
             assert execution_alpha_bps == Decimal("0")
 
 
 # ---------------------------------------------------------------------------
-# Scenario C — Prediction-only backtest smoke
+# Scenario C - Prediction-only backtest smoke
 # ---------------------------------------------------------------------------
 
 
@@ -307,7 +307,7 @@ def _simulate_prediction_backtest(
 
 
 class TestPredictionOnlyBacktest:
-    """Scenario C — prediction market binary contracts backtest smoke."""
+    """Scenario C - prediction market binary contracts backtest smoke."""
 
     def test_yes_outcome_yields_positive_pnl(self) -> None:
         result = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
@@ -336,7 +336,7 @@ class TestPredictionOnlyBacktest:
         r1 = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
         r2 = _simulate_prediction_backtest(_PREDICTION_CONTRACTS)
         assert r1["total_pnl"] == r2["total_pnl"]
-        for c1, c2 in zip(r1["contracts"], r2["contracts"]):
+        for c1, c2 in zip(r1["contracts"], r2["contracts"], strict=False):
             assert c1["pnl_usdc"] == c2["pnl_usdc"]
 
     def test_higher_entry_mid_lower_yes_payout(self) -> None:
