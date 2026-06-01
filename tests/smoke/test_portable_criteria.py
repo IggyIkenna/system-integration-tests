@@ -97,7 +97,7 @@ class TestBatchLiveSymmetry:
     """
 
     @pytest.fixture(autouse=True)
-    def _local_env(self) -> Generator[None, None, None]:
+    def _local_env(self) -> Generator[None]:
         _set_local_env()
         yield
 

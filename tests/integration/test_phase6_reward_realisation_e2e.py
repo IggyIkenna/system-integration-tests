@@ -47,14 +47,14 @@ from decimal import Decimal
 from execution_service.algo_library.dust_conversion_router import RouteQuote
 from execution_service.algo_library.dust_router_runner import DustRouterRunner
 from execution_service.algo_library.leg_controller_runner import LegControllerRunner
-from strategy_service.pnl.engine.reward_attribution import (
-    attribute_reward_realisation_from_rows,
-)
 from strategy_service.engine.strategies.v2.orchestrator import (
     V2EngineOrchestrator,
     V2Subscription,
 )
 from strategy_service.engine.strategies.v2.phase6_driver import Phase6Driver
+from strategy_service.pnl.engine.reward_attribution import (
+    attribute_reward_realisation_from_rows,
+)
 
 # Pre-import everything so a missing dep / wrong UAC version surfaces
 # at collection time, not deep inside one of the assertions.

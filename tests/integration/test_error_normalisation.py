@@ -241,7 +241,7 @@ class TestCircuitBreakerRateLimitNonTriggering:
     """P4.2 — CanonicalRateLimitError must NOT advance the failure counter."""
 
     @pytest.fixture()
-    def cb(self) -> Generator[object, None, None]:
+    def cb(self) -> Generator[object]:
         """Fresh _VenueCircuitBreaker instance isolated from the module registry."""
         from execution_service.engine.circuit_breaker import _VenueCircuitBreaker
 
@@ -299,7 +299,7 @@ class TestCircuitBreakerConfigDrivenThreshold:
     """P4.3 — failure_threshold from VenueCircuitBreakerConfig controls when OPEN occurs."""
 
     @pytest.fixture()
-    def cb_threshold_3(self) -> Generator[object, None, None]:
+    def cb_threshold_3(self) -> Generator[object]:
         """Circuit breaker with failure_threshold=3 and a very long cooldown."""
         from execution_service.engine.circuit_breaker import _VenueCircuitBreaker
         from unified_api_contracts.internal import VenueCircuitBreakerConfig

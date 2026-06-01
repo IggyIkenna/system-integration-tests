@@ -174,7 +174,7 @@ class ResourceMonitor:
 
 
 @pytest.fixture
-def resource_monitor() -> Generator[ResourceMonitor, None, None]:
+def resource_monitor() -> Generator[ResourceMonitor]:
     """Fixture that provides a ResourceMonitor and asserts no leak after test."""
     monitor = ResourceMonitor()
     yield monitor
