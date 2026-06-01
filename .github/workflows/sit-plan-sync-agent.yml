@@ -22,6 +22,10 @@ on:
         default: "false"
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sit-plan-sync:
     runs-on: ubuntu-latest
@@ -35,13 +39,13 @@ jobs:
 
     steps:
       - name: Checkout system-integration-tests
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
 
       - name: Checkout unified-trading-pm (active plans)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           repository: IggyIkenna/unified-trading-pm
           token: ${{ secrets.GH_PAT }}
@@ -80,7 +84,7 @@ jobs:
 
           CONTEXT:
           You have access to:
-          1. unified-trading-pm/plans/active/*.plan.md — active PM plans with todos and statuses
+          1. unified-trading-pm/plans/active/*.md — active PM plans with todos and statuses
           2. sit-inventory.txt — all test files and test functions in this repo
           3. The current directory is system-integration-tests/
 

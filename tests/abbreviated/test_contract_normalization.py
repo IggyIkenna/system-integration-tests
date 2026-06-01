@@ -1,7 +1,7 @@
 """
 Abbreviated SIT: Contract normalization checks for the three runtime communication paths.
 
-Runtime path:  execution-service <-> alerting-service <-> risk-and-exposure-service
+Runtime path:  execution-service <-> alerting-service <-> strategy-service
 Pilot path:    strategy-service <-> ml-inference-service
 Pipeline path: instruments-service -> market-data-processing-service -> features-*-service
 
@@ -22,7 +22,26 @@ import pytest
 
 # UAC canonical execution schemas (UAC has py.typed; import directly from UAC)
 from unified_api_contracts import CanonicalFill, CanonicalOrder, OrderSide, OrderType
-from unified_events_interface import (
+from unified_api_contracts.internal.domain.ml_inference_service import (
+    CascadeConfig,
+    CascadePredictionEvent,
+    PredictionSnapshot,
+)
+from unified_api_contracts.internal.domain.pubsub_service import (
+    FillEventMessage,
+    PubSubMessageEnvelope,
+    RiskAlertMessage,
+)
+from unified_api_contracts.internal.domain.risk_service import RiskMetrics, RiskPosition, RiskStatus
+from unified_api_contracts.internal.events import (
+    EventMetadata,
+    EventSeverity,
+    LifecycleEventEnvelope,
+    LifecycleEventType,
+)
+from unified_api_contracts.internal.market_data import CanonicalOHLCV, OHLCVSource
+from unified_api_contracts.internal.ml import InferenceRequest, InferenceResult
+from unified_trading_library import (
     STANDARD_COORDINATION_EVENTS,
     STANDARD_LIFECYCLE_EVENTS,
     TRADE_REPORTED_MIFID,
@@ -31,25 +50,6 @@ from unified_events_interface import (
     CoordinationEvent,
     LifecycleEvent,
 )
-from unified_internal_contracts.domain.ml_inference_service import (
-    CascadeConfig,
-    CascadePredictionEvent,
-    PredictionSnapshot,
-)
-from unified_internal_contracts.domain.pubsub_service import (
-    FillEventMessage,
-    PubSubMessageEnvelope,
-    RiskAlertMessage,
-)
-from unified_internal_contracts.domain.risk_service import RiskMetrics, RiskPosition, RiskStatus
-from unified_internal_contracts.events import (
-    EventMetadata,
-    EventSeverity,
-    LifecycleEventEnvelope,
-    LifecycleEventType,
-)
-from unified_internal_contracts.market_data import CanonicalOHLCV, OHLCVSource
-from unified_internal_contracts.ml import InferenceRequest, InferenceResult
 
 pytestmark = pytest.mark.abbreviated_sit
 
@@ -227,7 +227,7 @@ def test_uic_canonical_ohlcv_round_trip() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Runtime path: UIC risk schemas (execution <-> risk-and-exposure-service boundary)
+# Runtime path: UIC risk schemas (execution <-> strategy-service boundary)
 # ---------------------------------------------------------------------------
 
 
@@ -468,13 +468,13 @@ def test_uic_lifecycle_event_envelope_round_trip() -> None:
     ts = datetime(2026, 1, 15, 10, 30, 0, tzinfo=UTC)
     metadata = EventMetadata(
         timestamp=ts,
-        service_name="risk-and-exposure-service",
+        service_name="strategy-service",
         severity=EventSeverity.INFO,
         correlation_id="corr-risk-001",
     )
     original = LifecycleEventEnvelope(
         event=LifecycleEventType.STARTED,
-        service="risk-and-exposure-service",
+        service="strategy-service",
         timestamp=ts,
         metadata=metadata,
     )

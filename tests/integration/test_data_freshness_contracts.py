@@ -21,22 +21,22 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from unified_events_interface import (
+from unified_api_contracts.internal.reference.data_freshness import (
+    ALL_FRESHNESS_CONTRACTS,
+    FEATURE_FRESHNESS,
+    MARKET_TICK_FRESHNESS,
+    DataFreshnessContract,
+)
+from unified_trading_library import (
     DATA_AVAILABILITY_EVENT_TYPES,
     DATA_AVAILABILITY_RESTORED,
     DATA_COMPLETENESS_CHECK,
     DATA_GAP_DETECTED,
     DATA_STALE,
     FEED_UNHEALTHY,
+    FreshnessMonitor,
     setup_events,
 )
-from unified_internal_contracts.reference.data_freshness import (
-    ALL_FRESHNESS_CONTRACTS,
-    FEATURE_FRESHNESS,
-    MARKET_TICK_FRESHNESS,
-    DataFreshnessContract,
-)
-from unified_trading_library import FreshnessMonitor
 
 pytestmark = pytest.mark.deployment_test
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class TestFreshnessMonitorEventEmission:
     def _make_monitor(self, max_age: int = 10, warn_age: int = 5) -> FreshnessMonitor:
         contract = DataFreshnessContract(
             source="test-source",
-            asset_class="crypto_cefi",
+            asset_group="crypto_cefi",
             max_age_seconds=max_age,
             warn_age_seconds=warn_age,
             expected_cadence_seconds=1,
@@ -233,13 +233,16 @@ class TestCheckDataCompletenessScript:
             text=True,
             timeout=30,
         )
-        # Each source emits "PASS binance ..." or "FAIL binance ..."
+        # Each source emits "PASS binance ..." or "FAIL binance ..." on stdout
+        # Lines may be prefixed with a timestamp (e.g. "2026-03-17 11:36:14,042 INFO PASS ...")
+        combined_output = result.stdout + "\n" + result.stderr
         pass_fail_lines = [
             line
-            for line in result.stderr.splitlines()
-            if line.startswith("INFO") and ("PASS" in line or "FAIL" in line)
+            for line in combined_output.splitlines()
+            if ("PASS " in line or "FAIL " in line) and "coverage=" in line
         ]
         expected_source_count = len(ALL_FRESHNESS_CONTRACTS)
         assert len(pass_fail_lines) == expected_source_count, (
-            f"Expected {expected_source_count} result lines, got {len(pass_fail_lines)}\nstderr: {result.stderr}"
+            f"Expected {expected_source_count} result lines, got {len(pass_fail_lines)}\n"
+            f"stdout: {result.stdout[:500]}\nstderr: {result.stderr[:500]}"
         )

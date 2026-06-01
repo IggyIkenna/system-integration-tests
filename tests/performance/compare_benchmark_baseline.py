@@ -62,10 +62,7 @@ def compare_metrics(
             current_val = current_entry.get(metric)
             if baseline_val is None or current_val is None:
                 continue
-            if baseline_val == 0:
-                change_pct = 0.0
-            else:
-                change_pct = (current_val - baseline_val) / baseline_val * 100
+            change_pct = 0.0 if baseline_val == 0 else (current_val - baseline_val) / baseline_val * 100
             regressed = change_pct > threshold_pct
             results.append(
                 MetricResult(

@@ -246,7 +246,7 @@ class TestAuditResolutionAgent:
 
         sections_called: list[str] = []
 
-        def make_check(name: str):  # noqa: ANN202
+        def make_check(name: str):
             def check_fn(repo_path: Path, ws_root: Path) -> AuditResult:
                 sections_called.append(name)
                 return AuditResult(repo_name="", section="", status=AuditStatus.PASS)

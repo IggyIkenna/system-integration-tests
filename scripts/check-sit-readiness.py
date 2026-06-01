@@ -19,7 +19,7 @@ from pathlib import Path
 
 # yaml may not be installed in all environments — use a lightweight fallback
 try:
-    import yaml  # type: ignore[import-untyped]
+    import yaml  # pyright: ignore[reportMissingModuleSource]
 
     def _load_yaml(path: Path) -> dict[str, object]:
         with open(path) as f:
@@ -55,7 +55,7 @@ except ImportError:
             current_section[key] = value
         return current_section, current_key
 
-    def _load_yaml(path: Path) -> dict[str, object]:  # type: ignore[misc]
+    def _load_yaml(path: Path) -> dict[str, object]:  # pyright: ignore[reportRedeclaration]
         """Minimal YAML parser — reads only top-level key: value lines."""
         data: dict[str, object] = {}
         current_section: dict[str, object] | None = None
@@ -76,14 +76,8 @@ SIT_SCOPE_REPOS = [
     "strategy-service",
     "market-data-processing-service",
     "market-tick-data-service",
-    "market-data-api",
     "instruments-service",
     "alerting-service",
-    "risk-and-exposure-service",
-    "position-balance-monitor-service",
-    "pnl-attribution-service",
-    "ml-inference-service",
-    "ml-training-service",
     "features-delta-one-service",
     "features-volatility-service",
     "features-cross-instrument-service",

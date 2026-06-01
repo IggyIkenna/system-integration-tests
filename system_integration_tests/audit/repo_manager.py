@@ -22,7 +22,7 @@ from typing import TypedDict
 logger = logging.getLogger(__name__)
 
 
-class RepoContext(TypedDict):
+class RepoContext(TypedDict):  # CORRECT-LOCAL — test-harness infrastructure type, not a domain schema
     """Typed dict describing a single repo from the workspace manifest."""
 
     name: str

@@ -70,7 +70,9 @@ def _build_workspace(tmp_path: Path) -> tuple[Path, Path]:
     (pkg / "health.py").write_text("# health\n")
     (pkg / "metrics.py").write_text("# metrics\n")
     (pkg / "main.py").write_text(
-        'from unified_events_interface import setup_events, log_event\nlog_event("SERVICE_STARTED")\nsetup_events()\n'
+        "from unified_trading_library.events import setup_events, log_event\n"
+        'log_event("SERVICE_STARTED")\n'
+        "setup_events()\n"
     )
 
     # Build bad-service (minimal, missing most things)
@@ -126,7 +128,7 @@ class TestAuditAgentEndToEnd:
         assert len(report.results_for_repo("bad-service")) == 4
 
     def test_repo_context_has_path(self, tmp_path: Path) -> None:
-        workspace, manifest_path = _build_workspace(tmp_path)
+        _workspace, manifest_path = _build_workspace(tmp_path)
         repos = discover_repos(str(manifest_path))
         good_ctx = get_repo_context("good-service", repos)
         assert Path(good_ctx["path"]).is_dir()

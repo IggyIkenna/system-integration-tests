@@ -5,34 +5,31 @@ description = "System integration tests — Layer 3a smoke + Layer 3b full e2e"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1,<1.0.0",
-    "pytest>=9.0.1,<10.0.0",
-    "unified-internal-contracts>=0.1.0",
-    "unified-api-contracts>=0.1.0",
-    "unified-events-interface>=0.1.0",
+    "pytest<10.0.0,>=9.0.3",
     "unified-trading-library>=0.1.0",
     "market-data-processing-service",
+    "features-service>=0.0.1,<1.0.0",
+    "strategy-service>=0.1.0,<1.0.0",
+    "unified-api-contracts>=0.1.0,<1.0.0",
+    "alerting-service>=0.1.0,<1.0.0",
+    "execution-service>=0.1.0,<1.0.0",
+    "deployment-api>=0.1.0,<1.0.0",
+    "instruments-service>=0.1.0,<1.0.0",
+    "client-reporting-api>=0.1.0,<1.0.0",
+    "cryptography>=46.0.7,<47.0.0",
+    "urllib3>=2.7.0,<3.0.0",
+    "python-dotenv>=1.2.2,<2.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.0",
     "pytest-timeout<3.0.0,>=2.4.0",
     "boto3<2.0.0,>=1.40.70",  # only for @pytest.mark.aws_integration tests (S3 cassette replay)
+    "asyncpg>=0.31.0,<1.0.0",  # Cloud SQL / RDS smoke tests (test_database_smoke.py)
     "ruff==0.15.0",
     "basedpyright==1.38.2",
     "pip-audit>=2.7.0,<3.0.0",
     "bandit>=1.7.0,<2.0.0",
 ]
-[tool.uv.sources.unified-internal-contracts]
-path = "../unified-internal-contracts"
-editable = true
-
-[tool.uv.sources.unified-api-contracts]
-path = "../unified-api-contracts"
-editable = true
-
-[tool.uv.sources.unified-events-interface]
-path = "../unified-events-interface"
-editable = true
-
 [tool.uv.sources.unified-trading-library]
 path = "../unified-trading-library"
 editable = true
@@ -41,30 +38,116 @@ editable = true
 path = "../market-data-processing-service"
 editable = true
 
+[tool.uv.sources.features-service]
+path = "../features-service"
+editable = true
+
+[tool.uv.sources.strategy-service]
+path = "../strategy-service"
+editable = true
+
+[tool.uv.sources.unified-api-contracts]
+path = "../unified-api-contracts"
+editable = true
+
+[tool.uv.sources.alerting-service]
+path = "../alerting-service"
+editable = true
+
+[tool.uv.sources.execution-service]
+path = "../execution-service"
+editable = true
+
+[tool.uv.sources.deployment-api]
+path = "../deployment-api"
+editable = true
+
+[tool.uv.sources.instruments-service]
+path = "../instruments-service"
+editable = true
+
+[tool.uv.sources.client-reporting-api]
+path = "../client-reporting-api"
+editable = true
+
+# betfairlightweight (via execution-service) declares requests<2.33.0; workspace canonical is requests>=2.33.0
+# (CVE-2026-25645). Override forces the resolved version upward. SSOT: .cursor/rules/dependencies/requests-betfairlightweight-workspace-resolution.mdc
+[tool.uv]
+override-dependencies = [
+    "requests>=2.33.0,<3.0.0",
+]
+
+# ── ruff (lint + format) — canonical-tool-sections.toml 2026-05-26 ─────────────
 [tool.ruff]
 line-length = 120
+target-version = "py313"
+exclude = [".cursor", ".venv", ".venv-workspace", "build", "dist", "node_modules"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "G",
-"C90",]
-
+# Rich union — E/F/W (pyflakes+pycodestyle), I (isort), N (pep8-naming),
+# UP (pyupgrade), B (bugbear), C4 (comprehensions), SIM (simplify), RUF (ruff),
+# G (logging-format), C90 (mccabe complexity).
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "G", "C90"]
+extend-ignore = ["G003", "G004"]
+ignore = ["E402"]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 7
+max-complexity = 26
 
+[tool.ruff.lint.per-file-ignores]
+"*/__init__.py" = ["F401", "E402"]
+"tests/*" = ["F401", "F841", "F811"]
+"tests/**" = ["F401", "F841", "F811", "N806"]
+"tests/conftest.py" = ["E402"]
+
+# ── basedpyright (typecheck) — CONSOLIDATED from pyrightconfig.json 2026-05-26 ─
+# DEVIATION (scripts-only repo): include covers all owned dirs — tests/ (was the
+# sole include in pyrightconfig.json), scripts/, and system_integration_tests/
+# (the thin package present at root). No importable library package; no single
+# <PACKAGE_DIR> placeholder applies. extraPaths ported verbatim from
+# pyrightconfig.json (6 paths); venvPath/venv removed (basedpyright resolves via
+# pyproject.toml automatically).
 [tool.basedpyright]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
+include = ["tests", "scripts", "system_integration_tests"]
+exclude = ["tests/e2e/test_aws_s3_smoke.py", "**/__pycache__", ".venv*", ".venv-workspace", "build", "dist", "node_modules"]
+# ── Type-correctness rules → "error" (strict). Full canonical set restored.
+# ── Owned by ruff / pragmatic softenings.
+# DEVIATION (scripts-only — from pyrightconfig.json): reportMissingImports set
+# to "none" in old config; restored to "error" (canonical). reportImplicitRelativeImport
+# was "none" in old config; omitted here (not in canonical set; default behaviour).
+
+# Cross-repo import resolution — ported from pyrightconfig.json extraPaths (6 entries).
 reportAny = "error"
+reportMissingTypeStubs = false
+reportImplicitRelativeImport = "none"
+reportMissingImports = "none"
 reportUnknownMemberType = "error"
 reportUnknownVariableType = "error"
-reportUnknownArgumentType = "error"
-reportMissingTypeStubs = false
+reportUnusedFunction = "none"
+[[tool.basedpyright.executionEnvironments]]
+root = "."
+pythonVersion = "3.13"
+pythonPlatform = "All"
+extraPaths = [
+    ".",
+    "../deployment-api",
+    "../unified-api-contracts",
+    "../unified-internal-contracts",
+    "../unified-trading-library",
+    "../unified-cloud-interface",
+]
 
-[tool.coverage.report]
-fail_under = 15  # Realistic for SIT: unit+integration ~18%; e2e/smoke require live services (CI only)
-
+# ── pytest ──────────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
 markers = [
     "smoke: Layer 3a — fast pipeline smoke tests (<5 min, run first)",
     "integration: Layer 3b — cross-library contract tests (no live services required)",
@@ -82,3 +165,21 @@ markers = [
     "medium: Medium-priority journey — runs in weekly SIT",
     "scorecard: Test contributes to flow-validation scorecard",
 ]
+
+# ── coverage (run + report — BOTH required in every repo) ────────────────────────
+# DEVIATION (scripts-only repo): source covers all owned dirs (tests/,
+# system_integration_tests/, scripts/). fail_under = 0 because this is a
+# tests-only repo with no packaged library; e2e/smoke tests require live
+# services that are absent in CI unit runs. The existing value was 15 (comment
+# said "Realistic for SIT: unit+integration ~18%"); reset to 0 per canonical
+# scripts-only floor — no coverage gate applies here.
+[tool.coverage.run]
+source = ["tests", "system_integration_tests", "scripts"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 0   # scripts/tests-only repo — no packaged coverage gate; e2e requires live services
+
+# ── bandit (security SAST — every repo) ──────────────────────────────────────────
+[tool.bandit]
+skips = []

@@ -49,20 +49,16 @@ class FlowServiceURLs:
     deployment_api: str
     execution_service: str
     alerting_service: str
-    batch_audit_api: str
-    logs_dashboard_api: str
-    live_health_monitor_api: str
+    unified_trading_api: str
 
     @staticmethod
     def from_env() -> FlowServiceURLs:
         """Build from SIT_* env vars with sensible local-dev defaults."""
         return FlowServiceURLs(
-            deployment_api=os.environ.get("SIT_DEPLOYMENT_API_URL", "http://localhost:8001"),
+            deployment_api=os.environ.get("SIT_DEPLOYMENT_API_URL", "http://localhost:8004"),
             execution_service=os.environ.get("SIT_EXECUTION_SERVICE_URL", "http://localhost:8005"),
             alerting_service=os.environ.get("SIT_ALERTING_SERVICE_URL", "http://localhost:8008"),
-            batch_audit_api=os.environ.get("SIT_BATCH_AUDIT_API_URL", "http://localhost:8014"),
-            logs_dashboard_api=os.environ.get("SIT_LOGS_DASHBOARD_API_URL", "http://localhost:8015"),
-            live_health_monitor_api=os.environ.get("SIT_LIVE_HEALTH_MONITOR_URL", "http://localhost:8012"),
+            unified_trading_api=os.environ.get("SIT_UNIFIED_TRADING_API_URL", "http://localhost:8030"),
         )
 
 
@@ -73,7 +69,7 @@ def flow_urls() -> FlowServiceURLs:
 
 
 @pytest.fixture(scope="session")
-def flow_client() -> Generator[httpx.Client, None, None]:
+def flow_client() -> Generator[httpx.Client]:
     """Dedicated httpx client for real-flow tests with generous timeout."""
     with httpx.Client(timeout=30.0) as client:
         yield client

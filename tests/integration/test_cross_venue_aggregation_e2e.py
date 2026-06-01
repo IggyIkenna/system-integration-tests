@@ -16,7 +16,7 @@ import os
 from decimal import Decimal
 
 import pytest
-from unified_events_interface import MockEventSink, setup_events
+from unified_trading_library import MockEventSink, setup_events
 
 # Ensure credential-free execution throughout
 os.environ.setdefault("CLOUD_PROVIDER", "local")
@@ -30,11 +30,11 @@ setup_events(
 
 pytestmark = pytest.mark.integration
 
-# Guard: position-balance-monitor-service may not be cloned/installed in all
+# Guard: strategy-service may not be cloned/installed in all
 # SIT environments.  Skip the entire module gracefully instead of crashing.
 pbms_aggregator = pytest.importorskip(  # pyright: ignore[reportUnknownMemberType]
-    "position_balance_monitor_service.core.cross_venue_aggregator",
-    reason="position-balance-monitor-service not installed — skipping cross-venue aggregation e2e tests",
+    "strategy_service.position.core.cross_venue_aggregator",
+    reason="strategy-service not installed — skipping cross-venue aggregation e2e tests",
 )
 CrossVenueAggregator = pbms_aggregator.CrossVenueAggregator
 _VenueData = pbms_aggregator._VenueData
@@ -50,7 +50,7 @@ def test_aggregated_position_net_quantity_two_venues() -> None:
     from unittest.mock import patch
 
     async def _run() -> None:
-        with patch("position_balance_monitor_service.core.cross_venue_aggregator.log_event"):
+        with patch("strategy_service.position.core.cross_venue_aggregator.log_event"):
             agg = CrossVenueAggregator()
 
             vd_a = _VenueData(
@@ -90,7 +90,7 @@ def test_aggregated_position_net_quantity_long_short_net() -> None:
     from unittest.mock import patch
 
     async def _run() -> None:
-        with patch("position_balance_monitor_service.core.cross_venue_aggregator.log_event"):
+        with patch("strategy_service.position.core.cross_venue_aggregator.log_event"):
             agg = CrossVenueAggregator()
 
             vd_long = _VenueData(
@@ -127,7 +127,7 @@ def test_aggregated_position_multi_instrument() -> None:
     from unittest.mock import patch
 
     async def _run() -> None:
-        with patch("position_balance_monitor_service.core.cross_venue_aggregator.log_event"):
+        with patch("strategy_service.position.core.cross_venue_aggregator.log_event"):
             agg = CrossVenueAggregator()
 
             # BTC on two venues

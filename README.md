@@ -25,6 +25,13 @@ tests/
     test_aws_s3_smoke.py   # AWS S3 (skips without S3_TEST_BUCKET + boto3 creds)
 ```
 
+## Operational modes (staging / E2E)
+
+Declared combinations of `DATA_MODE`, `CLOUD_PROVIDER`, `TESTNET_MODE`, and related axes must match what services
+actually deploy. SSOT for the matrix:
+`unified-trading-codex/09-strategy/cross-cutting/operational-modes-matrix.md`. When CI or staging changes those env
+defaults, extend smoke (3a) and full E2E (3b) assertions so testnet paths cannot silently hit production endpoints.
+
 ## Environment Variables
 
 ```bash
@@ -66,6 +73,45 @@ AWS S3 smoke tests live in `tests/e2e/test_aws_s3_smoke.py`. They require:
 
 Tests skip gracefully when credentials or bucket are not configured.
 
+## Coverage Matrix Smoke
+
+`tests/smoke/test_coverage_matrix_smoke.py` parametrises over representative
+`(service × category × venue × data_type)` cells and asserts that TEST-bucket
+state is internally consistent with the canonical per-category path layout
+and manifest v5 schema.
+
+Opt-in — the test skips by default:
+
+```bash
+export GCS_TEST_BUCKET_ENABLED=1
+export GCP_PROJECT_ID=central-element-323112     # your project
+# ADC / service-account creds must be present (gcloud auth application-default login)
+pytest -m smoke -v tests/smoke/test_coverage_matrix_smoke.py
+```
+
+Pre-condition: TEST buckets must already contain parquet + manifest rows from
+a prior run. Seed them by running the dev-local helper per service:
+
+```bash
+cd <service>
+IS_TEST_RUN=true python scripts/smoke_matrix.py --execute --asset-group CEFI
+```
+
+The test enforces Steps 2 + 3 of the 3-step assertion contract (parquet
+exists under the category-specific prefix; manifest row has
+`capture_status in {captured, empty_confirmed}`). Step 1 (trigger) is
+assumed — SIT's canon is HTTP + GCS/PubSub assertions, not subprocess CLI.
+
+Pure-function helpers live in `tests/smoke/coverage_matrix_cells.py` and
+are unit-tested in `tests/unit/test_coverage_matrix_cells.py` (19 tests).
+Adding a new representative cell = append a row to `_CELLS`.
+
+SSOT references:
+
+- Per-category bucket + path layouts: `unified-trading-pm/codex/02-data/per-category-bucket-layouts.md`
+- Manifest v5 schema: `unified-trading-pm/codex/02-data/availability-manifest-and-data-status.md`
+- Playbook: `unified-trading-pm/codex/15-runbooks/smoke-testing-playbook.md`
+
 ## SIT Scope
 
 Which repos are gated by SIT for staging → main promotion.
@@ -86,11 +132,11 @@ Which repos are gated by SIT for staging → main promotion.
 | ml-inference-service              | L4   | Model inference pipeline        |
 | strategy-service                  | L4   | Signal generation               |
 | execution-service                 | L4   | Order execution                 |
-| position-balance-monitor-service  | L4   | Position tracking               |
-| risk-and-exposure-service         | L4   | Risk controls                   |
-| pnl-attribution-service           | L4   | PnL correctness                 |
+| strategy-service                  | L4   | Position tracking               |
+| strategy-service                  | L4   | Risk controls                   |
+| strategy-service                  | L4   | PnL correctness                 |
 | alerting-service                  | L5   | Alert delivery                  |
-| execution-results-api             | L5   | API contract stability          |
+| unified-trading-api               | L5   | API contract stability          |
 | market-data-api                   | L5   | API contract stability          |
 | client-reporting-api              | L5   | API contract stability          |
 | deployment-api                    | L5   | Deployment control plane        |

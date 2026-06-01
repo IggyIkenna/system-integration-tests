@@ -134,8 +134,8 @@ def test_utei_hyperliquid_order_validates() -> None:
 
 def test_urdi_delayed_data_scenario_config_valid() -> None:
     """URDI + DELAYED_DATA: ScenarioConfig loads and fast-forward math is correct."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.DELAYED_DATA)
 
@@ -154,8 +154,8 @@ def test_urdi_delayed_data_scenario_config_valid() -> None:
 
 def test_bust_scenario_fault_config_wired() -> None:
     """BUST scenario FaultConfig is present and has non-zero error_rate."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.BUST)
     assert cfg.fault is not None, "BUST scenario must have a fault config"
@@ -164,8 +164,8 @@ def test_bust_scenario_fault_config_wired() -> None:
 
 def test_no_system_overload_scenario_has_rate_limit() -> None:
     """NO_SYSTEM_OVERLOAD scenario FaultConfig has rate_limit_rate set."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     cfg = ScenarioConfig.load(MockScenario.NO_SYSTEM_OVERLOAD)
     assert cfg.fault is not None
@@ -179,8 +179,8 @@ def test_no_system_overload_scenario_has_rate_limit() -> None:
 
 def test_all_mock_scenarios_have_unique_seeds() -> None:
     """All 8 MockScenario values load and have unique deterministic seeds."""
-    from unified_internal_contracts.modes import MockScenario
-    from unified_internal_contracts.testing.scenario_config import ScenarioConfig
+    from unified_api_contracts.internal.modes import MockScenario
+    from unified_api_contracts.internal.testing.scenario_config import ScenarioConfig
 
     seeds: list[int] = []
     for scenario in MockScenario:

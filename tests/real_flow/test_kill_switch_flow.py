@@ -1,6 +1,6 @@
 """Critical journey: Kill switch — toggle -> verify status change.
 
-Validates the kill switch flow through live-health-monitor-ui + execution-service:
+Validates the kill switch flow through unified-trading-system-ui (ops surfaces) + execution-service:
     1. GET current kill switch state (request sent)
     2. POST toggle kill switch (response received with new state)
     3. GET state again confirms the toggle took effect (state updated)

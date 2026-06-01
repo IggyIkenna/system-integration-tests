@@ -23,10 +23,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
+from unified_trading_library import setup_events
 
 pytestmark = pytest.mark.deployment_test
 
 logger = logging.getLogger(__name__)
+
+# Initialize event logging for tests — services call log_event() internally
+setup_events(service_name="system-integration-tests", mode="test")
 
 
 # ---------------------------------------------------------------------------
@@ -37,8 +41,8 @@ logger = logging.getLogger(__name__)
 @pytest.mark.integration
 def test_correction_dispatcher_submits_sell_order_for_critical_discrepancy() -> None:
     """Internal qty > exchange qty on CRITICAL snapshot → SELL correction submitted."""
-    from position_balance_monitor_service.core.correction_dispatcher import CorrectionDispatcher
-    from position_balance_monitor_service.models import ReconciliationSnapshot
+    from strategy_service.position.core.correction_dispatcher import CorrectionDispatcher
+    from strategy_service.position.models import ReconciliationSnapshot
 
     snapshot = ReconciliationSnapshot(
         client_id="client-001",
@@ -59,14 +63,14 @@ def test_correction_dispatcher_submits_sell_order_for_critical_discrepancy() -> 
     mock_response.raise_for_status = MagicMock()
     mock_response.json.return_value = {"order_id": "corr-order-001"}
 
-    with patch("position_balance_monitor_service.core.correction_dispatcher.httpx.AsyncClient") as mock_client_cls:
+    with patch("strategy_service.position.core.correction_dispatcher.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.post = AsyncMock(return_value=mock_response)
         mock_client_cls.return_value = mock_client
 
-        with patch("position_balance_monitor_service.core.correction_dispatcher.get_service_config") as mock_cfg:
+        with patch("strategy_service.position.core.correction_dispatcher.get_service_config") as mock_cfg:
             cfg = MagicMock()
             cfg.auto_correct_enabled = True
             cfg.auto_correct_threshold_pct = 1.0  # 1%
@@ -89,8 +93,8 @@ def test_correction_dispatcher_submits_sell_order_for_critical_discrepancy() -> 
 @pytest.mark.integration
 def test_correction_dispatcher_skips_non_critical_snapshot() -> None:
     """Dispatcher must not dispatch for DISCREPANCY (non-CRITICAL) snapshot."""
-    from position_balance_monitor_service.core.correction_dispatcher import CorrectionDispatcher
-    from position_balance_monitor_service.models import ReconciliationSnapshot
+    from strategy_service.position.core.correction_dispatcher import CorrectionDispatcher
+    from strategy_service.position.models import ReconciliationSnapshot
 
     snapshot = ReconciliationSnapshot(
         client_id="client-001",
@@ -106,7 +110,7 @@ def test_correction_dispatcher_skips_non_critical_snapshot() -> None:
         status="DISCREPANCY",
     )
 
-    with patch("position_balance_monitor_service.core.correction_dispatcher.get_service_config") as mock_cfg:
+    with patch("strategy_service.position.core.correction_dispatcher.get_service_config") as mock_cfg:
         cfg = MagicMock()
         cfg.auto_correct_enabled = True
         cfg.auto_correct_threshold_pct = 1.0
@@ -123,8 +127,8 @@ def test_correction_dispatcher_skips_non_critical_snapshot() -> None:
 @pytest.mark.integration
 def test_correction_dispatcher_skips_when_auto_correct_disabled() -> None:
     """Dispatcher must not submit order when auto_correct_enabled=False."""
-    from position_balance_monitor_service.core.correction_dispatcher import CorrectionDispatcher
-    from position_balance_monitor_service.models import ReconciliationSnapshot
+    from strategy_service.position.core.correction_dispatcher import CorrectionDispatcher
+    from strategy_service.position.models import ReconciliationSnapshot
 
     snapshot = ReconciliationSnapshot(
         client_id="client-001",
@@ -140,7 +144,7 @@ def test_correction_dispatcher_skips_when_auto_correct_disabled() -> None:
         status="CRITICAL",
     )
 
-    with patch("position_balance_monitor_service.core.correction_dispatcher.get_service_config") as mock_cfg:
+    with patch("strategy_service.position.core.correction_dispatcher.get_service_config") as mock_cfg:
         cfg = MagicMock()
         cfg.auto_correct_enabled = False  # disabled
         cfg.auto_correct_threshold_pct = 1.0
@@ -357,6 +361,7 @@ def test_portfolio_rebalancer_no_orders_within_threshold() -> None:
 
     weights = [
         AssetWeight(symbol="BTC", target_weight=0.50, current_weight=0.501, notional_usd=50100.0),
+        AssetWeight(symbol="USDC", target_weight=0.50, current_weight=0.499, notional_usd=49900.0),
     ]
 
     class _MockFetcher:
@@ -370,7 +375,7 @@ def test_portfolio_rebalancer_no_orders_within_threshold() -> None:
             submitted.append(order)
             return "order-id"
 
-    config_path = _write_temp_rebalancing_config("test-strategy-no-drift", {"BTC": 0.50})
+    config_path = _write_temp_rebalancing_config("test-strategy-no-drift", {"BTC": 0.50, "USDC": 0.50})
 
     rebalancer = PortfolioRebalancer(
         position_fetcher=_MockFetcher(),

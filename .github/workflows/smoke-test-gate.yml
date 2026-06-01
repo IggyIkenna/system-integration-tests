@@ -159,7 +159,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Python CI tools
         uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
@@ -241,10 +241,10 @@ jobs:
           echo "SIT lock dispatched to PM."
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Checkout unified-trading-codex (readiness checklists)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           repository: IggyIkenna/unified-trading-codex
           token: ${{ secrets.GH_PAT }}
@@ -268,7 +268,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -e ".[dev]" --system --quiet
+          uv pip install -e "." --system --quiet
 
       - name: Run code tests (static, no live services)
         id: code_tests
@@ -291,12 +291,11 @@ jobs:
           SERVICES=(
             execution-service strategy-service market-data-processing-service
             market-tick-data-service market-data-api instruments-service
-            alerting-service risk-and-exposure-service position-balance-monitor-service
-            pnl-attribution-service ml-inference-service ml-training-service
+            alerting-service strategy-service ml-inference-service ml-training-service
             features-delta-one-service features-volatility-service
             features-cross-instrument-service features-onchain-service
             features-sports-service features-calendar-service
-            unified-market-interface unified-sports-execution-interface
+            unified-sports-execution-interface
           )
           OWNER="${{ github.repository_owner }}"
           for svc in "${SERVICES[@]}"; do
@@ -365,10 +364,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Checkout unified-trading-pm (docker-compose)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           repository: IggyIkenna/unified-trading-pm
           token: ${{ secrets.GH_PAT }}
@@ -416,7 +415,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install -e ".[dev]" --system --quiet
+          uv pip install -e "." --system --quiet
 
       - name: Run deployment tests (mock stack)
         id: deployment_tests

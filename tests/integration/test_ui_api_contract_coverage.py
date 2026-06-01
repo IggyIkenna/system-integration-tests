@@ -5,7 +5,7 @@ validate that:
 1. The mapping JSON is parseable and structurally valid.
 2. Every stack with a UI has a mapped api_port.
 3. The declared API module name follows the underscore convention.
-4. Settlement stack specifically maps to trading-analytics-api (confirmed canonical).
+4. unified-trading stack maps to unified-trading-api / unified-trading-system-ui (consolidated canonical).
 
 This test runs purely from the mapping file — no live services required.
 It is a structural contract test, not an HTTP integration test.
@@ -34,28 +34,23 @@ _MAPPING_PATH = (
 # Expected API module suffix pattern (underscore, not dash)
 _API_MODULE_CONVENTION = "_api"
 
-# UIs with explicit API routes that must be validated
+# Stacks declared in ui-api-mapping.json (consolidated UI/API model; archived split stacks removed)
 _REQUIRED_STACKS = {
     "deployment",
-    "onboarding",
-    "execution-analytics",
-    "strategy",
-    "settlement",
-    "live-health-monitor",
-    "logs-dashboard",
-    "ml-training",
-    "trading-analytics",
-    "batch-audit",
     "client-reporting",
+    "market-data",
+    "user-management",
+    "unified-trading",
+    "auth",
 }
 
-# Port range for APIs: 8004-8016
+# API HTTP ports from stacks (includes consolidated unified-trading-api, auth-api)
 _API_PORT_MIN = 8004
-_API_PORT_MAX = 8016
+_API_PORT_MAX = 8300
 
-# Port range for UIs: 5173-5183
+# Port range for UIs: 5173-5184
 _UI_PORT_MIN = 5173
-_UI_PORT_MAX = 5183
+_UI_PORT_MAX = 5184
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +130,7 @@ class TestPerStackFields:
             assert "api_module" in stack, f"Stack '{name}' missing 'api_module' field"
 
     def test_api_ports_in_valid_range(self) -> None:
-        """All API ports must be in the 8004-8016 range."""
+        """All API ports must be in the configured stack range (see _API_PORT_*)."""
         stacks = self._stacks()
         for name, stack in stacks.items():
             assert isinstance(stack, dict)
@@ -148,13 +143,21 @@ class TestPerStackFields:
             )
 
     def test_ui_ports_in_valid_range(self) -> None:
-        """All UI ports (where set) must be in the 5173-5183 range."""
+        """All UI ports (where set) must be in the 5173-5183 range.
+
+        Exception: non-Vite stacks (e.g. odum-website on port 3000) are excluded
+        from the Vite dev-server port range check.
+        """
+        # Stacks that use non-Vite dev servers or alternate ports (e.g. unified-trading-system-ui on 3000)
+        _NON_VITE_STACKS = {"odum-website", "client-reporting", "user-management"}
         stacks = self._stacks()
         for name, stack in stacks.items():
             assert isinstance(stack, dict)
             port = stack.get("ui_port")
             if port is None:
                 continue  # Non-UI stacks
+            if name in _NON_VITE_STACKS:
+                continue  # Non-Vite stack — different port range is expected
             assert isinstance(port, int), f"Stack '{name}' ui_port must be int, got {type(port)}"
             assert _UI_PORT_MIN <= port <= _UI_PORT_MAX, (
                 f"Stack '{name}' ui_port {port} outside expected range {_UI_PORT_MIN}-{_UI_PORT_MAX}"
@@ -182,7 +185,7 @@ class TestPerStackFields:
             if port is None or not isinstance(port, int):
                 continue
             port_to_stacks.setdefault(port, []).append(name)
-        # Multiple stacks can share an API (e.g. strategy + execution-analytics share execution-results-api)
+        # Multiple stacks can share an API (e.g. auth + user-management share auth-api)
         # This is intentional — just log it. Only fail on completely distinct APIs at same port.
         for port, names in port_to_stacks.items():
             if len(names) > 1:
@@ -193,7 +196,7 @@ class TestPerStackFields:
                 )
 
     def test_no_duplicate_ui_ports(self) -> None:
-        """Each UI port must be unique."""
+        """Each UI port must map to at most one logical UI (same app may serve multiple stacks)."""
         stacks = self._stacks()
         port_to_stacks: dict[int, list[str]] = {}
         for name, stack in stacks.items():
@@ -202,55 +205,59 @@ class TestPerStackFields:
             if port is None or not isinstance(port, int):
                 continue
             port_to_stacks.setdefault(port, []).append(name)
-        dupes = {p: names for p, names in port_to_stacks.items() if len(names) > 1}
-        assert not dupes, f"Duplicate UI ports found: {dupes}"
+        for port, names in port_to_stacks.items():
+            if len(names) <= 1:
+                continue
+            uis = {stacks[n]["ui"] for n in names}  # type: ignore[index]
+            assert len(uis) == 1, (
+                f"Port {port} assigned to stacks {names} with DIFFERENT UIs {uis}. "
+                "Each distinct UI dev server must have a unique port."
+            )
 
 
 # ---------------------------------------------------------------------------
-# 3. Settlement-specific contract assertions
+# 3. Unified-trading stack (canonical consolidated UI + API)
 # ---------------------------------------------------------------------------
 
 
-class TestSettlementStackContract:
-    """settlement stack must be mapped to trading-analytics-api on port 8012."""
+class TestUnifiedTradingStackContract:
+    """unified-trading stack maps to unified-trading-api and unified-trading-system-ui."""
 
-    def _settlement_stack(self) -> dict[str, object]:
+    def _unified_trading_stack(self) -> dict[str, object]:
         mapping = _load_mapping()
         stacks = mapping["stacks"]
         assert isinstance(stacks, dict)
-        assert "settlement" in stacks, "settlement stack must be in ui-api-mapping.json"
-        stack = stacks["settlement"]
+        assert "unified-trading" in stacks, "unified-trading stack must be in ui-api-mapping.json"
+        stack = stacks["unified-trading"]
         assert isinstance(stack, dict)
         return stack
 
-    def test_settlement_api_is_trading_analytics_api(self) -> None:
-        stack = self._settlement_stack()
-        assert stack.get("api") == "trading-analytics-api", (
-            f"settlement stack must map to trading-analytics-api, got '{stack.get('api')}'. "
-            "settlement-api as a separate repo is not needed — trading-analytics-api "
-            "already has all /settlement/* routes."
+    def test_unified_trading_api_is_unified_trading_api(self) -> None:
+        stack = self._unified_trading_stack()
+        assert stack.get("api") == "unified-trading-api", (
+            f"unified-trading stack must map to unified-trading-api, got '{stack.get('api')}'."
         )
 
-    def test_settlement_api_port_is_8012(self) -> None:
-        stack = self._settlement_stack()
-        assert stack.get("api_port") == 8012, (
-            f"settlement API port must be 8012 (trading-analytics-api), got {stack.get('api_port')}"
+    def test_unified_trading_api_port_is_8030(self) -> None:
+        stack = self._unified_trading_stack()
+        assert stack.get("api_port") == 8030, f"unified-trading API port must be 8030, got {stack.get('api_port')}"
+
+    def test_unified_trading_api_module(self) -> None:
+        stack = self._unified_trading_stack()
+        assert stack.get("api_module") == "unified_trading_api", (
+            f"unified-trading api_module must be 'unified_trading_api', got '{stack.get('api_module')}'"
         )
 
-    def test_settlement_api_module_is_trading_analytics_api(self) -> None:
-        stack = self._settlement_stack()
-        assert stack.get("api_module") == "trading_analytics_api", (
-            f"settlement api_module must be 'trading_analytics_api', got '{stack.get('api_module')}'"
+    def test_unified_trading_ui_port_is_5174(self) -> None:
+        stack = self._unified_trading_stack()
+        assert stack.get("ui_port") == 5174, (
+            f"unified-trading Vite stack must be on port 5174, got {stack.get('ui_port')}"
         )
 
-    def test_settlement_ui_port_is_5176(self) -> None:
-        stack = self._settlement_stack()
-        assert stack.get("ui_port") == 5176, f"settlement-ui must be on port 5176, got {stack.get('ui_port')}"
-
-    def test_settlement_ui_is_settlement_ui(self) -> None:
-        stack = self._settlement_stack()
-        assert stack.get("ui") == "settlement-ui", (
-            f"settlement stack ui must be 'settlement-ui', got '{stack.get('ui')}'"
+    def test_unified_trading_ui_is_unified_trading_system_ui(self) -> None:
+        stack = self._unified_trading_stack()
+        assert stack.get("ui") == "unified-trading-system-ui", (
+            f"unified-trading stack ui must be 'unified-trading-system-ui', got '{stack.get('ui')}'"
         )
 
 
@@ -272,29 +279,21 @@ class TestKeyStacksSpotCheck:
         stacks = self._stacks()
         assert stacks["deployment"]["api_port"] == 8004
 
-    def test_logs_dashboard_api_port(self) -> None:
+    def test_unified_trading_stack_api_port(self) -> None:
         stacks = self._stacks()
-        assert stacks["logs-dashboard"]["api_port"] == 8013
-
-    def test_logs_dashboard_api_is_batch_audit(self) -> None:
-        stacks = self._stacks()
-        assert stacks["logs-dashboard"]["api"] == "batch-audit-api"
-
-    def test_trading_analytics_stack_api_port(self) -> None:
-        stacks = self._stacks()
-        assert stacks["trading-analytics"]["api_port"] == 8012
-
-    def test_batch_audit_stack_api_port(self) -> None:
-        stacks = self._stacks()
-        assert stacks["batch-audit"]["api_port"] == 8013
+        assert stacks["unified-trading"]["api_port"] == 8030
 
     def test_client_reporting_stack_api_port(self) -> None:
         stacks = self._stacks()
         assert stacks["client-reporting"]["api_port"] == 8014
 
-    def test_total_stacks_count_at_least_ten(self) -> None:
+    def test_market_data_stack_api_port(self) -> None:
         stacks = self._stacks()
-        assert len(stacks) >= 10, (
-            f"Expected at least 10 stacks in ui-api-mapping.json, found {len(stacks)}. "
+        assert stacks["market-data"]["api_port"] == 8016
+
+    def test_total_stacks_count_at_least_six(self) -> None:
+        stacks = self._stacks()
+        assert len(stacks) >= 6, (
+            f"Expected at least 6 stacks in ui-api-mapping.json, found {len(stacks)}. "
             "Regression guard against accidental deletion."
         )

@@ -50,6 +50,13 @@ CI (GitHub Actions) — add to the workflow job that runs SIT::
 from __future__ import annotations
 
 import os
+
+# Set credential-free environment BEFORE any imports that might trigger GCP client init
+os.environ.setdefault("CLOUD_PROVIDER", "local")
+os.environ.setdefault("CLOUD_MOCK_MODE", "true")
+os.environ.setdefault("STORAGE_EMULATOR_HOST", "http://localhost:4443")
+os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+
 import socket
 from collections.abc import Generator
 from pathlib import Path
@@ -92,7 +99,7 @@ def _get_service_categories(
 
 def _resolve_bucket(template: str, cat: str, project_id: str) -> str:
     return (
-        template.replace("{category_lower}", cat.lower())
+        template.replace("{asset_group_lower}", cat.lower())
         .replace("{project_id}", project_id)
         .replace("{domain}", cat.lower())
     )
@@ -153,7 +160,7 @@ def _blocked_connect(self: socket.socket, address: object) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None]:
     if not request.config.getoption("--block-network", default=False):
         yield
         return
@@ -167,25 +174,48 @@ def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None, No
 
 @pytest.fixture(scope="session")
 def base_urls() -> dict[str, str]:
-    return {
-        "instruments": os.environ.get("INSTRUMENTS_SERVICE_URL", "http://localhost:8080"),
-        "era": os.environ.get("ERA_URL", "http://localhost:8002"),
-        "mda": os.environ.get("MDA_URL", "http://localhost:8004"),
-        "cra": os.environ.get("CRA_URL", "http://localhost:8003"),
-        "deployment_api": os.environ.get("DEPLOYMENT_API_URL", "http://localhost:8001"),
-        "market_data": os.environ.get("MARKET_DATA_API_URL", "http://localhost:8001"),
-        "client_reporting": os.environ.get("CLIENT_REPORTING_API_URL", "http://localhost:8003"),
-        "execution": os.environ.get("EXECUTION_SERVICE_URL", "http://localhost:8005"),
-        "risk": os.environ.get("RISK_SERVICE_URL", "http://localhost:8006"),
-        "position_monitor": os.environ.get("POSITION_MONITOR_URL", "http://localhost:8007"),
-        "alerting": os.environ.get("ALERTING_SERVICE_URL", "http://localhost:8008"),
-        "pnl": os.environ.get("PNL_SERVICE_URL", "http://localhost:8009"),
-        "market_tick": os.environ.get("MARKET_TICK_SERVICE_URL", "http://localhost:8010"),
-    }
+    """Load API URLs from ui-api-mapping.json SSOT, with env var overrides.
+
+    Only includes API services that serve HTTP (started by dev-start.sh).
+    Worker services (execution-service, risk-service, instruments-service, etc.)
+    are CLI workers — they don't serve HTTP and are tested via their own QG.
+    """
+    workspace_root = Path(__file__).resolve().parent.parent.parent
+    mapping_file = workspace_root / "unified-trading-pm" / "scripts" / "dev" / "ui-api-mapping.json"
+
+    # Build from SSOT
+    urls: dict[str, str] = {}
+    if mapping_file.exists():
+        import json
+
+        with open(mapping_file) as f:
+            mapping = json.load(f)
+        for _stack_name, stack in mapping.get("stacks", {}).items():
+            api_port = stack.get("api_port")
+            api_name = stack.get("api")
+            if api_port and api_name:
+                # Normalize key: "deployment-api" -> "deployment_api"
+                key = api_name.replace("-", "_")
+                urls[key] = f"http://localhost:{api_port}"
+
+    # Env var overrides (any SIT_<KEY>_URL takes precedence)
+    for key in list(urls.keys()):
+        env_key = f"{key.upper()}_URL"
+        env_val = os.environ.get(env_key)
+        if env_val:
+            urls[key] = env_val
+
+    # Legacy smoke-test aliases (execution-results-api consolidated into unified-trading-api)
+    urls.setdefault("era", urls.get("unified_trading_api", "http://localhost:8030"))
+    urls.setdefault("mda", urls.get("market_data_api", "http://localhost:8016"))
+    urls.setdefault("cra", urls.get("client_reporting_api", "http://localhost:8014"))
+    urls.setdefault("client_reporting", urls.get("client_reporting_api", "http://localhost:8014"))
+
+    return urls
 
 
 @pytest.fixture(scope="session")
-def http_client() -> Generator[httpx.Client, None, None]:
+def http_client() -> Generator[httpx.Client]:
     with httpx.Client(timeout=30.0) as client:
         yield client
 
@@ -299,7 +329,7 @@ def pubsub_emulator_host() -> str | None:
 def with_pubsub_emulator(
     pubsub_emulator_host: str | None,
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """Activate the Pub/Sub emulator for a single SIT test.
 
     Sets ``PUBSUB_EMULATOR_HOST`` via *monkeypatch* so the ``google-cloud-pubsub``
@@ -342,7 +372,7 @@ def _is_gcs_emulator_reachable(url: str) -> bool:
 
 
 @pytest.fixture(scope="session")
-def gcs_emulator() -> Generator[str, None, None]:
+def gcs_emulator() -> Generator[str]:
     """Yield the GCS emulator URL when ``STORAGE_EMULATOR_HOST`` is set and reachable.
 
     Tests that request this fixture are **skipped automatically** when the env var
@@ -387,7 +417,7 @@ def gcs_emulator() -> Generator[str, None, None]:
 def with_gcs_emulator(
     gcs_emulator: str,
     monkeypatch: pytest.MonkeyPatch,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """Activate the GCS emulator for a single SIT test via ``STORAGE_EMULATOR_HOST``.
 
     Sets ``STORAGE_EMULATOR_HOST`` via *monkeypatch* so the ``google-cloud-storage``

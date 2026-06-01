@@ -19,15 +19,15 @@ import logging
 from unittest.mock import patch
 
 import pytest
-from unified_events_interface import (
+from unified_api_contracts.internal import DataFreshnessContract
+from unified_trading_library import (
     DATA_AVAILABILITY_RESTORED,
     DATA_GAP_DETECTED,
     DATA_STALE,
     FEED_UNHEALTHY,
+    FreshnessMonitor,
     setup_events,
 )
-from unified_internal_contracts import DataFreshnessContract
-from unified_trading_library import FreshnessMonitor
 
 pytestmark = pytest.mark.deployment_test
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ def _make_contract(
 ) -> DataFreshnessContract:
     return DataFreshnessContract(
         source=source,
-        asset_class="crypto_cefi",
+        asset_group="crypto_cefi",
         max_age_seconds=max_age,
         warn_age_seconds=warn_age,
         expected_cadence_seconds=cadence,
@@ -213,7 +213,7 @@ class TestDataGapDetectedCondition:
         # cadence=1, max_age=5 — age of 3 > 2*1 triggers critical
         contract = _make_contract(max_age=5, warn_age=2, cadence=1, criticality="critical")
         monitor = FreshnessMonitor(contract=contract)
-        status, detail = monitor.check(last_update_seconds_ago=3.0)
+        status, _detail = monitor.check(last_update_seconds_ago=3.0)
         # age=3 > warn=2 → warn or critical; either qualifies for gap detection
         assert status in {"warn", "critical"}
 
@@ -242,7 +242,7 @@ class TestCriticalityDeterminesBlockingBehaviour:
     """
 
     def test_critical_contract_has_low_max_age(self) -> None:
-        from unified_internal_contracts.reference.data_freshness import MARKET_TICK_FRESHNESS
+        from unified_api_contracts.internal.reference.data_freshness import MARKET_TICK_FRESHNESS
 
         binance = MARKET_TICK_FRESHNESS["binance"]
         assert binance.criticality == "critical"
@@ -250,7 +250,7 @@ class TestCriticalityDeterminesBlockingBehaviour:
         assert binance.max_age_seconds <= 60
 
     def test_informational_contract_allows_daily_cadence(self) -> None:
-        from unified_internal_contracts.reference.data_freshness import MARKET_TICK_FRESHNESS
+        from unified_api_contracts.internal.reference.data_freshness import MARKET_TICK_FRESHNESS
 
         openbb = MARKET_TICK_FRESHNESS["openbb"]
         assert openbb.criticality == "informational"

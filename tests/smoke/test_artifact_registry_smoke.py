@@ -59,7 +59,6 @@ _EXPECTED_SERVICE_IMAGES = [
     "execution-service",
     "strategy-service",
     "risk-service",
-    "pnl-attribution-service",
     "instruments-service",
     "market-tick-data-service",
     "deployment-api",
