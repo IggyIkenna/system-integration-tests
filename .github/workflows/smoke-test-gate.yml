@@ -301,42 +301,55 @@ jobs:
             2>&1 | tee code_tests_output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
-      - name: Run UIC contract adoption check
+      - name: Run UAC internal-contract adoption check
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+
+          # #362: UIC was folded into unified_api_contracts.internal — the standalone
+          # unified-internal-contracts repo is archived. Repoint to UAC + its check_uac_adoption.py
+          # (same --orphans-only/--workspace interface).
           git clone --depth=1 --filter=blob:none \
-            "https://x-access-token:${{ secrets.GH_PAT }}@github.com/IggyIkenna/unified-internal-contracts.git" \
-            /tmp/uic-check --sparse
-          git -C /tmp/uic-check sparse-checkout set \
-            unified_internal_contracts/ scripts/check_uic_adoption.py scripts/check_uic_completeness.py
+            "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-api-contracts.git" \
+            /tmp/uac-check --sparse
+          git -C /tmp/uac-check sparse-checkout set \
+            unified_api_contracts/internal/ scripts/check_uac_adoption.py scripts/check_uac_completeness.py
+
+          # #375: derive the importer set from the PM manifest (type∈{service,batch-service,api-service}
+          # AND status==active) instead of a hardcoded list that cloned 10 dead/consolidated repos.
+          MANIFEST=$(curl -sL \
+            -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github.raw" \
+            "https://api.github.com/repos/${OWNER}/unified-trading-pm/contents/workspace-manifest.json")
+          SERVICES=$(echo "$MANIFEST" | python3 -c "
+          import json, sys
+          m = json.load(sys.stdin)
+          ok = {'service', 'batch-service', 'api-service'}
+          print(' '.join(
+              name for name, meta in m.get('repositories', {}).items()
+              if not name.startswith('_') and meta.get('type') in ok and meta.get('status') == 'active'
+          ))")
+          echo "Active code repos for adoption scan: ${SERVICES}"
 
           mkdir -p workspace
-          SERVICES=(
-            execution-service strategy-service market-data-processing-service
-            market-tick-data-service market-data-api instruments-service
-            alerting-service strategy-service ml-inference-service ml-training-service
-            features-delta-one-service features-volatility-service
-            features-cross-instrument-service features-onchain-service
-            features-sports-service features-calendar-service
-            unified-sports-execution-interface
-          )
-          OWNER="${{ github.repository_owner }}"
-          for svc in "${SERVICES[@]}"; do
+          for svc in ${SERVICES}; do
             git clone --depth=1 --filter=blob:none \
-              "https://x-access-token:${{ secrets.GH_PAT }}@github.com/IggyIkenna/${svc}.git" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${svc}.git" \
               "workspace/${svc}" 2>/dev/null \
               || echo "WARN: ${svc} not found — skipping"
           done
 
-          python3 /tmp/uic-check/scripts/check_uic_adoption.py \
+          python3 /tmp/uac-check/scripts/check_uac_adoption.py \
             --orphans-only --workspace workspace \
-            2>&1 | tee uic_adoption_orphans.txt
+            2>&1 | tee uac_adoption_orphans.txt
           EXIT=${PIPESTATUS[0]}
           if [ "$EXIT" -ne 0 ]; then
-            ORPHAN_COUNT=$(wc -l < uic_adoption_orphans.txt | tr -d ' ')
-            echo "::error::${ORPHAN_COUNT} orphaned UIC schema(s) have no terminal consumer importer."
+            ORPHAN_COUNT=$(wc -l < uac_adoption_orphans.txt | tr -d ' ')
+            echo "::error::${ORPHAN_COUNT} orphaned UAC internal schema(s) have no terminal consumer importer."
             exit 1
           fi
-          echo "All UIC schemas have at least one terminal consumer importer."
+          echo "All UAC internal schemas have at least one terminal consumer importer."
 
       - name: Upload code test reports
         if: always()
