@@ -207,7 +207,7 @@ class TestVenueTypeMatrix:
         """DeFi venues must produce the expected instrument types."""
         venue_types: dict[str, set[str]] = {}
         for inst in all_instruments:
-            if inst.asset_group == "crypto_defi":
+            if inst.asset_group == "defi":
                 venue_types.setdefault(inst.venue, set()).add(str(inst.instrument_type))
 
         # Aave must produce A_TOKEN and DEBT_TOKEN
@@ -499,25 +499,26 @@ class TestCrossComponentIntegration:
     def test_urdi_adapter_venues_cover_generator_cefi_venues(
         self,
     ) -> None:
-        """URDI factory adapter keys should cover the CeFi venues InstrumentGenerator uses."""
+        """URDI factory adapter keys should cover the CeFi/hybrid venues InstrumentGenerator uses.
+
+        Note: instruments-service (URDI) handles protocol-level reference data; it does NOT
+        cover simple CeFi venues like binance/bybit/okx/coinbase — those are MTDS domain.
+        Only perp/hybrid venues wired into URDI are tested here.
+        """
         from instruments_service.reference_data.factory import _ADAPTERS
 
         adapter_venues = set(_ADAPTERS.keys())
 
-        # CeFi venues used by InstrumentGenerator (lowercase for URDI lookup)
-        generator_cefi_venues_lower = {
-            "binance",
-            "deribit",
-            "bybit",
-            "okx",
-            "coinbase",
+        # CeFi/hybrid venues that URDI must have adapters for (subset of generator CeFi venues)
+        # binance, bybit, okx, coinbase, deribit: handled by MTDS, not instruments-service
+        required_urdi_cefi_venues = {
             "hyperliquid",
             "aster",
         }
 
-        missing = generator_cefi_venues_lower - adapter_venues
+        missing = required_urdi_cefi_venues - adapter_venues
         assert not missing, (
-            f"URDI missing adapters for generator CeFi venues: {missing}; URDI has: {sorted(adapter_venues)}"
+            f"URDI missing required adapters: {missing}; URDI has: {sorted(adapter_venues)}"
         )
 
     def test_instrument_record_field_coverage(self) -> None:
@@ -528,8 +529,23 @@ class TestCrossComponentIntegration:
         record_fields = set(InstrumentRecord.model_fields.keys())
         canonical_fields = set(CanonicalInstrument.model_fields.keys())
 
-        # Core fields that must exist in both schemas
-        core_fields = {
+        # Core fields that must exist in InstrumentRecord (URDI output schema)
+        # Note: InstrumentRecord uses raw_symbol (not symbol) for exchange-native symbol
+        core_record_fields = {
+            "instrument_key",
+            "venue",
+            "instrument_type",
+            "raw_symbol",
+            "base_asset",
+            "quote_asset",
+            "tick_size",
+            "expiry",
+            "strike",
+            "option_type",
+            "underlying",
+        }
+        # Core fields that must exist in CanonicalInstrument (downstream schema)
+        core_canonical_fields = {
             "instrument_key",
             "venue",
             "instrument_type",
@@ -543,8 +559,8 @@ class TestCrossComponentIntegration:
             "underlying",
         }
 
-        missing_in_record = core_fields - record_fields
-        missing_in_canonical = core_fields - canonical_fields
+        missing_in_record = core_record_fields - record_fields
+        missing_in_canonical = core_canonical_fields - canonical_fields
 
         assert not missing_in_record, f"InstrumentRecord missing core fields: {missing_in_record}"
         assert not missing_in_canonical, f"CanonicalInstrument missing core fields: {missing_in_canonical}"
@@ -646,7 +662,8 @@ class TestTradFiFieldAlignment:
             InstrumentType.INDEX,
         }
         tradfi = [inst for inst in all_instruments if inst.instrument_type in tradfi_types]
-        valid_asset_groupes = {"tradfi_equity", "tradfi_etf", "tradfi_index", "tradfi_futures"}
+        # canonical vocabulary: "tradfi" (merged from tradfi_equity/tradfi_etf/tradfi_index/tradfi_futures)
+        valid_asset_groupes = {"tradfi"}
         for inst in tradfi:
             assert inst.asset_group in valid_asset_groupes, (
                 f"Unexpected asset_group {inst.asset_group!r} for TradFi instrument {inst.instrument_key}"
@@ -676,7 +693,7 @@ class TestRegistryDrivenAlignment:
         cefi_spot = [
             inst
             for inst in no_options_instruments
-            if inst.instrument_type == InstrumentType.SPOT_PAIR and inst.asset_group == "crypto_cefi"
+            if inst.instrument_type == InstrumentType.SPOT_PAIR and inst.asset_group == "cefi"
         ]
         base_assets = {inst.base_asset for inst in cefi_spot}
         for asset in CEFI_BASE_ASSETS:
