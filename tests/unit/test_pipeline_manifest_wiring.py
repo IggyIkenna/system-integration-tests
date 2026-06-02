@@ -19,16 +19,14 @@ wiring layers documented in
    through ``strategy-service`` (no broken/disconnected hop).
 4. ``AvailabilityRecord`` (v9) carries every stage-key column, so the manifest can
    *represent* each hop of the chain.
-5. GAP G-EXEC — the strategy→execution readiness edge — is currently missing. It is
-   asserted as ``xfail`` so this test passes today (surfacing the precise missing
-   hop) and flips to ``xpass`` the moment the edge is wired, prompting cleanup.
+5. The strategy→execution readiness edge (formerly GAP G-EXEC) is wired:
+   ``execution-service`` declares ``strategy_instructions`` upstream of ``strategy-service``.
 """
 
 from __future__ import annotations
 
 import dataclasses
 
-import pytest
 from unified_trading_library import (
     MANIFEST_SCHEMA_VERSION,
     PATH_REGISTRY,
@@ -154,25 +152,21 @@ def test_strategy_output_dataset_exists_for_execution_edge() -> None:
     )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "GAP G-EXEC: execution-service has no PIPELINE_DEPENDENCIES entry, so the "
-        "strategy→execution readiness hop is unwired. The 'strategy_orders' dataset "
-        "exists; adding the edge is the documented follow-up. See "
-        "codex/04-architecture/e2e-pipeline-manifest-wiring.md (Layer 2, G-EXEC). "
-        "When wired, this xfail becomes xpass — remove the marker."
-    ),
-    strict=False,
-)
 def test_execution_service_declares_strategy_upstream() -> None:
-    """execution-service should declare a strategy-output upstream to complete the chain."""
+    """execution-service declares a strategy-output upstream — completes the chain (G-EXEC wired).
+
+    See codex/04-architecture/e2e-pipeline-manifest-wiring.md (Layer 2). Execution's batch
+    loader reads strategy_instructions; both strategy_orders/strategy_instructions resolve to
+    the strategy-store bucket that strategy-service writes with service_name="strategy-service".
+    """
     deps = PIPELINE_DEPENDENCIES.get("execution-service", [])
     upstream_datasets = {d.dataset for d in deps}
-    assert isinstance(deps, list)
+    upstream_services = {d.service_name for d in deps}
     assert {"strategy_orders", "strategy_instructions"} & upstream_datasets, (
         "execution-service does not declare a strategy-output upstream "
         f"(found edges: {[(d.dataset, d.service_name) for d in deps]})"
     )
+    assert "strategy-service" in upstream_services
 
 
 def test_upstream_dependency_shape_is_stable() -> None:
