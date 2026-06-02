@@ -37,7 +37,9 @@ pbms_aggregator = pytest.importorskip(  # pyright: ignore[reportUnknownMemberTyp
     reason="strategy-service not installed — skipping cross-venue aggregation e2e tests",
 )
 CrossVenueAggregator = pbms_aggregator.CrossVenueAggregator
-_VenueData = pbms_aggregator._VenueData
+# `_VenueData` was renamed to the public `VenueData` in strategy-service
+# (cross_venue_aggregator.py); keep the local alias name, point it at the new symbol.
+_VenueData = pbms_aggregator.VenueData
 
 
 # ---------------------------------------------------------------------------
