@@ -65,7 +65,7 @@ concurrency:
 
 jobs:
   setup:
-    name: SIT Setup (v0.1+ repo filter + mode detection)
+    name: SIT Setup (v0.1+ repo filter + mode detection + dep-slice)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -74,6 +74,12 @@ jobs:
       has_v1_repos: ${{ steps.filter.outputs.has_v1_repos }}
       v1_repos_json: ${{ steps.filter.outputs.v1_repos_json }}
       sit_mode: ${{ steps.filter.outputs.sit_mode }}
+      # SIT-slicing outputs (§299): slice_mode ∈ {targeted, BROAD, EXEMPT}
+      # slice_repos_json = JSON array of repos in the slice (empty for BROAD/EXEMPT → full run)
+      # pytest_filter = pytest -k expression (empty for BROAD → no filter; empty for EXEMPT → skip)
+      slice_mode: ${{ steps.slice.outputs.slice_mode }}
+      slice_repos_json: ${{ steps.slice.outputs.slice_repos_json }}
+      pytest_filter: ${{ steps.slice.outputs.pytest_filter }}
 
     steps:
       # No in-job debounce: PM's sit-debounce-trigger.yml is the single debouncer (60s quiet
@@ -162,11 +168,68 @@ jobs:
             echo "sit_mode=full" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Compute SIT dep-slice (§299 — targeted vs BROAD vs EXEMPT)
+        id: slice
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          # Changed repos: prefer explicit client_payload.pending_repos (set by PM debouncer),
+          # then workflow_dispatch manual override. Falls back to [] → BROAD (safety fallback).
+          CHANGED_REPOS_JSON: ${{ github.event.client_payload.pending_repos || '[]' }}
+        run: |
+          set -euo pipefail
+
+          # Checkout the SIT repo (staging branch) to get compute_sit_slice.py
+          OWNER="${{ github.repository_owner }}"
+          git clone --depth=1 -b staging \
+            "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/system-integration-tests.git" \
+            /tmp/sit-repo 2>/dev/null \
+            || git clone --depth=1 \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/system-integration-tests.git" \
+              /tmp/sit-repo
+
+          # Convert JSON array to space-separated args for compute_sit_slice.py
+          CHANGED_ARGS=""
+          if [ -n "$CHANGED_REPOS_JSON" ] && [ "$CHANGED_REPOS_JSON" != "null" ] && [ "$CHANGED_REPOS_JSON" != "[]" ]; then
+            CHANGED_ARGS=$(echo "$CHANGED_REPOS_JSON" | python3 -c "
+          import json, sys
+          repos = json.load(sys.stdin)
+          if isinstance(repos, list):
+              print(' '.join(str(r) for r in repos))
+          " 2>/dev/null || true)
+          fi
+
+          # Run slice computation; on any error emit BROAD (safety fallback — never under-test)
+          SLICE_OUTPUT=""
+          if [ -f /tmp/sit-repo/scripts/compute_sit_slice.py ]; then
+            SLICE_OUTPUT=$(python3 /tmp/sit-repo/scripts/compute_sit_slice.py \
+              --manifest /tmp/pm-repo/workspace-manifest.json \
+              --topology /tmp/pm-repo/configs/runtime-topology.yaml \
+              ${CHANGED_ARGS:+--changed $CHANGED_ARGS} \
+              2>/dev/null) || true
+          fi
+
+          # Parse output or use BROAD fallback
+          if [ -z "$SLICE_OUTPUT" ]; then
+            echo "WARN: compute_sit_slice.py produced no output — falling back to BROAD" >&2
+            SLICE_OUTPUT="SLICE_MODE=BROAD
+          SLICE_REPOS_JSON=[]
+          PYTEST_FILTER="
+          fi
+
+          # Write to GITHUB_OUTPUT
+          echo "$SLICE_OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "Slice outputs:" >&2
+          echo "$SLICE_OUTPUT" >&2
+
   abbreviated-tests:
     name: Abbreviated SIT (contract + workflow sanity, <2 min)
     runs-on: ubuntu-latest
     needs: setup
-    if: needs.setup.outputs.has_v1_repos == 'true' && needs.setup.outputs.sit_mode == 'abbreviated'
+    # Also check slice_mode != EXEMPT: a PM-only change should not gate on SIT at all.
+    if: |
+      needs.setup.outputs.has_v1_repos == 'true' &&
+      needs.setup.outputs.sit_mode == 'abbreviated' &&
+      needs.setup.outputs.slice_mode != 'EXEMPT'
     timeout-minutes: 5
     permissions:
       contents: read
@@ -223,7 +286,11 @@ jobs:
     name: Code Tests (static, <10 min)
     runs-on: ubuntu-latest
     needs: setup
-    if: needs.setup.outputs.has_v1_repos == 'true' && needs.setup.outputs.sit_mode == 'full'
+    # slice_mode EXEMPT = PM-only change; SIT must not run. Otherwise full-mode gate proceeds.
+    if: |
+      needs.setup.outputs.has_v1_repos == 'true' &&
+      needs.setup.outputs.sit_mode == 'full' &&
+      needs.setup.outputs.slice_mode != 'EXEMPT'
     timeout-minutes: 10
     permissions:
       contents: read
@@ -294,10 +361,21 @@ jobs:
 
       - name: Run code tests (static, no live services)
         id: code_tests
+        env:
+          # slice_mode=targeted → restrict to affected repos via -k; BROAD → no restriction.
+          SLICE_MODE: ${{ needs.setup.outputs.slice_mode }}
+          PYTEST_FILTER: ${{ needs.setup.outputs.pytest_filter }}
         run: |
+          # Build -k filter: targeted mode uses the dep-slice expression; BROAD runs all.
+          K_ARG=""
+          if [ "$SLICE_MODE" = "targeted" ] && [ -n "$PYTEST_FILTER" ]; then
+            K_ARG="-k $PYTEST_FILTER"
+          fi
+
           pytest tests/ \
             -m "code_test" -v --tb=short --no-header \
             -q --json-report --json-report-file=code_tests_report.json \
+            $K_ARG \
             2>&1 | tee code_tests_output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
@@ -379,7 +457,11 @@ jobs:
     name: Deployment Tests (docker-compose mock stack)
     runs-on: ubuntu-latest
     needs: [setup, code-tests]
-    if: needs.setup.outputs.has_v1_repos == 'true' && needs.setup.outputs.sit_mode == 'full'
+    # slice_mode EXEMPT = PM-only change; SIT must not run. Otherwise full-mode gate proceeds.
+    if: |
+      needs.setup.outputs.has_v1_repos == 'true' &&
+      needs.setup.outputs.sit_mode == 'full' &&
+      needs.setup.outputs.slice_mode != 'EXEMPT'
     timeout-minutes: 45
     permissions:
       contents: read
@@ -458,10 +540,21 @@ jobs:
 
       - name: Run deployment tests (mock stack)
         id: deployment_tests
+        env:
+          # slice_mode=targeted → restrict to affected repos via -k; BROAD → no restriction.
+          SLICE_MODE: ${{ needs.setup.outputs.slice_mode }}
+          PYTEST_FILTER: ${{ needs.setup.outputs.pytest_filter }}
         run: |
+          # Build -k filter: targeted mode uses the dep-slice expression; BROAD runs all.
+          K_ARG=""
+          if [ "$SLICE_MODE" = "targeted" ] && [ -n "$PYTEST_FILTER" ]; then
+            K_ARG="-k $PYTEST_FILTER"
+          fi
+
           pytest tests/ \
             -m "deployment_test" -v --tb=short --no-header \
             -q --json-report --json-report-file=deployment_tests_report.json \
+            $K_ARG \
             2>&1 | tee deployment_tests_output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
@@ -500,13 +593,19 @@ jobs:
     name: Dispatch staging-validated
     runs-on: ubuntu-latest
     needs: [setup, abbreviated-tests, code-tests, deployment-tests]
-    # Run if: has repos to test AND (abbreviated path passed OR full path passed)
+    # Run if: has repos to test AND one of:
+    #   (a) abbreviated path passed,
+    #   (b) full path passed,
+    #   (c) slice_mode == EXEMPT (PM-only change: tests skipped, but staging is still valid → promote)
+    # The skipped abbreviated-tests/code-tests/deployment-tests jobs have result=='skipped',
+    # which is allowed by the always() guard below.
     if: |
       always() &&
       needs.setup.outputs.has_v1_repos == 'true' &&
       (
-        (needs.setup.outputs.sit_mode == 'abbreviated' && needs.abbreviated-tests.result == 'success') ||
-        (needs.setup.outputs.sit_mode == 'full' && needs.code-tests.result == 'success' && needs.deployment-tests.result == 'success')
+        (needs.setup.outputs.sit_mode == 'abbreviated' && needs.setup.outputs.slice_mode != 'EXEMPT' && needs.abbreviated-tests.result == 'success') ||
+        (needs.setup.outputs.sit_mode == 'full' && needs.setup.outputs.slice_mode != 'EXEMPT' && needs.code-tests.result == 'success' && needs.deployment-tests.result == 'success') ||
+        needs.setup.outputs.slice_mode == 'EXEMPT'
       )
     permissions:
       contents: write
@@ -555,7 +654,9 @@ jobs:
               "commit": "${{ steps.staging_sha.outputs.sha }}",
               "run_id": "${{ github.run_id }}",
               "trigger_event": "${{ github.event_name }}",
-              "sit_mode": "${{ needs.setup.outputs.sit_mode }}"
+              "sit_mode": "${{ needs.setup.outputs.sit_mode }}",
+              "slice_mode": "${{ needs.setup.outputs.slice_mode }}",
+              "slice_repos": ${{ needs.setup.outputs.slice_repos_json || '[]' }}
             }
 
       - name: Notify on failure
