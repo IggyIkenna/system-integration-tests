@@ -34,6 +34,7 @@ from unified_trading_library import (
     DATA_GAP_DETECTED,
     DATA_STALE,
     FEED_UNHEALTHY,
+    VENUE_ZERO_INSTRUMENTS,
     FreshnessMonitor,
     setup_events,
 )
@@ -49,12 +50,12 @@ def _test_mode() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 1. Schema completeness — DATA_AVAILABILITY_EVENT_TYPES covers the 5 events
+# 1. Schema completeness — DATA_AVAILABILITY_EVENT_TYPES covers all events
 # ---------------------------------------------------------------------------
 
 
 class TestDataAvailabilityEventSchemaCompleteness:
-    """All 5 freshness events are defined and correctly typed."""
+    """All freshness events are defined and correctly typed."""
 
     def test_data_stale_in_event_types(self) -> None:
         assert DATA_STALE in DATA_AVAILABILITY_EVENT_TYPES
@@ -71,12 +72,17 @@ class TestDataAvailabilityEventSchemaCompleteness:
     def test_data_completeness_check_in_event_types(self) -> None:
         assert DATA_COMPLETENESS_CHECK in DATA_AVAILABILITY_EVENT_TYPES
 
+    def test_venue_zero_instruments_in_event_types(self) -> None:
+        # VENUE_ZERO_INSTRUMENTS added to data-availability event set (UTL)
+        assert VENUE_ZERO_INSTRUMENTS in DATA_AVAILABILITY_EVENT_TYPES
+
     def test_all_event_names_are_uppercase(self) -> None:
         for event in DATA_AVAILABILITY_EVENT_TYPES:
             assert event.isupper(), f"{event!r} must be all-uppercase"
 
-    def test_event_set_has_exactly_five_members(self) -> None:
-        assert len(DATA_AVAILABILITY_EVENT_TYPES) == 5
+    def test_event_set_has_exactly_six_members(self) -> None:
+        # 5 original + VENUE_ZERO_INSTRUMENTS added to UTL data-availability set
+        assert len(DATA_AVAILABILITY_EVENT_TYPES) == 6
 
 
 # ---------------------------------------------------------------------------
@@ -99,10 +105,11 @@ class TestFreshnessContractCoverage:
             assert contract.max_age_seconds == 5
 
     def test_feature_freshness_covers_delta_one(self) -> None:
-        assert "features-delta-one-service" in FEATURE_FRESHNESS
-        contract = FEATURE_FRESHNESS["features-delta-one-service"]
+        # features-delta-one-service consolidated into features-service
+        assert "features-service" in FEATURE_FRESHNESS
+        contract = FEATURE_FRESHNESS["features-service"]
         assert contract.criticality == "critical"
-        assert contract.max_age_seconds == 120
+        assert contract.max_age_seconds == 300
 
     def test_each_contract_has_valid_thresholds(self) -> None:
         for source, contract in ALL_FRESHNESS_CONTRACTS.items():

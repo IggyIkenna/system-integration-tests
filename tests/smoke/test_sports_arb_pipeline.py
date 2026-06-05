@@ -19,6 +19,8 @@ import uuid
 from decimal import Decimal
 from unittest.mock import MagicMock
 
+import alerting_service  # declared dep: alerting-service (sports alert rules)
+import client_reporting_api  # declared dep: client-reporting-api (sports PnL endpoints)
 import pytest
 from unified_api_contracts import BetOrder, BetStatus
 

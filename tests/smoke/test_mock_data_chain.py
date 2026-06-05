@@ -156,7 +156,7 @@ class TestInstrumentEdgeCases:
             symbol="LUNA-USDT",
             base_asset="LUNA",
             quote_asset="USDT",
-            asset_group="crypto_cefi",
+            asset_group="cefi",
             available_from_datetime=datetime(2020, 1, 1, tzinfo=UTC),
             available_to_datetime=past_dt,
             timestamp=datetime(2024, 6, 1, tzinfo=UTC),
@@ -174,7 +174,7 @@ class TestInstrumentEdgeCases:
             symbol="NEW-USDT",
             base_asset="NEW",
             quote_asset="USDT",
-            asset_group="crypto_cefi",
+            asset_group="cefi",
             available_from_datetime=today,
             available_to_datetime=None,
             timestamp=today,
@@ -240,7 +240,7 @@ class TestInstrumentEdgeCases:
             symbol="BTC-USDT",
             base_asset="BTC",
             quote_asset="USDT",
-            asset_group="crypto_cefi",
+            asset_group="cefi",
             timestamp=datetime(2025, 1, 1, tzinfo=UTC),
         )
         assert inst.venue == "UNKNOWN_EXCHANGE"
@@ -265,7 +265,7 @@ class TestInstrumentEdgeCases:
             symbol="BTC-28MAR25-0-C",
             base_asset="BTC",
             quote_asset="USD",
-            asset_group="crypto_cefi",
+            asset_group="cefi",
             strike=0.0,
             option_type=OptionType.CALL,
             expiry=datetime(2025, 3, 28, 8, 0, 0, tzinfo=UTC),
@@ -285,7 +285,7 @@ class TestInstrumentEdgeCases:
             symbol="BTC-29MAR24",
             base_asset="BTC",
             quote_asset="USD",
-            asset_group="crypto_cefi",
+            asset_group="cefi",
             expiry=past_expiry,
             available_from_datetime=datetime(2023, 3, 29, tzinfo=UTC),
             available_to_datetime=past_expiry,
@@ -491,8 +491,9 @@ class TestSchemaValidation:
         instruments = gen.generate_all(REF_DATE)
         asset_groupes = {i.asset_group for i in instruments if i.asset_group is not None}
 
-        assert "crypto_cefi" in asset_groupes, "Missing crypto_cefi instruments"
-        assert "crypto_defi" in asset_groupes, "Missing crypto_defi instruments"
+        # canonical vocabulary: "cefi" and "defi" (venue_axis_asset_group_vocabulary_2026_04_25)
+        assert "cefi" in asset_groupes, "Missing cefi instruments"
+        assert "defi" in asset_groupes, "Missing defi instruments"
         assert "prediction" in asset_groupes or "sports" in asset_groupes, "Missing prediction/sports instruments"
 
         # Check tradfi variants
