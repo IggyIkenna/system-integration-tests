@@ -49,7 +49,9 @@ CI (GitHub Actions) — add to the workflow job that runs SIT::
 
 from __future__ import annotations
 
+import asyncio
 import os
+import warnings
 
 # Set credential-free environment BEFORE any imports that might trigger GCP client init
 os.environ.setdefault("CLOUD_PROVIDER", "local")
@@ -170,6 +172,31 @@ def _enforce_block_network(request: pytest.FixtureRequest) -> Generator[None]:
     socket.socket.connect = _blocked_connect  # type: ignore[method-assign]
     yield
     socket.socket.connect = _original_connect  # type: ignore[method-assign]
+
+
+@pytest.fixture(autouse=True)
+def _ensure_event_loop() -> Generator[None]:
+    """Guarantee a usable current asyncio event loop for every test (isolation guard).
+
+    On Python 3.13 a prior test that calls ``asyncio.run()`` leaves the thread with NO
+    current event loop. A later test that imports a module which calls the deprecated
+    ``asyncio.get_event_loop()`` at import time (e.g. ``instruments_service`` → ``eventkit``)
+    then dies with ``RuntimeError: There is no current event loop`` — an ORDER-DEPENDENT
+    failure (``test_urdi_adapter_venues_cover_generator_cefi_venues`` passed in isolation but
+    failed in the full suite). Restoring a fresh loop pre-test makes that import-time call safe
+    regardless of what ran before; pytest-asyncio still installs its own loop for async tests.
+    """
+    with warnings.catch_warnings():
+        # get_event_loop() warns when there is no running loop on 3.12+; we only probe it.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        try:
+            loop = asyncio.get_event_loop_policy().get_event_loop()
+            usable = not loop.is_closed()
+        except RuntimeError:
+            usable = False
+    if not usable:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+    yield
 
 
 @pytest.fixture(scope="session")
