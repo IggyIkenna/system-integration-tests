@@ -17,6 +17,7 @@ jobs:
       contents: read
     env:
       GH_PAT: ${{ secrets.GH_PAT }}
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
 
     steps:
       - name: Checkout repository
@@ -28,7 +29,7 @@ jobs:
           python-version: "3.13.9"
 
       - name: Authenticate to GCP Artifact Registry
-        if: ${{ secrets.GCP_SA_KEY != '' }}
+        if: ${{ env.GCP_SA_KEY != '' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
@@ -55,7 +56,8 @@ jobs:
           RUN_PERFORMANCE_TESTS: "true"
           GCP_PROJECT_ID: "test-project"
         run: |
-          export PATH="$(pwd)/.venv/bin:$PATH"
+          PATH="$(pwd)/.venv/bin:$PATH"
+          export PATH
           .venv/bin/pytest tests/performance/ -m "not slow" \
             --tb=short \
             -q \
@@ -66,7 +68,8 @@ jobs:
       - name: Run regression detection
         if: always()
         run: |
-          export PATH="$(pwd)/.venv/bin:$PATH"
+          PATH="$(pwd)/.venv/bin:$PATH"
+          export PATH
           if [ -f tests/performance/compare_benchmark_baseline.py ]; then
             python tests/performance/compare_benchmark_baseline.py \
               --results tests/performance/results/performance_run_${GITHUB_RUN_ID:-local}.log \
