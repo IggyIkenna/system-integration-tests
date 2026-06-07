@@ -458,8 +458,14 @@ jobs:
           git clone --depth=1 --filter=blob:none \
             "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-api-contracts.git" \
             /tmp/uac-check --sparse
-          git -C /tmp/uac-check sparse-checkout set \
-            unified_api_contracts/internal/ scripts/check_uac_adoption.py scripts/check_uac_completeness.py
+          # --no-cone (with leading-slash-anchored patterns): `sparse-checkout set` defaults to
+          # CONE mode, which treats every arg as a DIRECTORY and HARD-FAILS on a file path
+          # ("fatal: 'scripts/check_uac_adoption.py' is not a directory"). The #362 repoint to
+          # UAC added two FILE paths → cone-mode aborted the clone (exit 128) → the Code-Tests
+          # job died before running, dispatching sit-failed every SIT run and jamming the
+          # breaking-cascade staging lock (incident 2026-06-07, sit_retry_count hit max=3).
+          git -C /tmp/uac-check sparse-checkout set --no-cone \
+            /unified_api_contracts/internal/ /scripts/check_uac_adoption.py /scripts/check_uac_completeness.py
 
           # #375: derive the importer set from the PM manifest (type∈{service,batch-service,api-service}
           # AND status==active) instead of a hardcoded list that cloned 10 dead/consolidated repos.
