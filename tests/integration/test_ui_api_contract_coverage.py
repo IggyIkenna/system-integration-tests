@@ -148,8 +148,10 @@ class TestPerStackFields:
         Exception: non-Vite stacks (e.g. odum-website on port 3000) are excluded
         from the Vite dev-server port range check.
         """
-        # Stacks that use non-Vite dev servers or alternate ports (e.g. unified-trading-system-ui on 3000)
-        _NON_VITE_STACKS = {"odum-website", "client-reporting", "user-management"}
+        # Stacks that use non-Vite dev servers or alternate ports. unified-trading-system-ui
+        # migrated from Vite (:5174 legacy) to Next.js (:3000); client-reporting + user-management
+        # are likewise Next.js/archived. See ui-api-mapping.json stack $note fields.
+        _NON_VITE_STACKS = {"odum-website", "client-reporting", "user-management", "unified-trading"}
         stacks = self._stacks()
         for name, stack in stacks.items():
             assert isinstance(stack, dict)
@@ -248,10 +250,15 @@ class TestUnifiedTradingStackContract:
             f"unified-trading api_module must be 'unified_trading_api', got '{stack.get('api_module')}'"
         )
 
-    def test_unified_trading_ui_port_is_5174(self) -> None:
+    def test_unified_trading_ui_port_is_3000(self) -> None:
+        """unified-trading-system-ui runs on Next.js :3000 (Vite :5174 was retired).
+
+        See the unified-trading stack ``$note`` in ui-api-mapping.json documenting the
+        Next.js-on-:3000 migration from the legacy Vite :5174 dev server.
+        """
         stack = self._unified_trading_stack()
-        assert stack.get("ui_port") == 5174, (
-            f"unified-trading Vite stack must be on port 5174, got {stack.get('ui_port')}"
+        assert stack.get("ui_port") == 3000, (
+            f"unified-trading Next.js stack must be on port 3000, got {stack.get('ui_port')}"
         )
 
     def test_unified_trading_ui_is_unified_trading_system_ui(self) -> None:
