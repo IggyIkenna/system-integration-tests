@@ -137,10 +137,19 @@ class TestCanonicalUnknownVenueErrorFields:
         err = _make_unknown_error("binance", "X", "msg")
         assert isinstance(err, CanonicalError)
 
-    def test_is_not_a_python_exception(self) -> None:
-        """CanonicalUnknownVenueError is a data container, not a Python exception."""
+    def test_is_a_python_exception_subclassing_canonical_error(self) -> None:
+        """CanonicalUnknownVenueError IS a Python exception (CanonicalError subclasses Exception).
+
+        The prior "data container, not an exception" contract was deliberately retired
+        (UAC made ``class CanonicalError(Exception)`` so the 10 production adapters can
+        ``raise`` canonical errors directly). Verify the current contract: it is raisable
+        AND still a CanonicalError, while structured fields remain intact.
+        """
         err = _make_unknown_error("binance", "99999", "Unknown error")
-        assert not isinstance(err, Exception)
+        assert isinstance(err, Exception)
+        assert isinstance(err, CanonicalError)
+        with pytest.raises(CanonicalUnknownVenueError):
+            raise err
         assert err.raw_code == "99999"
         assert err.venue == "binance"
 
@@ -183,7 +192,7 @@ class TestMockAdapterCatchAllPattern:
             raise  # re-raise original exception
 
     def test_unknown_binance_code_emits_event_and_reraises(self) -> None:
-        with patch("unified_trading_library.events.log_event") as mock_log:
+        with patch("unified_trading_library.log_event") as mock_log:
             with pytest.raises(RuntimeError):
                 self._mock_adapter_submit_order(
                     "binance",
@@ -196,7 +205,7 @@ class TestMockAdapterCatchAllPattern:
             assert call_kwargs[0][0] == UNKNOWN_VENUE_ERROR_RECEIVED
 
     def test_unknown_betfair_code_emits_event_and_reraises(self) -> None:
-        with patch("unified_trading_library.events.log_event") as mock_log:
+        with patch("unified_trading_library.log_event") as mock_log:
             with pytest.raises(RuntimeError):
                 self._mock_adapter_submit_order(
                     "betfair",
@@ -207,7 +216,7 @@ class TestMockAdapterCatchAllPattern:
             mock_log.assert_called_once()
 
     def test_unknown_code_emits_correct_event_details(self) -> None:
-        with patch("unified_trading_library.events.log_event") as mock_log:
+        with patch("unified_trading_library.log_event") as mock_log:
             with pytest.raises(RuntimeError):
                 self._mock_adapter_submit_order(
                     "binance",

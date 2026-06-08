@@ -247,6 +247,39 @@ jobs:
         with:
           python-version: "3.13.9"
 
+      # SIT's pyproject [tool.uv.sources] are filesystem path=../<repo> editable deps — the sibling
+      # repos must exist on disk before `uv pip install -e .`. Mirror full-workspace-sit.yml.
+      - name: Assemble sibling workspace (editable path deps)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          cd ..
+          git clone --depth=1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-trading-pm.git" \
+            unified-trading-pm
+          mapfile -t REPOS < <(python3 - <<'PY'
+          import json
+          m = json.load(open("unified-trading-pm/workspace-manifest.json"))
+          seen = []
+          for lvl in m.get("topologicalOrder", {}).get("levels", []):
+              for r in lvl.get("repos", []):
+                  if r not in ("unified-trading-pm", "system-integration-tests") and r not in seen:
+                      seen.append(r)
+          print("\n".join(seen))
+          PY
+          )
+          echo "Cloning ${#REPOS[@]} sibling repos @ staging (fallback main)..."
+          for r in "${REPOS[@]}"; do
+            git clone --depth=1 -b staging \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${r}.git" "$r" 2>/dev/null \
+              || git clone --depth=1 -b main \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${r}.git" "$r" 2>/dev/null \
+              || echo "WARN: could not clone $r (uv will fail loudly if it is a required sibling)"
+          done
+          echo "Assembled workspace:" && ls -d ./*/
+
       - name: Install dependencies
         run: |
           uv pip install -e . --system --quiet
@@ -332,28 +365,61 @@ jobs:
           # (main); we always test the staging code that PM is gating for promotion.
           ref: staging
 
-      - name: Checkout unified-trading-codex (readiness checklists)
-        uses: actions/checkout@v4
-        with:
-          repository: IggyIkenna/unified-trading-codex
-          token: ${{ secrets.GH_PAT }}
-          path: ../unified-trading-codex
-        continue-on-error: true
-
-      - name: Check SIT readiness prerequisites (advisory)
-        run: |
-          if [ -d "../unified-trading-codex/10-audit/repos" ]; then
-            python3 scripts/check-sit-readiness.py \
-              --codex-path ../unified-trading-codex/10-audit/repos \
-              2>&1 || true
-          else
-            echo "::warning::unified-trading-codex not available — skipping readiness prereq check"
-          fi
-
+      # unified-trading-codex is ARCHIVED (folded into unified-trading-pm at codex/) — it is no
+      # longer a clonable repo. The codex/ directory now lives inside PM. The SIT readiness check
+      # reads it from the PM clone the deps-assembly step lays down at ../unified-trading-pm/codex.
       - name: Setup Python CI tools
         uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
         with:
           python-version: "3.13.9"
+
+      # SIT's pyproject.toml declares [tool.uv.sources] path=../<repo> editable deps for the whole
+      # workspace (UTL/UAC/all services). `uv pip install -e .` resolves those FILESYSTEM paths, so
+      # every sibling repo MUST exist on disk first. Mirror full-workspace-sit.yml: clone the active
+      # workspace from the PM manifest topologicalOrder as siblings (staging, fallback main).
+      - name: Assemble sibling workspace (editable path deps)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          # Siblings live one level up from this checkout (../<repo> per pyproject path sources).
+          cd ..
+          git clone --depth=1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-trading-pm.git" \
+            unified-trading-pm
+          mapfile -t REPOS < <(python3 - <<'PY'
+          import json
+          m = json.load(open("unified-trading-pm/workspace-manifest.json"))
+          seen = []
+          for lvl in m.get("topologicalOrder", {}).get("levels", []):
+              for r in lvl.get("repos", []):
+                  if r not in ("unified-trading-pm", "system-integration-tests") and r not in seen:
+                      seen.append(r)
+          print("\n".join(seen))
+          PY
+          )
+          echo "Cloning ${#REPOS[@]} sibling repos @ staging (fallback main)..."
+          for r in "${REPOS[@]}"; do
+            git clone --depth=1 -b staging \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${r}.git" "$r" 2>/dev/null \
+              || git clone --depth=1 -b main \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${r}.git" "$r" 2>/dev/null \
+              || echo "WARN: could not clone $r (uv will fail loudly if it is a required sibling)"
+          done
+          echo "Assembled workspace:" && ls -d ./*/
+
+      - name: Check SIT readiness prerequisites (advisory)
+        run: |
+          # Codex now lives inside the PM clone (../unified-trading-pm/codex); the archived
+          # standalone unified-trading-codex repo no longer exists.
+          if [ -d "../unified-trading-pm/codex/10-audit/repos" ]; then
+            python3 scripts/check-sit-readiness.py \
+              --codex-path ../unified-trading-pm/codex/10-audit/repos \
+              2>&1 || true
+          else
+            echo "::warning::codex readiness checklists not available — skipping readiness prereq check"
+          fi
 
       - name: Install dependencies
         run: |
@@ -392,8 +458,14 @@ jobs:
           git clone --depth=1 --filter=blob:none \
             "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-api-contracts.git" \
             /tmp/uac-check --sparse
-          git -C /tmp/uac-check sparse-checkout set \
-            unified_api_contracts/internal/ scripts/check_uac_adoption.py scripts/check_uac_completeness.py
+          # --no-cone (with leading-slash-anchored patterns): `sparse-checkout set` defaults to
+          # CONE mode, which treats every arg as a DIRECTORY and HARD-FAILS on a file path
+          # ("fatal: 'scripts/check_uac_adoption.py' is not a directory"). The #362 repoint to
+          # UAC added two FILE paths → cone-mode aborted the clone (exit 128) → the Code-Tests
+          # job died before running, dispatching sit-failed every SIT run and jamming the
+          # breaking-cascade staging lock (incident 2026-06-07, sit_retry_count hit max=3).
+          git -C /tmp/uac-check sparse-checkout set --no-cone \
+            /unified_api_contracts/internal/ /scripts/check_uac_adoption.py /scripts/check_uac_completeness.py
 
           # #375: derive the importer set from the PM manifest (type∈{service,batch-service,api-service}
           # AND status==active) instead of a hardcoded list that cloned 10 dead/consolidated repos.
@@ -533,6 +605,47 @@ jobs:
         uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
         with:
           python-version: "3.13.9"
+
+      # `uv pip install -e .` resolves SIT's [tool.uv.sources] path=../<repo> editable deps from
+      # disk. The v1-only clone above misses repos NOT in staging_versions (e.g. mtds, strategy,
+      # alerting, client-reporting, unified-cloud-interface) and any below 0.1.0 (features-service)
+      # — all still declared as editable path sources. Clone the FULL active manifest set as
+      # siblings (skip any already present) so the install resolves every path source.
+      - name: Assemble remaining sibling workspace (editable path deps)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          # PM is sparse-checked-out here (docker/ only) — clone a fresh full copy for the manifest.
+          git clone --depth=1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-trading-pm.git" \
+            /tmp/pm-manifest
+          mapfile -t REPOS < <(python3 - <<'PY'
+          import json
+          m = json.load(open("/tmp/pm-manifest/workspace-manifest.json"))
+          seen = []
+          for lvl in m.get("topologicalOrder", {}).get("levels", []):
+              for r in lvl.get("repos", []):
+                  if r not in ("unified-trading-pm", "system-integration-tests") and r not in seen:
+                      seen.append(r)
+          print("\n".join(seen))
+          PY
+          )
+          cd ..
+          echo "Ensuring ${#REPOS[@]} sibling repos exist @ staging (fallback main)..."
+          for r in "${REPOS[@]}"; do
+            if [ -d "$r" ]; then
+              echo "  $r already present — skipping"
+              continue
+            fi
+            git clone --depth=1 -b staging \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${r}.git" "$r" 2>/dev/null \
+              || git clone --depth=1 -b main \
+              "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${r}.git" "$r" 2>/dev/null \
+              || echo "WARN: could not clone $r (uv will fail loudly if it is a required sibling)"
+          done
+          echo "Assembled workspace:" && ls -d ./*/
 
       - name: Install dependencies
         run: |

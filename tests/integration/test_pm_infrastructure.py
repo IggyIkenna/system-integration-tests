@@ -112,7 +112,7 @@ class TestWorkflowYAMLValidity:
         """Key CI/CD workflows must be present."""
         wf_dir = PM_ROOT / ".github" / "workflows"
         required = [
-            "quality-gates.yml",
+            "quality-gates-v2.yml",
             "semver-agent.yml",
             "sit-gate.yml",
             "staging-to-main.yml",
