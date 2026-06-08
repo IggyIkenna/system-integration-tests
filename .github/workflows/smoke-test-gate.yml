@@ -572,15 +572,23 @@ jobs:
           # (main); we always test the staging code that PM is gating for promotion.
           ref: staging
 
+      # git clone (not actions/checkout) — checkout@v4 hard-refuses a `path:` OUTSIDE the
+      # workspace ("Repository path '.../unified-trading-pm' is not under '.../system-integration-tests'"),
+      # but the docker-compose steps below reference ../unified-trading-pm/docker/ as a SIBLING dir.
+      # This step never ran before (deployment-tests only runs after code-tests passes, which was
+      # blocked for weeks by the smoke-test-gate sparse-checkout bug), so the latent failure surfaced
+      # only after that fix. Clone PM's docker/ sparsely into the sibling path like the other PM clones.
       - name: Checkout unified-trading-pm (docker-compose)
-        uses: actions/checkout@v4
-        with:
-          repository: IggyIkenna/unified-trading-pm
-          token: ${{ secrets.GH_PAT }}
-          path: ../unified-trading-pm
-          sparse-checkout: |
-            docker/
-          sparse-checkout-cone-mode: false
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          rm -rf ../unified-trading-pm
+          git clone --depth=1 --filter=blob:none --sparse \
+            "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/unified-trading-pm.git" \
+            ../unified-trading-pm
+          git -C ../unified-trading-pm sparse-checkout set --no-cone /docker/
 
       - name: Write v1 services env file for compose
         run: |
