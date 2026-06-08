@@ -236,7 +236,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Pin staging: repository_dispatch/workflow_dispatch default to the repo default branch
           # (main); we always test the staging code that PM is gating for promotion.
@@ -359,7 +359,7 @@ jobs:
           echo "SIT lock dispatched to PM."
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Pin staging: repository_dispatch/workflow_dispatch default to the repo default branch
           # (main); we always test the staging code that PM is gating for promotion.
@@ -566,7 +566,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Pin staging: repository_dispatch/workflow_dispatch default to the repo default branch
           # (main); we always test the staging code that PM is gating for promotion.
