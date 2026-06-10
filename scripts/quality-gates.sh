@@ -14,6 +14,10 @@ RUN_INTEGRATION=false
 PYTEST_WORKERS=${PYTEST_WORKERS:-2}
 LOCAL_DEPS=()
     UAC_CANONICAL_EXEMPT=true   # SIT needs deep imports for contract validation
+# Test-harness repo: all imports live under tests/ which the manifest-alignment scanner
+# EXCLUDES (PM 2026-06-10 parity change) — without this skip every declared service dep
+# reads as "declared but never imported" and reddens QG (jammed the exec-svc 0.6.0 cascade).
+MANIFEST_ALIGNMENT_SKIP=true
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 # lxml 5.4.0 PYSEC-2026-87 (fix=6.1.0): constrained to <6.0 by workspace; cannot upgrade without breaking
 # uv.lock resolution — ignore until lxml constraint is lifted workspace-wide.

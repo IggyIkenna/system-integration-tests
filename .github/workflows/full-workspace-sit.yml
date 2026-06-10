@@ -92,3 +92,18 @@ jobs:
         run: |
           set -uo pipefail
           bash system-integration-tests/scripts/run_cross_repo_invariants.sh
+
+      # MISSING LINK FIX (2026-06-10): the SIT result never reached PM — sit-unlock listens for
+      # sit-passed/sit-failed repository_dispatch events that NOTHING sent, so a green SIT left
+      # staging locked forever and a red SIT never opened staging for fixes. Close the loop.
+      - name: Report SIT result to PM (drives sit-unlock)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          if [ "${{ job.status }}" = "success" ]; then EVENT="sit-passed"; else EVENT="sit-failed"; fi
+          gh api "repos/IggyIkenna/unified-trading-pm/dispatches" \
+            -X POST -f event_type="$EVENT" \
+            && echo "Dispatched $EVENT to unified-trading-pm" \
+            || echo "::error::failed to dispatch $EVENT — staging lock will dangle"
