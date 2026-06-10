@@ -41,7 +41,7 @@ import pytest
 # separate follow-up, NOT a cap tweak.
 # Tracked: plans/active/issues/sit_uac_orphan_cap_stale_consumer_list_2026_06_07.md
 ORPHAN_CAP = 400
-EXEMPTION_CAP = 80  # exemption union currently 65 (EXEMPT_CLASSES 47 ∪ EXEMPT_MISSING 18), ~23% headroom
+EXEMPTION_CAP = 80  # exemption union currently 65 (EXEMPT_CLASSES 47 + EXEMPT_MISSING 18), ~23% headroom
 
 pytestmark = pytest.mark.code_test
 
