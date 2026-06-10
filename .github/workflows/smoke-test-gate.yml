@@ -294,7 +294,7 @@ jobs:
 
       - name: Upload abbreviated SIT report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: abbreviated-sit-report
           path: |
@@ -516,7 +516,7 @@ jobs:
 
       - name: Upload code test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: code-tests-report
           path: |
@@ -702,7 +702,7 @@ jobs:
 
       - name: Upload deployment test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deployment-tests-report
           path: |
