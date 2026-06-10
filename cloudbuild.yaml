@@ -36,6 +36,7 @@ steps:
       - "-c"
       - |
         set -e
+        pip install uv
         uv pip install --system ruff==0.15.0
         ruff check .
         ruff format --check .
@@ -48,6 +49,7 @@ steps:
       - "-c"
       - |
         set -e
+        pip install uv
         uv pip install --system -e .
         pytest -m smoke -v --timeout=300
     waitFor: ["lint"]
