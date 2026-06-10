@@ -253,7 +253,11 @@ class TestSecretsInherit:
             # followed by secrets: inherit within a few lines.
             lines = content.splitlines()
             for i, line in enumerate(lines):
-                if "persist-cicd-event.yml" in line:
+                # Only an actual `uses:` reference is a real caller. A comment that merely
+                # MENTIONS persist-cicd-event.yml (e.g. explaining where error-tolerance lives)
+                # is not a call and must not be flagged — its `secrets: inherit` legitimately
+                # sits on the real `uses:` line a few lines below, outside this 5-line window.
+                if "uses:" in line and "persist-cicd-event.yml" in line:
                     # Search forward within 5 lines for secrets: inherit
                     window = "\n".join(lines[i : i + 5])
                     if "secrets: inherit" not in window:
