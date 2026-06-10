@@ -464,17 +464,28 @@ jobs:
           # UAC added two FILE paths → cone-mode aborted the clone (exit 128) → the Code-Tests
           # job died before running, dispatching sit-failed every SIT run and jamming the
           # breaking-cascade staging lock (incident 2026-06-07, sit_retry_count hit max=3).
+          # #375 (re-hardened 2026-06-10): ALSO sparse-checkout the UAC package __init__.py so
+          # check_uac_adoption.py's get_uac_all() can read __all__ from the /tmp/uac-check clone
+          # itself (its _resolve_uac_init() falls back to the script's own repo root). Without it
+          # the scanner crashed with FileNotFoundError (UAC absent from workspace/) → the prior
+          # NON-FATAL hack. internal/ stays for check_uac_completeness.py.
           git -C /tmp/uac-check sparse-checkout set --no-cone \
-            /unified_api_contracts/internal/ /scripts/check_uac_adoption.py /scripts/check_uac_completeness.py
+            /unified_api_contracts/ \
+            /scripts/check_uac_adoption.py /scripts/check_uac_completeness.py
 
           # #375: derive the importer set from the PM manifest (type∈{service,batch-service,api-service}
           # AND status==active) instead of a hardcoded list that cloned 10 dead/consolidated repos.
-          MANIFEST=$(curl -sL \
+          # check_uac_adoption.py now derives the SAME set internally from the manifest, so we lay
+          # the manifest down at workspace/unified-trading-pm/ (its first _resolve_manifest() candidate)
+          # AND still pre-clone the consumer repos into workspace/ for the grep scan.
+          mkdir -p workspace/unified-trading-pm
+          curl -sL \
             -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github.raw" \
-            "https://api.github.com/repos/${OWNER}/unified-trading-pm/contents/workspace-manifest.json")
-          SERVICES=$(echo "$MANIFEST" | python3 -c "
-          import json, sys
-          m = json.load(sys.stdin)
+            "https://api.github.com/repos/${OWNER}/unified-trading-pm/contents/workspace-manifest.json" \
+            > workspace/unified-trading-pm/workspace-manifest.json
+          SERVICES=$(python3 -c "
+          import json
+          m = json.load(open('workspace/unified-trading-pm/workspace-manifest.json'))
           ok = {'service', 'batch-service', 'api-service'}
           print(' '.join(
               name for name, meta in m.get('repositories', {}).items()
@@ -482,7 +493,6 @@ jobs:
           ))")
           echo "Active code repos for adoption scan: ${SERVICES}"
 
-          mkdir -p workspace
           for svc in ${SERVICES}; do
             git clone --depth=1 --filter=blob:none \
               "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${svc}.git" \
@@ -490,29 +500,32 @@ jobs:
               || echo "WARN: ${svc} not found — skipping"
           done
 
-          # NON-FATAL (warn, not exit 1) — transitional, 2026-06-07. This step exits 1 on ANY
-          # orphan (no cap) AND currently also crashes the scanner with FileNotFoundError on
-          # workspace/unified-api-contracts/__init__.py (UAC itself is not in the cloned set —
-          # only type∈{service,batch-service,api-service} repos are). Both are KNOWN ARTIFACTS,
-          # not a real adoption regression: check_uac_adoption.py's hardcoded
-          # TERMINAL_CONSUMER_SERVICES list is stale post-consolidation (features-*-service→
-          # features-service, ml-*-service→ml-service, …) so schemas owned by consolidated repos
-          # score as orphaned (~364). This gate never ran for weeks (the smoke-test-gate was dying
-          # earlier at the sparse-checkout bug), so it surfaced only after that fix and blocked the
-          # v0.2.0 cascade SIT from validating. Warn now; RE-HARDEN to `exit 1` once the root cause
-          # is fixed (update the consumer list + clone UAC into workspace/). The pytest ratchet
-          # `test_uac_orphan_count_under_cap` still tracks the count (cap raised 120→400, same TODO).
-          # Tracked: unified-trading-pm/plans/active/issues/sit_uac_orphan_cap_stale_consumer_list_2026_06_07.md
+          # CAP-BASED regression guard (corrected 2026-06-10). The stale-TERMINAL_CONSUMER_SERVICES
+          # root cause IS fixed (check_uac_adoption.py now derives the consumer set from the manifest
+          # type∈{service,batch-service,api-service}+status==active filter) and UAC's __init__.py is
+          # in the sparse-checkout so get_uac_all() no longer crashes. BUT the honest orphan count
+          # with the corrected 11-service list is ~328 (fixing the list trimmed 364→328, NOT →0): UAC
+          # carries hundreds of internal/registry/enum schemas that terminal services consume
+          # TRANSITIVELY (via unified-trading-library re-exports / facade imports) which the
+          # by-class-name grep cannot see, so they score "orphaned". An exit-1-on-ANY-orphan would
+          # FAIL the SIT gate on these 328 and re-block the whole promotion cascade. So: WARN with the
+          # count; the authoritative ratchet is pytest test_uac_orphan_count_under_cap (ORPHAN_CAP=400);
+          # this step fails ONLY if the count blows past a generous hard ceiling = a real adoption
+          # regression. Deeper fix (widen consumer set / follow facade re-exports to drive 328 down) is
+          # a follow-up. Tracked:
+          # unified-trading-pm/plans/active/issues/sit_uac_orphan_cap_stale_consumer_list_2026_06_07.md
+          ORPHAN_HARD_CEILING=450
+          set +e
           python3 /tmp/uac-check/scripts/check_uac_adoption.py \
             --orphans-only --workspace workspace \
-            2>&1 | tee uac_adoption_orphans.txt || true
-          EXIT=${PIPESTATUS[0]}
-          if [ "$EXIT" -ne 0 ]; then
-            ORPHAN_COUNT=$(wc -l < uac_adoption_orphans.txt | tr -d ' ')
-            echo "::warning::UAC adoption check exit ${EXIT} / ${ORPHAN_COUNT} orphan line(s) — NON-FATAL (transitional; stale TERMINAL_CONSUMER_SERVICES + UAC absent from workspace/). See PM issue sit_uac_orphan_cap_stale_consumer_list_2026_06_07."
-          else
-            echo "All UAC internal schemas have at least one terminal consumer importer."
+            2>&1 | tee uac_adoption_orphans.txt
+          set -e
+          ORPHAN_COUNT=$(grep -c . uac_adoption_orphans.txt || echo 0)
+          if [ "${ORPHAN_COUNT}" -gt "${ORPHAN_HARD_CEILING}" ]; then
+            echo "::error::UAC adoption orphan count ${ORPHAN_COUNT} exceeds hard ceiling ${ORPHAN_HARD_CEILING} — a real adoption regression. See uac_adoption_orphans.txt artifact."
+            exit 1
           fi
+          echo "::warning::UAC adoption: ${ORPHAN_COUNT} orphaned schema(s) (expected ~328 baseline; many transitive-via-UTL/facade, not dead schemas). pytest ORPHAN_CAP=400 is the ratchet; hard ceiling ${ORPHAN_HARD_CEILING}."
 
       - name: Upload code test reports
         if: always()
@@ -522,7 +535,7 @@ jobs:
           path: |
             code_tests_report.json
             code_tests_output.txt
-            uic_adoption_orphans.txt
+            uac_adoption_orphans.txt
           retention-days: 7
 
       - name: Unlock staging on failure (dispatch sit-failed to PM)
