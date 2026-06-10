@@ -1,6 +1,6 @@
 [project]
 name = "system-integration-tests"
-version = "0.2.0"
+version = "0.3.1"
 description = "System integration tests — Layer 3a smoke + Layer 3b full e2e"
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -9,12 +9,12 @@ dependencies = [
     "unified-trading-library>=0.1.0",
     "market-data-processing-service",
     "features-service>=0.0.1,<1.0.0",
-    "strategy-service>=0.1.0,<1.0.0",
-    "unified-api-contracts>=0.1.0,<1.0.0",
+    "strategy-service>=0.2.0,<1.0.0",
+    "unified-api-contracts>=0.5.0,<1.0.0",
     "alerting-service>=0.1.0,<1.0.0",
-    "execution-service>=0.1.0,<1.0.0",
-    "deployment-api>=0.1.0,<1.0.0",
-    "instruments-service>=0.1.0,<1.0.0",
+    "execution-service>=0.5.0,<1.0.0",
+    "deployment-api>=0.3.0,<1.0.0",
+    "instruments-service>=0.30.0,<1.0.0",
     "client-reporting-api>=0.1.0,<1.0.0",
     "cryptography>=46.0.7,<47.0.0",
     "urllib3>=2.7.0,<3.0.0",
