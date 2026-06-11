@@ -19,7 +19,7 @@ import ast
 from pathlib import Path
 
 import pytest
-from unified_api_contracts.registry.service_contract_map import (
+from unified_api_contracts.registry import (
     SERVICE_CONTRACT_MAP,
     ServiceContract,
 )

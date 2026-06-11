@@ -20,7 +20,7 @@ import pytest
 from unified_api_contracts import CanonicalInstrument, InstrumentType, OptionType
 from unified_api_contracts.internal import InstrumentDefinition, InstrumentKey, InstrumentRecord
 from unified_api_contracts.internal.testing.instrument_generator import InstrumentGenerator
-from unified_api_contracts.registry.representative_sample import (
+from unified_api_contracts.registry import (
     CEFI_BASE_ASSETS,
     DEFI_LENDING_ASSETS,
     TRADFI_EQUITIES,
