@@ -23,6 +23,8 @@ WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 # uv.lock resolution — ignore until lxml constraint is lifted workspace-wide.
 # joblib PYSEC-2024-277 + pyjwt PYSEC-2025-183: no-fix-available / workspace-wide ignore (base-service.sh).
 PIP_AUDIT_EXTRA_ARGS="--ignore-vuln PYSEC-2024-277 --ignore-vuln PYSEC-2025-183 --ignore-vuln PYSEC-2026-87"
+# CODEX_MAX_VIOLATIONS pinned 2026-06-11 per plans/active/codex_violations_ratchet_to_five_2026_06_10.md (census-honest: 0 current violations; ratchet-down only).
+CODEX_MAX_VIOLATIONS=0
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-service.sh"
 
 # Codex enforcement: lifecycle triple (STARTED / STOPPED / FAILED) via UTL — not duplicated in service code.
