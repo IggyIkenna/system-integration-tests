@@ -25,11 +25,11 @@ from decimal import Decimal
 
 import pytest
 from unified_api_contracts.internal import MarginModel
-from unified_api_contracts.registry.archetype_capability_matrix import (
+from unified_api_contracts.registry import (
     ASSET_GROUP_ONTOLOGY,
     AssetGroupOntology,
+    MarketAssetGroup,
 )
-from unified_api_contracts.registry.taxonomy import MarketAssetGroup
 from unified_trading_library.state_hashing import (  # noqa: qg-deep-import
     StateBundle,
     assert_state_equal,
