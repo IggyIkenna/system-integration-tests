@@ -213,14 +213,15 @@ class TestCascadeWorkflowTelegram:
 
     WORKFLOW_NAMES: ClassVar[list[str]] = [
         "cascade-qg-ordering.yml",
-        "downstream-fix-agent.yml",
         "fix-approval-timeout.yml",
     ]
 
     def test_cascade_workflows_have_telegram(self) -> None:
-        """Verify cascade-qg-ordering.yml, downstream-fix-agent.yml, and
-        fix-approval-timeout.yml all reference notify-telegram or inline
-        Telegram notification."""
+        """Verify cascade-qg-ordering.yml and fix-approval-timeout.yml
+        reference notify-telegram or inline Telegram notification.
+        (downstream-fix-agent.yml deleted 2026-06-11 — cicd_workflow_sprawl_audit:
+        0 emitters of downstream-fix-needed fleet-wide; superseded by
+        escalate-to-orchestrator on the VM-worker pivot.)"""
         for wf_name in self.WORKFLOW_NAMES:
             wf_path = WORKFLOWS_DIR / wf_name
             assert wf_path.is_file(), f"Workflow not found: {wf_path}"
@@ -293,54 +294,3 @@ class TestBreakingFlagDispatchChain:
                 f"{label} does not contain 'is_breaking' — "
                 f"breaking-change flag will not propagate through dispatch chain"
             )
-
-
-@pytest.mark.code_test
-class TestDownstreamFixAgentClaude:
-    """Verify downstream-fix-agent.yml calls the Anthropic API."""
-
-    def test_downstream_fix_agent_has_claude_api_call(self) -> None:
-        """Verify downstream-fix-agent.yml contains an Anthropic API call pattern."""
-        wf_path = WORKFLOWS_DIR / "downstream-fix-agent.yml"
-        assert wf_path.is_file(), f"downstream-fix-agent.yml not found at {wf_path}"
-        content = wf_path.read_text()
-
-        has_anthropic_api = "api.anthropic.com" in content or "ANTHROPIC_API_KEY" in content
-        assert has_anthropic_api, (
-            "downstream-fix-agent.yml does not contain Anthropic API call pattern "
-            "(expected 'api.anthropic.com' or 'ANTHROPIC_API_KEY')"
-        )
-
-
-@pytest.mark.code_test
-class TestAutoMergeSafetyGates:
-    """Verify auto-merge-minor-fixes.yml has critical safety gates."""
-
-    def test_auto_merge_has_safety_gates(self) -> None:
-        """Verify auto-merge-minor-fixes.yml checks:
-        - version >= 1.0.0 (pre-1.0.0 requires human approval)
-        - is_breaking != true
-        - dry_run default is true
-        """
-        wf_path = WORKFLOWS_DIR / "auto-merge-minor-fixes.yml"
-        assert wf_path.is_file(), f"auto-merge-minor-fixes.yml not found at {wf_path}"
-        content = wf_path.read_text()
-
-        # Gate 1: version >= 1.0.0 check (pre-1.0.0 guard)
-        has_version_gate = "1.0.0" in content or "pre_1_0" in content or "is_pre_1_0" in content
-        assert has_version_gate, "auto-merge-minor-fixes.yml missing version >= 1.0.0 safety gate"
-
-        # Gate 2: is_breaking check
-        has_breaking_gate = "is_breaking" in content or "breaking" in content.lower()
-        assert has_breaking_gate, "auto-merge-minor-fixes.yml missing is_breaking safety gate"
-
-        # Gate 3: dry_run defaults to true
-        wf = _load_workflow("auto-merge-minor-fixes.yml")
-        triggers = wf.get("on") or wf.get(True)
-        assert triggers is not None, "auto-merge-minor-fixes.yml missing triggers"
-
-        wd_inputs = (triggers.get("workflow_dispatch") or {}).get("inputs") or {}
-        dry_run_input = wd_inputs.get("dry_run", {})
-        assert dry_run_input.get("default") is True, (
-            f"auto-merge-minor-fixes.yml dry_run default is not true (got {dry_run_input.get('default')!r})"
-        )
