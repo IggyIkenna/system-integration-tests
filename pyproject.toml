@@ -179,7 +179,7 @@ source = ["tests", "system_integration_tests", "scripts"]
 branch = true
 
 [tool.coverage.report]
-fail_under = 0   # scripts/tests-only repo — no packaged coverage gate; e2e requires live services
+fail_under = 2   # settled to the enforced stub floor (MIN_COVERAGE=2, Finding-#1 reconciliation); scripts/tests-only repo, e2e requires live services
 
 # ── bandit (security SAST — every repo) ──────────────────────────────────────────
 [tool.bandit]
