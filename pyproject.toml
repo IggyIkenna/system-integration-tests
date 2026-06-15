@@ -8,7 +8,7 @@ dependencies = [
     "pytest<10.0.0,>=9.0.3",
     "unified-trading-library>=0.10.0,<1.0.0",
     "market-data-processing-service",
-    "features-service>=0.0.1,<1.0.0",
+    "features-service>=0.3.0,<1.0.0",
     "strategy-service>=0.7.0,<1.0.0",
     "unified-api-contracts>=0.9.0,<1.0.0",
     "alerting-service>=0.5.0,<1.0.0",
