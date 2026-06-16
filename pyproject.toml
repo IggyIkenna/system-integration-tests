@@ -6,7 +6,7 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1,<1.0.0",
     "pytest<10.0.0,>=9.0.3",
-    "unified-trading-library>=0.11.0,<1.0.0",
+    "unified-trading-library>=0.12.0,<1.0.0",
     "market-data-processing-service",
     "features-service>=0.4.0,<1.0.0",
     "strategy-service>=0.9.0,<1.0.0",
