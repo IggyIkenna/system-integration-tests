@@ -25,6 +25,9 @@ WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
 PIP_AUDIT_EXTRA_ARGS="--ignore-vuln PYSEC-2024-277 --ignore-vuln PYSEC-2025-183 --ignore-vuln PYSEC-2026-87"
 # CODEX_MAX_VIOLATIONS pinned 2026-06-11 per plans/active/codex_violations_ratchet_to_five_2026_06_10.md (census-honest: 0 current violations; ratchet-down only).
 CODEX_MAX_VIOLATIONS=0
+# Not a deployable HTTP/CLI service — this is a Layer-3 e2e/smoke test harness (no api/main.py,
+# no ServiceBootstrap entrypoint). Skip the service-lifecycle infra checks (STEP 5.61/5.62).
+SKIP_SERVICE_LIFECYCLE_STEPS=true
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-service.sh"
 
 # Codex enforcement: lifecycle triple (STARTED / STOPPED / FAILED) via UTL — not duplicated in service code.
