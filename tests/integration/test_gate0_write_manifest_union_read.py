@@ -8,8 +8,8 @@ LEG 1 — the WRITER stamps all four provenance columns.
     BATCH cell with ``pipeline_mode="batch_<source>"`` + ``source`` + ``transport``
     + ``cadence`` yields an :class:`AvailabilityRecord` that carries all four
     NON-blank (the in-memory ``_records`` path — no sink/GCS). A ``live_<source>``
-    variant is skip-marked pending the M1-BREAKING ``live_websocket → live_<source>``
-    object migration.
+    variant proves the same for a LIVE cell (the M1-BREAKING source-aware
+    ``live_<source>`` migration has landed — the transitional alias is removed).
 
 LEG 2 — the manifest SCHEMA carries all four.
     :class:`AvailabilityRecord` declares ``pipeline_mode`` / ``source`` /
@@ -103,14 +103,13 @@ def test_leg1_writer_stamps_all_four_provenance_columns_for_batch_cell() -> None
     assert record.pipeline_mode == "batch_hyperliquid"
 
 
-@pytest.mark.skip(reason="pending M1-BREAKING live_websocket→live_<source> migration")
 def test_leg1_writer_stamps_all_four_provenance_columns_for_live_cell() -> None:
-    """live_<source> variant — skip-marked until the live_websocket→live_<source> object migration lands.
+    """live_<source> variant — the writer stamps all four provenance columns for a LIVE cell.
 
-    Once the M1-BREAKING migration promotes ``live_websocket`` to per-source
-    ``live_<source>`` pipeline_mode keys, this drives the same add() path with
-    ``pipeline_mode="live_hyperliquid"`` and asserts all four provenance columns
-    stamp non-blank for a LIVE cell.
+    The M1-BREAKING migration to per-source ``live_<source>`` pipeline_mode keys
+    has landed (the transitional alias is removed), so this drives the same add()
+    path with ``pipeline_mode="live_hyperliquid"`` and asserts all four provenance
+    columns stamp non-blank for a LIVE cell — identical to the batch leg.
     """
     writer = ManifestWriter(service_name="market-tick-data-service")
     writer.add(
