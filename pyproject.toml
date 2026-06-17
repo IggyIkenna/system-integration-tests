@@ -7,7 +7,7 @@ dependencies = [
     "httpx>=0.28.1,<1.0.0",
     "pytest<10.0.0,>=9.0.3",
     "unified-trading-library>=0.13.0,<1.0.0",
-    "market-data-processing-service",
+    "market-data-processing-service>=0.9.0,<1.0.0",
     "features-service>=0.4.0,<1.0.0",
     "strategy-service>=0.12.0,<1.0.0",
     "unified-api-contracts>=0.18.0,<1.0.0",
