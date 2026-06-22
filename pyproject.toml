@@ -1,6 +1,6 @@
 [project]
 name = "system-integration-tests"
-version = "0.14.0"
+version = "0.14.6"
 description = "System integration tests — Layer 3a smoke + Layer 3b full e2e"
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -10,7 +10,7 @@ dependencies = [
     "market-data-processing-service>=0.9.0,<1.0.0",
     "features-service>=0.4.0,<1.0.0",
     "strategy-service>=0.14.0,<1.0.0",
-    "unified-api-contracts>=0.19.0,<1.0.0",
+    "unified-api-contracts>=0.33.0,<1.0.0",
     "alerting-service>=0.9.0,<1.0.0",
     "execution-service>=0.10.0,<1.0.0",
     "deployment-api>=0.20.0,<1.0.0",
@@ -177,6 +177,12 @@ markers = [
 [tool.coverage.run]
 source = ["tests", "system_integration_tests", "scripts"]
 branch = true
+# pytest-cov + xdist: workers are separate processes; without parallel-combine the terminal
+# fail-under reads PARTIAL (controller-only) data and spuriously fails (2026-06-22: mtds saw
+# terminal 46.4% while coverage.xml correctly combined to 83.95%). parallel-combine fixes the gate.
+parallel = true
+concurrency = ["thread", "multiprocessing"]
+sigterm = true
 
 [tool.coverage.report]
 fail_under = 2   # settled to the enforced stub floor (MIN_COVERAGE=2, Finding-#1 reconciliation); scripts/tests-only repo, e2e requires live services
