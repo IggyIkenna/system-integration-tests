@@ -8,8 +8,16 @@ in the writer's record buffer across the four emission paths.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
-from unified_api_contracts import EMPTY_CONFIRMED_REASONS, LegacyBlankErrorReasonError, PipelineMode
+from unified_api_contracts import (
+    EMPTY_CONFIRMED_REASONS,
+    FetchEvidence,
+    LegacyBlankErrorReasonError,
+    PipelineMode,
+    UnprovenHonestAbsenceError,
+)
 from unified_trading_library import CaptureStatus, ManifestWriter, UnknownEmptyConfirmedReasonError
 
 pytestmark = pytest.mark.unit
@@ -23,6 +31,17 @@ _PM = PipelineMode.BATCH_DATABENTO
 
 def _writer() -> ManifestWriter:
     return ManifestWriter(service_name=_SERVICE, catalogue_bucket="", batch_size=0, per_vm_shards=False)
+
+
+def _clean_fetch_evidence(source: str = "databento", endpoint: str = "https://api.test/endpoint") -> FetchEvidence:
+    return FetchEvidence(
+        http_status=200,
+        response_received=True,
+        rows_in_response=0,
+        source=source,
+        endpoint=endpoint,
+        attempted_at=datetime(2026, 5, 18, 0, 0, 0, tzinfo=UTC),
+    )
 
 
 class TestCapturedEmissionFlow:
@@ -60,6 +79,7 @@ class TestEmptyConfirmedEmissionFlow:
             row_key={"date": _DATE, "venue": _VENUE, "data_type": _DATA_TYPE},
             reason="SOURCE_RETURNED_ZERO",
             pipeline_mode=_PM,
+            fetch_evidence=_clean_fetch_evidence(),
         )
         assert len(w._records) == 1
         rec = w._records[0]
@@ -71,8 +91,18 @@ class TestEmptyConfirmedEmissionFlow:
             row_key={"date": _DATE, "venue": _VENUE, "data_type": _DATA_TYPE},
             reason="SOURCE_RETURNED_ZERO",
             pipeline_mode=_PM,
+            fetch_evidence=_clean_fetch_evidence(),
         )
         assert w._records[0].error_reason == "SOURCE_RETURNED_ZERO"
+
+    def test_record_empty_source_returned_zero_requires_fetch_evidence(self) -> None:
+        w = _writer()
+        with pytest.raises(UnprovenHonestAbsenceError):
+            w.record_empty(
+                row_key={"date": _DATE, "venue": _VENUE, "data_type": _DATA_TYPE},
+                reason="SOURCE_RETURNED_ZERO",
+                pipeline_mode=_PM,
+            )
 
     def test_record_empty_rejects_blank_reason(self) -> None:
         w = _writer()
@@ -95,10 +125,13 @@ class TestEmptyConfirmedEmissionFlow:
     def test_all_empty_confirmed_reasons_accepted(self) -> None:
         for reason in sorted(EMPTY_CONFIRMED_REASONS):
             w = _writer()
+            # SOURCE_RETURNED_ZERO requires FetchEvidence proving a clean 200+empty fetch
+            evidence = _clean_fetch_evidence() if reason == "SOURCE_RETURNED_ZERO" else None
             w.record_empty(
                 row_key={"date": _DATE, "venue": _VENUE, "data_type": _DATA_TYPE},
                 reason=reason,
                 pipeline_mode=_PM,
+                fetch_evidence=evidence,
             )
             assert w._records[0].capture_status == CaptureStatus.EMPTY_CONFIRMED.value
 
@@ -137,6 +170,7 @@ class TestMixedStatusBatch:
             row_key={"date": _DATE, "venue": "KRAKEN", "data_type": "trades"},
             reason="SOURCE_RETURNED_ZERO",
             pipeline_mode=_PM,
+            fetch_evidence=_clean_fetch_evidence(source="kraken"),
         )
         w.record_failed(
             row_key={"date": _DATE, "venue": "BITFINEX", "data_type": "trades"},

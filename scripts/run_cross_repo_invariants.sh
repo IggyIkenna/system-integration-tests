@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Epic: infrastructure_master
+# Lifecycle: permanent
+# Delete-when: NA
 #
 # run_cross_repo_invariants.sh — Tier B full-workspace SIT invariant runner.
 #

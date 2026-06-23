@@ -1,3 +1,6 @@
+# Epic: infrastructure_master
+# Lifecycle: permanent
+# Delete-when: NA
 """Compute the SIT repo-slice for a gate run.
 
 Usage:
