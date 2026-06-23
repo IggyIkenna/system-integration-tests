@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Epic: infrastructure_master
+# Lifecycle: permanent
+# Delete-when: NA
 # Portable parallel backtest runner for CI.
 # Uses local fixture files instead of GCS — no live API calls, no cloud credentials required.
 #
