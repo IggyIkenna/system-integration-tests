@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Epic: infrastructure_master
+# Lifecycle: permanent
+# Delete-when: NA
 """check-sit-readiness.py — Advisory readiness prerequisite check before SIT runs.
 
 Reads per-repo YAML checklists from unified-trading-codex/10-audit/repos/ for
