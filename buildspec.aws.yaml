@@ -12,7 +12,7 @@ phases:
     commands:
       - VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "//;s/"//') && export VERSION
       - echo "Building version $VERSION"
-      - uv pip install --system -e "."
+      - python -m pip install -e "."
 
   build:
     commands:
@@ -21,7 +21,7 @@ phases:
   post_build:
     commands:
       - VERSION=$(cat VERSION 2>/dev/null || grep '^version' pyproject.toml | head -1 | sed 's/version = "//;s/"//')
-      - uv pip install build twine
+      - python -m pip install build twine
       - python -m build --wheel --outdir dist/
       - |
         if [ -n "$CODEARTIFACT_DOMAIN" ]; then
