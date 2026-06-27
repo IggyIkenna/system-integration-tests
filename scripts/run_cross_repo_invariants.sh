@@ -55,6 +55,7 @@ REQUIRED_SIBLINGS=(
     features-service
     instruments-service
     strategy-service
+    unified-trading-library
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -140,6 +141,10 @@ run_shell_invariant "cassette↔consumer linkage (STEP 5.86)" \
 # ── 4. data_type canonicalization across sibling venue_data_types.yaml ────────
 run_pytest_invariant "data_type canonicalization (no banned aliases / in UAC)" \
     "tests/test_data_type_canonicalization.py"
+
+# ── 5. unified-trading-library public API surface (cross-repo breaking-change gate) ──
+run_pytest_invariant "UTL public API surface (cross-repo invariant)" \
+    "tests/test_utl_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
