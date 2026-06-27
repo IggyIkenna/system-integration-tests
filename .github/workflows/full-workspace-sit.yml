@@ -93,6 +93,36 @@ jobs:
           set -uo pipefail
           bash system-integration-tests/scripts/run_cross_repo_invariants.sh
 
+      # WS-L SIT-rehome STEP 2 (producer): on a GREEN cross-repo run, stamp ci_status=SIT_VALIDATED
+      # for every sibling repo keyed to its LDR SHA + LDR tree fingerprint. The suite validated the
+      # ASSEMBLED LDR workspace, so each repo in it is SIT-validated at its LDR tip. This is the signal
+      # the LDR→main fleet promoter's SIT-gate part-2 consumes to prove a BREAKING main..LDR delta was
+      # validated on EXACTLY this content (sit_validated_tree == the promoted LDR tree). The store
+      # clears sit_validated_tree on any non-SIT_VALIDATED transition, so a stale fingerprint can never
+      # validate a later tree. Additive: only WRITES the signal (no gate change until the consumer flip).
+      - name: Stamp SIT_VALIDATED + LDR tree per repo (WS-L SIT-rehome producer)
+        if: success()
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_ORG: IggyIkenna
+        run: |
+          set -uo pipefail
+          for d in */; do
+            r="${d%/}"
+            case "$r" in system-integration-tests | unified-trading-pm) continue ;; esac
+            [ -d "$r/.git" ] || continue
+            SHA="$(git -C "$r" rev-parse HEAD 2>/dev/null || echo "")"
+            TREE="$(git -C "$r" rev-parse 'HEAD^{tree}' 2>/dev/null || echo "")"
+            if [ -z "$SHA" ] || [ -z "$TREE" ]; then echo "skip $r (no sha/tree)"; continue; fi
+            curl -s -X POST \
+              -H "Authorization: token ${GH_PAT}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${GH_ORG}/unified-trading-pm/dispatches" \
+              -d "{\"event_type\": \"ci-status-update\", \"client_payload\": {\"repo\": \"${r}\", \"status\": \"SIT_VALIDATED\", \"branch\": \"live-defi-rollout\", \"sha\": \"${SHA}\", \"sit_validated_tree\": \"${TREE}\"}}" \
+              && echo "stamped SIT_VALIDATED ${r} @ ${SHA} (tree ${TREE})" \
+              || echo "::warning::failed to stamp SIT_VALIDATED for ${r}"
+          done
+
       # MISSING LINK FIX (2026-06-10): the SIT result never reached PM — sit-unlock listens for
       # sit-passed/sit-failed repository_dispatch events that NOTHING sent, so a green SIT left
       # staging locked forever and a red SIT never opened staging for fixes. Close the loop.
