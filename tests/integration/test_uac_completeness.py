@@ -24,23 +24,17 @@ from pathlib import Path
 import pytest
 
 # Cap constants for orphan and exemption regression guards
-# ORPHAN_CAP held at 400 (2026-06-10, honest recalibration). The stale-TERMINAL_CONSUMER_SERVICES
-# root cause IS fixed — check_uac_adoption.py now derives the consumer set from
-# workspace-manifest.json (type ∈ {service,batch-service,api-service} AND status==active),
-# mirroring smoke-test-gate.yml. BUT fixing the list only trimmed the orphan count 364→328
-# (NOT →0): the MEASURED honest count with the corrected 11-service list is **328** orphans
-# (2026-06-10, full local workspace, `check_uac_adoption.py --orphans-only`). 328 is NOT a
-# pure artifact — UAC carries hundreds of internal/registry/enum schemas that terminal
-# services consume transitively (via unified-trading-library re-exports / facade imports),
-# which the by-class-name grep does not see, so they score "orphaned". A hard exit-1-on-any
-# or a cap of 20 would FAIL the SIT gate on these 328 and re-block the whole promotion cascade.
-# Cap = 400 (measured 328 + ~22% headroom; coincidentally the prior stopgap value, now HONESTLY
-# justified rather than "masking" anything) — a real adoption regression (count climbing well
-# past 328) still trips it. The deeper question — whether the terminal-consumer set should
-# include UTL or the grep should follow facade re-exports to drive 328 genuinely down — is a
-# separate follow-up, NOT a cap tweak.
-# Tracked: plans/active/issues/sit_uac_orphan_cap_stale_consumer_list_2026_06_07.md
-ORPHAN_CAP = 400
+# ORPHAN_CAP lowered to 360 (2026-06-27, L1482 UTL-consumer fix). Root cause of the
+# 328→389 growth: UTL (T0 re-export layer for UAC schemas) was not in the scanned consumer
+# set — by-class-name grep in check_uac_adoption.py missed all schemas consumed transitively
+# via UTL facade imports, inflating the orphan count. Fix: added LIBRARY_CONSUMERS =
+# {"unified-trading-library"} to get_terminal_consumer_services(); 12-service list grows to 13
+# with UTL included.  Measured count WITH the fix: **332** orphans (2026-06-27,
+# `check_uac_adoption.py --orphans-only`, full local workspace).
+# Cap = 360 (332 + ~8% headroom) — real adoption regressions (count climbing past 332)
+# still trip the gate; the headroom absorbs organic schema additions between cap recalibrations.
+# Tracked: plans/active/cicd_consolidated_remaining_2026_06_24.md L1482
+ORPHAN_CAP = 360
 EXEMPTION_CAP = 80  # exemption union currently 65 (EXEMPT_CLASSES 47 + EXEMPT_MISSING 18), ~23% headroom
 
 pytestmark = pytest.mark.code_test
