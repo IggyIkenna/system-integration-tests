@@ -93,24 +93,34 @@ jobs:
           set -uo pipefail
           bash system-integration-tests/scripts/run_cross_repo_invariants.sh
 
-      # WS-L SIT-rehome STEP 2 (producer): on a GREEN cross-repo run, stamp ci_status=SIT_VALIDATED
-      # for every sibling repo keyed to its LDR SHA + LDR tree fingerprint. The suite validated the
-      # ASSEMBLED LDR workspace, so each repo in it is SIT-validated at its LDR tip. This is the signal
-      # the LDR→main fleet promoter's SIT-gate part-2 consumes to prove a BREAKING main..LDR delta was
-      # validated on EXACTLY this content (sit_validated_tree == the promoted LDR tree). The store
-      # clears sit_validated_tree on any non-SIT_VALIDATED transition, so a stale fingerprint can never
-      # validate a later tree. Additive: only WRITES the signal (no gate change until the consumer flip).
-      - name: Stamp SIT_VALIDATED + LDR tree per repo (WS-L SIT-rehome producer)
+      # WS-L SIT-rehome STEP 2 (producer, Option B+ safe interim 2026-06-27): on a GREEN cross-repo run,
+      # stamp ci_status=SIT_VALIDATED + LDR tree fingerprint ONLY for the repos the suite ACTUALLY
+      # validates — workspace-manifest.json `sit_cross_repo_validated_repos` (mirror of this suite's
+      # REQUIRED_SIBLINGS). The suite runs a small set of cross-repo invariants over those repos; the
+      # other ldr_main repos are assembled but their public surface is NOT exercised, so stamping THEM
+      # SIT_VALIDATED would forge a cross-repo guarantee (adversarial-caught: 5 validated vs 21 stamped).
+      # The LDR→main fleet promoter consumes this to prove a BREAKING main..LDR delta was validated on
+      # EXACTLY this content (sit_validated_tree == the promoted LDR tree). A breaking change in a
+      # NON-covered repo stays conservatively BLOCKED on the promoter. Expanding coverage = add the repo
+      # to REQUIRED_SIBLINGS + its invariant + the manifest list (the suite asserts the two match).
+      - name: Stamp SIT_VALIDATED + LDR tree (WS-L SIT-rehome producer — covered repos only)
         if: success()
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           GH_ORG: IggyIkenna
         run: |
           set -uo pipefail
-          for d in */; do
-            r="${d%/}"
-            case "$r" in system-integration-tests | unified-trading-pm) continue ;; esac
-            [ -d "$r/.git" ] || continue
+          # The covered set is the SSOT for "what SIT actually validated" — read it from the manifest.
+          mapfile -t COVERED < <(python3 -c "import json; print('\n'.join(json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])))")
+          if [ "${#COVERED[@]}" -eq 0 ]; then echo "::error::sit_cross_repo_validated_repos empty in manifest — refusing to stamp (no coverage SSOT)"; exit 1; fi
+          echo "SIT-covered repos (stamping only these): ${COVERED[*]}"
+          for r in "${COVERED[@]}"; do
+            [ -d "$r/.git" ] || { echo "skip $r (not assembled)"; continue; }
+            # Defense-in-depth: only stamp a repo actually checked out on live-defi-rollout (the clone
+            # may have fallen back to main; stamping a main tree would be wrong — though the consumer's
+            # tree-equality check would also reject it).
+            BR="$(git -C "$r" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+            if [ "$BR" != "live-defi-rollout" ]; then echo "skip $r (on '$BR', not live-defi-rollout)"; continue; fi
             SHA="$(git -C "$r" rev-parse HEAD 2>/dev/null || echo "")"
             TREE="$(git -C "$r" rev-parse 'HEAD^{tree}' 2>/dev/null || echo "")"
             if [ -z "$SHA" ] || [ -z "$TREE" ]; then echo "skip $r (no sha/tree)"; continue; fi

@@ -67,6 +67,31 @@ if [ ${#missing[@]} -gt 0 ]; then
 fi
 echo "✅ all required siblings present"
 
+# ── 0b. Coverage SSOT drift guard (WS-L SIT-rehome, Option B+) ─────────────────
+# REQUIRED_SIBLINGS above is the SSOT for "which repos this suite actually validates". The LDR→main
+# fleet promoter (a different repo) can't read this array, so it reads the MIRROR
+# `sit_cross_repo_validated_repos` from workspace-manifest.json — and only trusts SIT_VALIDATED for
+# those repos. If the two drift, the promoter would either forge a guarantee (manifest ⊋ suite) or
+# needlessly block (manifest ⊊ suite). Assert they match EXACTLY so drift fails LOUD here.
+_MANIFEST="$WORKSPACE_ROOT/unified-trading-pm/workspace-manifest.json"
+if [ -f "$_MANIFEST" ]; then
+    _drift=$("$PY" -c "
+import json, sys
+suite = sorted(sys.argv[1:])
+mani = sorted(json.load(open('$_MANIFEST')).get('sit_cross_repo_validated_repos', []))
+print('OK' if suite == mani else f'DRIFT suite={suite} manifest={mani}')
+" "${REQUIRED_SIBLINGS[@]}")
+    if [ "$_drift" != "OK" ]; then
+        echo "❌ FATAL: SIT coverage SSOT drift — REQUIRED_SIBLINGS != manifest.sit_cross_repo_validated_repos"
+        echo "   $_drift"
+        echo "   Keep run_cross_repo_invariants.sh REQUIRED_SIBLINGS and the manifest list in sync."
+        exit 2
+    fi
+    echo "✅ SIT coverage SSOT in sync (suite REQUIRED_SIBLINGS == manifest.sit_cross_repo_validated_repos)"
+else
+    echo "⚠️  manifest not found at $_MANIFEST — skipping coverage-drift assertion"
+fi
+
 # ── invariant runner helper ───────────────────────────────────────────────────
 # run_pytest_invariant <label> <nodeid...>
 # Fails on non-zero pytest exit OR on any "skipped" in the summary (skip == sibling
