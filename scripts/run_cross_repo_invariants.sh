@@ -65,6 +65,7 @@ REQUIRED_SIBLINGS=(
     batch-live-reconciliation-service
     deployment-service
     alerting-service
+    client-reporting-api
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -194,6 +195,10 @@ run_pytest_invariant "deployment-service package surface + HTTP API contract (cr
 # ── 15. alerting-service alert/notification contract ─────────────────────────
 run_pytest_invariant "alerting-service alert/notification contract (cross-repo invariant)" \
     "tests/test_alerting_service_cross_repo_invariant.py"
+
+# ── 16. client-reporting-api reporting contract ───────────────────────────────
+run_pytest_invariant "client-reporting-api reporting contract (cross-repo invariant)" \
+    "tests/test_client_reporting_api_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
