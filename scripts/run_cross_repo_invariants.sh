@@ -60,6 +60,7 @@ REQUIRED_SIBLINGS=(
     unified-trading-api
     deployment-api
     ml-service
+    market-data-processing-service
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -165,6 +166,10 @@ run_pytest_invariant "deployment-ui API contract consumption (cross-repo invaria
 # ── 9. ml-service model/feature contract (cross-repo breaking-change gate) ───
 run_pytest_invariant "ml-service model/feature contract (cross-repo invariant)" \
     "tests/test_ml_service_cross_repo_invariant.py"
+
+# ── 10. MDPS output contract (candle schema vs MTDS input + features consumer) ──
+run_pytest_invariant "MDPS output contract (cross-repo invariant)" \
+    "tests/test_mdps_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
