@@ -64,6 +64,7 @@ REQUIRED_SIBLINGS=(
     trading-agent-service
     batch-live-reconciliation-service
     deployment-service
+    alerting-service
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -189,6 +190,10 @@ run_pytest_invariant "deployment-api deploy/launch + repo-ci API contract (cross
 # ── 14. deployment-service Python package surface + HTTP API contract ─────────
 run_pytest_invariant "deployment-service package surface + HTTP API contract (cross-repo invariant)" \
     "tests/test_deployment_service_cross_repo_invariant.py"
+
+# ── 15. alerting-service alert/notification contract ─────────────────────────
+run_pytest_invariant "alerting-service alert/notification contract (cross-repo invariant)" \
+    "tests/test_alerting_service_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
