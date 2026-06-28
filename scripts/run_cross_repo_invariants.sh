@@ -68,6 +68,7 @@ REQUIRED_SIBLINGS=(
     client-reporting-api
     fund-administration-service
     agent-orchestrator
+    unified-trading-system-ui
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -209,6 +210,10 @@ run_pytest_invariant "fund-administration-service fund-admin contract (cross-rep
 # ── 18. agent-orchestrator role-registry / dispatch contract ──────────────────
 run_pytest_invariant "agent-orchestrator role-registry / dispatch contract (cross-repo invariant)" \
     "tests/test_agent_orchestrator_cross_repo_invariant.py"
+
+# ── 19. unified-trading-system-ui API-contract consumption ────────────────────
+run_pytest_invariant "unified-trading-system-ui API-contract consumption (cross-repo invariant)" \
+    "tests/test_unified_trading_system_ui_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
