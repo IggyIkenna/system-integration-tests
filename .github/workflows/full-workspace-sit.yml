@@ -114,6 +114,30 @@ jobs:
           mapfile -t COVERED < <(python3 -c "import json; print('\n'.join(json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])))")
           if [ "${#COVERED[@]}" -eq 0 ]; then echo "::error::sit_cross_repo_validated_repos empty in manifest — refusing to stamp (no coverage SSOT)"; exit 1; fi
           echo "SIT-covered repos (stamping only these): ${COVERED[*]}"
+
+          # ── Cross-repo combination fingerprint (HIGH-combo, Phase 2) ──────────────────────────────
+          # Compute workspace digest = SHA-256 of all covered repos' LDR tree SHAs. Emitted
+          # alongside sit_validated_tree so the consumer can detect when a DEPENDENCY changed after
+          # SIT validated a dependent (per-repo tree match alone is insufficient — repo R validated
+          # against UAC v1 can still pass if UAC v2 lands before R promotes). The consumer blocks
+          # and re-dispatches SIT when digest mismatch is detected. Fail-open on absent digest
+          # (legacy consumer behaviour) so the check applies progressively.
+          printf '%s\n' "${COVERED[@]}" > /tmp/covered_repos.txt
+          WORKSPACE_DIGEST=$(python3 -c "
+import hashlib, json, subprocess
+with open('/tmp/covered_repos.txt') as f:
+    repos = [l.strip() for l in f if l.strip()]
+trees = {}
+for r in repos:
+    res = subprocess.run(['git', '-C', r, 'rev-parse', 'HEAD^{tree}'], capture_output=True, text=True)
+    tree = res.stdout.strip()
+    if tree:
+        trees[r] = tree
+payload = json.dumps(trees, sort_keys=True, separators=(',', ':'))
+print(hashlib.sha256(payload.encode()).hexdigest())
+" 2>/dev/null || echo "")
+          echo "Workspace digest (combination fingerprint): ${WORKSPACE_DIGEST:0:16}... (${#COVERED[@]} repos)"
+
           for r in "${COVERED[@]}"; do
             [ -d "$r/.git" ] || { echo "skip $r (not assembled)"; continue; }
             # Defense-in-depth: only stamp a repo actually checked out on live-defi-rollout (the clone
@@ -128,8 +152,8 @@ jobs:
               -H "Authorization: token ${GH_PAT}" \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/${GH_ORG}/unified-trading-pm/dispatches" \
-              -d "{\"event_type\": \"ci-status-update\", \"client_payload\": {\"repo\": \"${r}\", \"status\": \"SIT_VALIDATED\", \"branch\": \"live-defi-rollout\", \"sha\": \"${SHA}\", \"sit_validated_tree\": \"${TREE}\"}}" \
-              && echo "stamped SIT_VALIDATED ${r} @ ${SHA} (tree ${TREE})" \
+              -d "{\"event_type\": \"ci-status-update\", \"client_payload\": {\"repo\": \"${r}\", \"status\": \"SIT_VALIDATED\", \"branch\": \"live-defi-rollout\", \"sha\": \"${SHA}\", \"sit_validated_tree\": \"${TREE}\", \"sit_validated_workspace_digest\": \"${WORKSPACE_DIGEST}\"}}" \
+              && echo "stamped SIT_VALIDATED ${r} @ ${SHA} (tree ${TREE}, ws_digest ${WORKSPACE_DIGEST:0:12}...)" \
               || echo "::warning::failed to stamp SIT_VALIDATED for ${r}"
           done
 
