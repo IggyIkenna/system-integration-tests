@@ -57,6 +57,7 @@ REQUIRED_SIBLINGS=(
     strategy-service
     unified-trading-library
     greeks-service
+    unified-trading-api
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -150,6 +151,10 @@ run_pytest_invariant "UTL public API surface (cross-repo invariant)" \
 # ── 6. greeks-service greeks/risk output contract (cross-repo breaking-change gate) ──
 run_pytest_invariant "greeks-service output contract (cross-repo invariant)" \
     "tests/test_greeks_service_cross_repo_invariant.py"
+
+# ── 7. unified-trading-api public API contract (route modules + prefixes) ─────
+run_pytest_invariant "unified-trading-api public API contract (cross-repo invariant)" \
+    "tests/test_unified_trading_api_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
