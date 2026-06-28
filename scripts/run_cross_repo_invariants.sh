@@ -69,6 +69,8 @@ REQUIRED_SIBLINGS=(
     fund-administration-service
     agent-orchestrator
     unified-trading-system-ui
+    deployment-ui
+    execution-service
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -214,6 +216,20 @@ run_pytest_invariant "agent-orchestrator role-registry / dispatch contract (cros
 # ── 19. unified-trading-system-ui API-contract consumption ────────────────────
 run_pytest_invariant "unified-trading-system-ui API-contract consumption (cross-repo invariant)" \
     "tests/test_unified_trading_system_ui_cross_repo_invariant.py"
+
+# ── 20. execution-service interface/contract (orders, fills, instruction pipeline) ──
+run_pytest_invariant "execution-service interface/contract (cross-repo invariant)" \
+    "tests/test_execution_service_cross_repo_invariant.py"
+
+# ── 21. deployment-ui TypeScript source self-check (Layer 2 — UI source routes) ─
+# The first 3 tests in test_deployment_ui_cross_repo_invariant.py (invariant #8)
+# validate deployment-api's route surface; the Layer-2 tests added here validate
+# that deployment-ui's TypeScript API clients still reference those same routes.
+# Both layers run as a single pytest call so any skip == workspace-assembly failure.
+run_pytest_invariant "deployment-ui TypeScript source routes (cross-repo invariant — Layer 2)" \
+    "tests/test_deployment_ui_cross_repo_invariant.py::test_deployment_ui_deployment_api_client_routes_stable" \
+    "tests/test_deployment_ui_cross_repo_invariant.py::test_deployment_ui_repo_readiness_client_route_stable" \
+    "tests/test_deployment_ui_cross_repo_invariant.py::test_deployment_ui_client_api_present"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
