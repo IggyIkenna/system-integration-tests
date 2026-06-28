@@ -181,6 +181,10 @@ run_pytest_invariant "trading-agent-service directive-pipeline contract (cross-r
 run_pytest_invariant "batch-live-reconciliation-service reconciliation contract (cross-repo invariant)" \
     "tests/test_blrs_cross_repo_invariant.py"
 
+# ── 13. deployment-api deploy/launch + repo-ci API contract ──────────────────
+run_pytest_invariant "deployment-api deploy/launch + repo-ci API contract (cross-repo invariant)" \
+    "tests/test_deployment_api_cross_repo_invariant.py"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════ Tier B SIT summary ════════════════"
