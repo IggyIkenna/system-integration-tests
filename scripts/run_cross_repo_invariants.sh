@@ -59,6 +59,7 @@ REQUIRED_SIBLINGS=(
     greeks-service
     unified-trading-api
     deployment-api
+    ml-service
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -160,6 +161,10 @@ run_pytest_invariant "unified-trading-api public API contract (cross-repo invari
 # ── 8. deployment-ui API-contract consumption vs deployment-api ───────────────
 run_pytest_invariant "deployment-ui API contract consumption (cross-repo invariant)" \
     "tests/test_deployment_ui_cross_repo_invariant.py"
+
+# ── 9. ml-service model/feature contract (cross-repo breaking-change gate) ───
+run_pytest_invariant "ml-service model/feature contract (cross-repo invariant)" \
+    "tests/test_ml_service_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
