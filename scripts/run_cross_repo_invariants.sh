@@ -56,6 +56,7 @@ REQUIRED_SIBLINGS=(
     instruments-service
     strategy-service
     unified-trading-library
+    greeks-service
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -145,6 +146,10 @@ run_pytest_invariant "data_type canonicalization (no banned aliases / in UAC)" \
 # ── 5. unified-trading-library public API surface (cross-repo breaking-change gate) ──
 run_pytest_invariant "UTL public API surface (cross-repo invariant)" \
     "tests/test_utl_cross_repo_invariant.py"
+
+# ── 6. greeks-service greeks/risk output contract (cross-repo breaking-change gate) ──
+run_pytest_invariant "greeks-service output contract (cross-repo invariant)" \
+    "tests/test_greeks_service_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
