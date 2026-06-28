@@ -62,6 +62,7 @@ REQUIRED_SIBLINGS=(
     ml-service
     market-data-processing-service
     trading-agent-service
+    batch-live-reconciliation-service
 )
 missing=()
 for r in "${REQUIRED_SIBLINGS[@]}"; do
@@ -175,6 +176,10 @@ run_pytest_invariant "MDPS output contract (cross-repo invariant)" \
 # ── 11. trading-agent-service directive-pipeline contract (vs strategy + execution) ──
 run_pytest_invariant "trading-agent-service directive-pipeline contract (cross-repo invariant)" \
     "tests/test_trading_agent_service_cross_repo_invariant.py"
+
+# ── 12. batch-live-reconciliation-service reconciliation contract ─────────────
+run_pytest_invariant "batch-live-reconciliation-service reconciliation contract (cross-repo invariant)" \
+    "tests/test_blrs_cross_repo_invariant.py"
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
