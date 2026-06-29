@@ -127,12 +127,12 @@ jobs:
 
           # Filter to repos that passed their per-repo invariants.
           mapfile -t STAMP_REPOS < <(python3 -c "
-import json
-results = json.load(open('$_RESULTS'))
-covered = json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])
-passed = [r for r in covered if results.get(r) == 'PASS']
-print('\n'.join(passed))
-")
+          import json
+          results = json.load(open('$_RESULTS'))
+          covered = json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])
+          passed = [r for r in covered if results.get(r) == 'PASS']
+          print('\n'.join(passed))
+          ")
           if [ "${#STAMP_REPOS[@]}" -eq 0 ]; then
             echo "No repos passed per-repo invariants — skipping stamp."
             exit 0
@@ -148,18 +148,18 @@ print('\n'.join(passed))
           # (legacy consumer behaviour) so the check applies progressively.
           printf '%s\n' "${COVERED[@]}" > /tmp/covered_repos.txt
           WORKSPACE_DIGEST=$(python3 -c "
-import hashlib, json, subprocess
-with open('/tmp/covered_repos.txt') as f:
-    repos = [l.strip() for l in f if l.strip()]
-trees = {}
-for r in repos:
-    res = subprocess.run(['git', '-C', r, 'rev-parse', 'HEAD^{tree}'], capture_output=True, text=True)
-    tree = res.stdout.strip()
-    if tree:
-        trees[r] = tree
-payload = json.dumps(trees, sort_keys=True, separators=(',', ':'))
-print(hashlib.sha256(payload.encode()).hexdigest())
-" 2>/dev/null || echo "")
+          import hashlib, json, subprocess
+          with open('/tmp/covered_repos.txt') as f:
+              repos = [l.strip() for l in f if l.strip()]
+          trees = {}
+          for r in repos:
+              res = subprocess.run(['git', '-C', r, 'rev-parse', 'HEAD^{tree}'], capture_output=True, text=True)
+              tree = res.stdout.strip()
+              if tree:
+                  trees[r] = tree
+          payload = json.dumps(trees, sort_keys=True, separators=(',', ':'))
+          print(hashlib.sha256(payload.encode()).hexdigest())
+          " 2>/dev/null || echo "")
           echo "Workspace digest (combination fingerprint): ${WORKSPACE_DIGEST:0:16}... (${#COVERED[@]} repos)"
 
           for r in "${STAMP_REPOS[@]}"; do
