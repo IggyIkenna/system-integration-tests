@@ -93,6 +93,94 @@ jobs:
           set -uo pipefail
           bash system-integration-tests/scripts/run_cross_repo_invariants.sh
 
+      # WS-L SIT-rehome STEP 2 (producer, Option B+ safe interim 2026-06-27): on a GREEN cross-repo run,
+      # stamp ci_status=SIT_VALIDATED + LDR tree fingerprint ONLY for the repos the suite ACTUALLY
+      # validates — workspace-manifest.json `sit_cross_repo_validated_repos` (mirror of this suite's
+      # REQUIRED_SIBLINGS). The suite runs a small set of cross-repo invariants over those repos; the
+      # other ldr_main repos are assembled but their public surface is NOT exercised, so stamping THEM
+      # SIT_VALIDATED would forge a cross-repo guarantee (adversarial-caught: 5 validated vs 21 stamped).
+      # The LDR→main fleet promoter consumes this to prove a BREAKING main..LDR delta was validated on
+      # EXACTLY this content (sit_validated_tree == the promoted LDR tree). A breaking change in a
+      # NON-covered repo stays conservatively BLOCKED on the promoter. Expanding coverage = add the repo
+      # to REQUIRED_SIBLINGS + its invariant + the manifest list (the suite asserts the two match).
+      - name: Stamp SIT_VALIDATED + LDR tree (WS-L SIT-rehome producer — covered repos only)
+        if: always()
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_ORG: IggyIkenna
+        run: |
+          set -uo pipefail
+          # Per-invariant isolation: read the per-repo results JSON written by
+          # run_cross_repo_invariants.sh. If the file is absent (workspace-assembly
+          # error before any invariant ran) skip all stamping. Only repos whose
+          # per-repo invariant PASSED get SIT_VALIDATED — an unrelated red invariant
+          # for repo B does not block repo A's stamp.
+          _RESULTS=/tmp/sit_per_repo_results.json
+          if [ ! -f "$_RESULTS" ]; then
+            echo "No per-repo results file (invariant runner failed at workspace assembly) — skipping stamp."
+            exit 0
+          fi
+
+          # The covered set is the SSOT for "what SIT actually validated" — read it from the manifest.
+          mapfile -t COVERED < <(python3 -c "import json; print('\n'.join(json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])))")
+          if [ "${#COVERED[@]}" -eq 0 ]; then echo "::error::sit_cross_repo_validated_repos empty in manifest — refusing to stamp (no coverage SSOT)"; exit 1; fi
+
+          # Filter to repos that passed their per-repo invariants.
+          mapfile -t STAMP_REPOS < <(python3 -c "
+import json
+results = json.load(open('$_RESULTS'))
+covered = json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])
+passed = [r for r in covered if results.get(r) == 'PASS']
+print('\n'.join(passed))
+")
+          if [ "${#STAMP_REPOS[@]}" -eq 0 ]; then
+            echo "No repos passed per-repo invariants — skipping stamp."
+            exit 0
+          fi
+          echo "SIT-covered repos: ${#COVERED[@]} total; stamping ${#STAMP_REPOS[@]} that passed: ${STAMP_REPOS[*]}"
+
+          # ── Cross-repo combination fingerprint (HIGH-combo, Phase 2) ──────────────────────────────
+          # Compute workspace digest = SHA-256 of all covered repos' LDR tree SHAs. Emitted
+          # alongside sit_validated_tree so the consumer can detect when a DEPENDENCY changed after
+          # SIT validated a dependent (per-repo tree match alone is insufficient — repo R validated
+          # against UAC v1 can still pass if UAC v2 lands before R promotes). The consumer blocks
+          # and re-dispatches SIT when digest mismatch is detected. Fail-open on absent digest
+          # (legacy consumer behaviour) so the check applies progressively.
+          printf '%s\n' "${COVERED[@]}" > /tmp/covered_repos.txt
+          WORKSPACE_DIGEST=$(python3 -c "
+import hashlib, json, subprocess
+with open('/tmp/covered_repos.txt') as f:
+    repos = [l.strip() for l in f if l.strip()]
+trees = {}
+for r in repos:
+    res = subprocess.run(['git', '-C', r, 'rev-parse', 'HEAD^{tree}'], capture_output=True, text=True)
+    tree = res.stdout.strip()
+    if tree:
+        trees[r] = tree
+payload = json.dumps(trees, sort_keys=True, separators=(',', ':'))
+print(hashlib.sha256(payload.encode()).hexdigest())
+" 2>/dev/null || echo "")
+          echo "Workspace digest (combination fingerprint): ${WORKSPACE_DIGEST:0:16}... (${#COVERED[@]} repos)"
+
+          for r in "${STAMP_REPOS[@]}"; do
+            [ -d "$r/.git" ] || { echo "skip $r (not assembled)"; continue; }
+            # Defense-in-depth: only stamp a repo actually checked out on live-defi-rollout (the clone
+            # may have fallen back to main; stamping a main tree would be wrong — though the consumer's
+            # tree-equality check would also reject it).
+            BR="$(git -C "$r" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+            if [ "$BR" != "live-defi-rollout" ]; then echo "skip $r (on '$BR', not live-defi-rollout)"; continue; fi
+            SHA="$(git -C "$r" rev-parse HEAD 2>/dev/null || echo "")"
+            TREE="$(git -C "$r" rev-parse 'HEAD^{tree}' 2>/dev/null || echo "")"
+            if [ -z "$SHA" ] || [ -z "$TREE" ]; then echo "skip $r (no sha/tree)"; continue; fi
+            curl -s -X POST \
+              -H "Authorization: token ${GH_PAT}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${GH_ORG}/unified-trading-pm/dispatches" \
+              -d "{\"event_type\": \"ci-status-update\", \"client_payload\": {\"repo\": \"${r}\", \"status\": \"SIT_VALIDATED\", \"branch\": \"live-defi-rollout\", \"sha\": \"${SHA}\", \"sit_validated_tree\": \"${TREE}\", \"sit_validated_workspace_digest\": \"${WORKSPACE_DIGEST}\"}}" \
+              && echo "stamped SIT_VALIDATED ${r} @ ${SHA} (tree ${TREE}, ws_digest ${WORKSPACE_DIGEST:0:12}...)" \
+              || echo "::warning::failed to stamp SIT_VALIDATED for ${r}"
+          done
+
       # MISSING LINK FIX (2026-06-10): the SIT result never reached PM — sit-unlock listens for
       # sit-passed/sit-failed repository_dispatch events that NOTHING sent, so a green SIT left
       # staging locked forever and a red SIT never opened staging for fixes. Close the loop.

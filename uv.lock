@@ -143,7 +143,6 @@ wheels = [
 
 [[package]]
 name = "alerting-service"
-version = "0.49.0"
 source = { editable = "../alerting-service" }
 dependencies = [
     { name = "aiohttp" },
@@ -668,7 +667,6 @@ wheels = [
 
 [[package]]
 name = "client-reporting-api"
-version = "0.25.0"
 source = { editable = "../client-reporting-api" }
 dependencies = [
     { name = "aiohttp" },
@@ -1082,7 +1080,6 @@ wheels = [
 
 [[package]]
 name = "deployment-api"
-version = "0.45.0"
 source = { editable = "../deployment-api" }
 dependencies = [
     { name = "aiohttp" },
@@ -1161,7 +1158,6 @@ requires-dist = [
 
 [[package]]
 name = "deployment-service"
-version = "0.92.0"
 source = { editable = "../deployment-service" }
 dependencies = [
     { name = "aiohttp" },
@@ -1171,10 +1167,10 @@ dependencies = [
     { name = "fastapi" },
     { name = "flask" },
     { name = "functions-framework" },
+    { name = "google-cloud-artifact-registry" },
     { name = "google-cloud-compute" },
     { name = "google-cloud-run" },
     { name = "jinja2" },
-    { name = "pip" },
     { name = "pip-audit" },
     { name = "prometheus-client" },
     { name = "py-solc-x" },
@@ -1204,10 +1200,10 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0,<0.137.0" },
     { name = "flask", specifier = ">=3.0.0,<4.0.0" },
     { name = "functions-framework", specifier = ">=3.8.0,<4.0.0" },
+    { name = "google-cloud-artifact-registry", specifier = ">=1.13.0,<2.0.0" },
     { name = "google-cloud-compute", specifier = ">=1.45.0,<2.0.0" },
     { name = "google-cloud-run", specifier = ">=0.15.0,<1.0.0" },
     { name = "jinja2", specifier = ">=3.0.0,<4.0.0" },
-    { name = "pip", specifier = ">=26.1.2" },
     { name = "pip-audit", specifier = ">=2.7.0,<3.0.0" },
     { name = "prometheus-client", specifier = ">=0.20.0,<1.0.0" },
     { name = "py-solc-x", specifier = ">=2.0.3,<3.0.0" },
@@ -1451,7 +1447,6 @@ wheels = [
 
 [[package]]
 name = "execution-service"
-version = "0.37.0"
 source = { editable = "../execution-service" }
 dependencies = [
     { name = "aiohttp" },
@@ -1619,7 +1614,6 @@ wheels = [
 
 [[package]]
 name = "features-service"
-version = "0.62.0"
 source = { editable = "../features-service" }
 dependencies = [
     { name = "aiohttp" },
@@ -1973,6 +1967,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/65/38/89317773c64b5a7e9b56b9aecb2e39ac02d8d6d09fb5b276710c6892e690/google_cloud_appengine_logging-1.8.0.tar.gz", hash = "sha256:84b705a69e4109fc2f68dfe36ce3df6a34d5c3d989eee6d0ac1b024dda0ba6f5", size = 18071, upload-time = "2026-01-15T13:14:40.024Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/66/4a9be8afb1d0bf49472478cec20fefe4f4cb3a6e67be2231f097041e7339/google_cloud_appengine_logging-1.8.0-py3-none-any.whl", hash = "sha256:a4ce9ce94a9fd8c89ed07fa0b06fcf9ea3642f9532a1be1a8c7b5f82c0a70ec6", size = 18380, upload-time = "2026-01-09T14:52:58.154Z" },
+]
+
+[[package]]
+name = "google-cloud-artifact-registry"
+version = "1.22.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpc-google-iam-v1" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/af/9c/a78d175a0484c500063696b1b923920392de6e5e4c1bd509210721554242/google_cloud_artifact_registry-1.22.0.tar.gz", hash = "sha256:0e8173a97ae695dfcf02c83277a0fd574e1a39be409da6345b945bebe577ad94", size = 312446, upload-time = "2026-06-03T14:52:43.625Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/3d/a777dee068746bf2c44475221be3d2209a0810f1b811c0cf21b66f488583/google_cloud_artifact_registry-1.22.0-py3-none-any.whl", hash = "sha256:2a595448af4366c016aa61805b7e8f685ab089022a1ebb65bea1eaaae461b37d", size = 250051, upload-time = "2026-06-03T14:51:59.298Z" },
 ]
 
 [[package]]
@@ -2459,7 +2470,6 @@ wheels = [
 
 [[package]]
 name = "instruments-service"
-version = "0.79.0"
 source = { editable = "../instruments-service" }
 dependencies = [
     { name = "aiohttp" },
@@ -2816,7 +2826,6 @@ wheels = [
 
 [[package]]
 name = "market-data-processing-service"
-version = "0.21.0"
 source = { editable = "../market-data-processing-service" }
 dependencies = [
     { name = "aiobotocore" },
@@ -2866,7 +2875,7 @@ requires-dist = [
     { name = "bandit", specifier = ">=1.7.0,<2.0.0" },
     { name = "basedpyright", specifier = "==1.38.2" },
     { name = "boto3", specifier = ">=1.40.70,<2.0.0" },
-    { name = "boto3-stubs", extras = ["s3", "sqs", "sns"], specifier = ">=1.40.0,<2.0.0" },
+    { name = "boto3-stubs", extras = ["s3", "sns", "sqs"], specifier = ">=1.40.0,<2.0.0" },
     { name = "cryptography", specifier = ">=46.0.7,<47.0.0" },
     { name = "curl-cffi", specifier = ">=0.15.0,<1.0.0" },
     { name = "exchange-calendars", specifier = ">=4.5.0,<5.0.0" },
@@ -4877,7 +4886,6 @@ wheels = [
 
 [[package]]
 name = "strategy-service"
-version = "0.46.0"
 source = { editable = "../strategy-service" }
 dependencies = [
     { name = "aiofiles" },
@@ -5004,7 +5012,6 @@ requires-dist = [
 
 [[package]]
 name = "system-integration-tests"
-version = "0.14.10"
 source = { virtual = "." }
 dependencies = [
     { name = "alerting-service" },
@@ -5307,7 +5314,6 @@ wheels = [
 
 [[package]]
 name = "unified-api-contracts"
-version = "0.66.0"
 source = { editable = "../unified-api-contracts" }
 dependencies = [
     { name = "bandit" },
@@ -5320,7 +5326,6 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pandas-stubs" },
-    { name = "pip" },
     { name = "pip-audit" },
     { name = "polars" },
     { name = "prek" },
@@ -5353,7 +5358,6 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.3.0,<2.4.0" },
     { name = "pandas", specifier = ">=2.3.0,<3.0.0" },
     { name = "pandas-stubs", specifier = ">=2.2.0,<3.0.0" },
-    { name = "pip", specifier = ">=26.1.2" },
     { name = "pip-audit", specifier = ">=2.7.0,<3.0.0" },
     { name = "polars", specifier = ">=1.37.0,<2.0.0" },
     { name = "prek", specifier = ">=0.3.0,<1.0.0" },
@@ -5376,7 +5380,6 @@ requires-dist = [
 
 [[package]]
 name = "unified-trading-library"
-version = "0.49.0"
 source = { editable = "../unified-trading-library" }
 dependencies = [
     { name = "aiohttp" },
@@ -5447,7 +5450,7 @@ requires-dist = [
     { name = "bandit", specifier = ">=1.7.0,<2.0.0" },
     { name = "basedpyright", specifier = "==1.38.2" },
     { name = "boto3", specifier = ">=1.40.70,<2.0.0" },
-    { name = "boto3-stubs", extras = ["s3", "secretsmanager", "logs", "sns", "sqs"], specifier = ">=1.35.0,<2.0.0" },
+    { name = "boto3-stubs", extras = ["logs", "s3", "secretsmanager", "sns", "sqs"], specifier = ">=1.35.0,<2.0.0" },
     { name = "botocore", specifier = ">=1.34.0,<2.0.0" },
     { name = "databento", specifier = ">=0.32.0,<1.0.0" },
     { name = "duckdb", specifier = ">=1.5.0,<2.0.0" },
