@@ -104,16 +104,40 @@ jobs:
       # NON-covered repo stays conservatively BLOCKED on the promoter. Expanding coverage = add the repo
       # to REQUIRED_SIBLINGS + its invariant + the manifest list (the suite asserts the two match).
       - name: Stamp SIT_VALIDATED + LDR tree (WS-L SIT-rehome producer — covered repos only)
-        if: success()
+        if: always()
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           GH_ORG: IggyIkenna
         run: |
           set -uo pipefail
+          # Per-invariant isolation: read the per-repo results JSON written by
+          # run_cross_repo_invariants.sh. If the file is absent (workspace-assembly
+          # error before any invariant ran) skip all stamping. Only repos whose
+          # per-repo invariant PASSED get SIT_VALIDATED — an unrelated red invariant
+          # for repo B does not block repo A's stamp.
+          _RESULTS=/tmp/sit_per_repo_results.json
+          if [ ! -f "$_RESULTS" ]; then
+            echo "No per-repo results file (invariant runner failed at workspace assembly) — skipping stamp."
+            exit 0
+          fi
+
           # The covered set is the SSOT for "what SIT actually validated" — read it from the manifest.
           mapfile -t COVERED < <(python3 -c "import json; print('\n'.join(json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])))")
           if [ "${#COVERED[@]}" -eq 0 ]; then echo "::error::sit_cross_repo_validated_repos empty in manifest — refusing to stamp (no coverage SSOT)"; exit 1; fi
-          echo "SIT-covered repos (stamping only these): ${COVERED[*]}"
+
+          # Filter to repos that passed their per-repo invariants.
+          mapfile -t STAMP_REPOS < <(python3 -c "
+import json
+results = json.load(open('$_RESULTS'))
+covered = json.load(open('unified-trading-pm/workspace-manifest.json')).get('sit_cross_repo_validated_repos', [])
+passed = [r for r in covered if results.get(r) == 'PASS']
+print('\n'.join(passed))
+")
+          if [ "${#STAMP_REPOS[@]}" -eq 0 ]; then
+            echo "No repos passed per-repo invariants — skipping stamp."
+            exit 0
+          fi
+          echo "SIT-covered repos: ${#COVERED[@]} total; stamping ${#STAMP_REPOS[@]} that passed: ${STAMP_REPOS[*]}"
 
           # ── Cross-repo combination fingerprint (HIGH-combo, Phase 2) ──────────────────────────────
           # Compute workspace digest = SHA-256 of all covered repos' LDR tree SHAs. Emitted
@@ -138,7 +162,7 @@ print(hashlib.sha256(payload.encode()).hexdigest())
 " 2>/dev/null || echo "")
           echo "Workspace digest (combination fingerprint): ${WORKSPACE_DIGEST:0:16}... (${#COVERED[@]} repos)"
 
-          for r in "${COVERED[@]}"; do
+          for r in "${STAMP_REPOS[@]}"; do
             [ -d "$r/.git" ] || { echo "skip $r (not assembled)"; continue; }
             # Defense-in-depth: only stamp a repo actually checked out on live-defi-rollout (the clone
             # may have fallen back to main; stamping a main tree would be wrong — though the consumer's
