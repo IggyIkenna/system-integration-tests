@@ -105,12 +105,15 @@ class TestGCSBucketsExist:
     def test_core_infra_buckets_accessible(self, gcp_project_id: str) -> None:
         """Core infrastructure buckets (terraform-state, config-store) must always be accessible."""
         pytest.importorskip("unified_trading_library.cloud_interface")
-        from unified_trading_library import get_storage_client
+        from unified_trading_library import get_cloud_provider, get_storage_client, resolve_bucket_name
 
         client = get_storage_client(provider="gcp")
         core_buckets = [
             f"terraform-state-{gcp_project_id}",
-            f"config-store-{gcp_project_id}",
+            # config-store is env-tiered (config-store-{env}-{pid}) — the flat
+            # config-store-{pid} bucket was retired 2026-07-14; resolve the
+            # canonical name rather than hardcoding the retired literal.
+            resolve_bucket_name(cloud=get_cloud_provider(), kind="config-store"),
             f"deployment-orchestration-{gcp_project_id}",
         ]
         for bucket in core_buckets:
