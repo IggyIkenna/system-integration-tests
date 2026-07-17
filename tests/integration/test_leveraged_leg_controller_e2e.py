@@ -120,7 +120,7 @@ def test_pbm_builder_produces_post_pnl_snapshots() -> None:
     """PBM: LegSnapshotBuilder maps observed positions + PnL into LegSnapshots.
     Initial alloc = $250k each. ETH +8% => long +$32k, short -$32k. So
     snapshots equity = $282k (long) / $218k (short)."""
-    from strategy_service.position.core.leg_snapshot_builder import build_leg_snapshots
+    from unified_trading_library import build_leg_snapshots
 
     state = _basis_state()
     observations = {
@@ -249,10 +249,10 @@ def test_full_e2e_chain_strategy_pbm_controller_risk() -> None:
     from strategy_service.engine.strategies.v2.carry_and_yield.staked_basis import (
         CarryStakedBasisEngine,
     )
-    from strategy_service.position.core.leg_snapshot_builder import build_leg_snapshots
     from strategy_service.risk.core.leverage_breach_detector import (
         detect_leverage_breaches,
     )
+    from unified_trading_library import build_leg_snapshots
 
     # Layer 1: strategy declares
     engine = CarryStakedBasisEngine(

@@ -100,8 +100,12 @@ def _get_service_categories(
 
 
 def _resolve_bucket(template: str, cat: str, project_id: str) -> str:
+    # dependencies.yaml's on-disk bucket_template fields use {category_lower} almost
+    # everywhere (not {asset_group_lower}) — substitute both aliases so real templates
+    # resolve to a real bucket name instead of a literal, never-substituted placeholder.
     return (
         template.replace("{asset_group_lower}", cat.lower())
+        .replace("{category_lower}", cat.lower())
         .replace("{project_id}", project_id)
         .replace("{domain}", cat.lower())
     )
