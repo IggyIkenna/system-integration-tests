@@ -73,9 +73,15 @@ editable = true
 
 # betfairlightweight (via execution-service) declares requests<2.33.0; workspace canonical is requests>=2.33.0
 # (CVE-2026-25645). Override forces the resolved version upward. SSOT: .cursor/rules/dependencies/requests-betfairlightweight-workspace-resolution.mdc
+#
+# Transitive security pin (pip-audit) — keep at or above fix version. starlette is pulled in transitively via
+# unified-trading-library's own starlette<1.3.0 pin (fastapi<0.137.0 only requires starlette>=1.1.0, so a plain
+# re-lock stays on the vulnerable 1.1.0/1.2.1, PYSEC-2026-248/249, fix 1.3.0/1.3.1). Mirrors the already-verified fix
+# in ml-service, unified-trading-api, and e2e-testing. SSOT: plans/active/issues/qg_red_blocking_workflow_template_and_pip_audit_2026_07_22.md.
 [tool.uv]
 override-dependencies = [
     "requests>=2.33.0,<3.0.0",
+    "starlette>=1.3.1",
 ]
 
 # ── ruff (lint + format) — canonical-tool-sections.toml 2026-05-26 ─────────────
