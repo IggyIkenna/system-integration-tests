@@ -3,7 +3,10 @@ revision = 3
 requires-python = "==3.13.*"
 
 [manifest]
-overrides = [{ name = "requests", specifier = ">=2.33.0,<3.0.0" }]
+overrides = [
+    { name = "requests", specifier = ">=2.33.0,<3.0.0" },
+    { name = "starlette", specifier = ">=1.3.1" },
+]
 
 [[package]]
 name = "aiobotocore"
@@ -179,7 +182,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.87.0,<1.0.0" },
     { name = "bandit", specifier = ">=1.7.0,<2.0.0" },
     { name = "basedpyright", specifier = "==1.38.2" },
-    { name = "fastapi", specifier = ">=0.115.0,<0.138.0" },
+    { name = "fastapi", specifier = ">=0.115.0,<0.137.0" },
     { name = "httpx", specifier = ">=0.28.1,<1.0.0" },
     { name = "idna", specifier = ">=3.15" },
     { name = "pip", specifier = ">=26.1.2" },
@@ -1089,6 +1092,7 @@ dependencies = [
     { name = "cachetools" },
     { name = "cryptography" },
     { name = "deployment-service" },
+    { name = "duckdb" },
     { name = "fastapi" },
     { name = "google-auth" },
     { name = "google-cloud-firestore" },
@@ -1098,6 +1102,7 @@ dependencies = [
     { name = "pip" },
     { name = "pip-audit" },
     { name = "prometheus-client" },
+    { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pygithub" },
     { name = "pygments" },
@@ -1127,7 +1132,8 @@ requires-dist = [
     { name = "cachetools", specifier = ">=5.0.0,<6.0.0" },
     { name = "cryptography", specifier = ">=47.0.0,<50.0.0" },
     { name = "deployment-service", editable = "../deployment-service" },
-    { name = "fastapi", specifier = ">=0.115.0,<0.138.0" },
+    { name = "duckdb", specifier = ">=1.5.0,<2.0.0" },
+    { name = "fastapi", specifier = ">=0.115.0,<0.137.0" },
     { name = "google-auth", specifier = ">=2.40.0,<3.0.0" },
     { name = "google-cloud-firestore", specifier = ">=2.0.0,<3.0.0" },
     { name = "gunicorn", specifier = ">=22.0.0,<23.0.0" },
@@ -1136,6 +1142,7 @@ requires-dist = [
     { name = "pip", specifier = ">=26.1.2" },
     { name = "pip-audit", specifier = ">=2.7.0,<3.0.0" },
     { name = "prometheus-client", specifier = ">=0.20.0,<1.0.0" },
+    { name = "pyarrow", specifier = ">=23.0.1,<24.0.0" },
     { name = "pydantic", specifier = ">=2.12.5,<3.0.0" },
     { name = "pygithub", specifier = ">=2.0.0,<3.0.0" },
     { name = "pygments", specifier = ">=2.20.0,<3.0.0" },
@@ -1171,6 +1178,7 @@ dependencies = [
     { name = "google-cloud-compute" },
     { name = "google-cloud-functions" },
     { name = "google-cloud-run" },
+    { name = "google-cloud-scheduler" },
     { name = "jinja2" },
     { name = "pip-audit" },
     { name = "prometheus-client" },
@@ -1205,6 +1213,7 @@ requires-dist = [
     { name = "google-cloud-compute", specifier = ">=1.45.0,<2.0.0" },
     { name = "google-cloud-functions", specifier = ">=1.16.0,<2.0.0" },
     { name = "google-cloud-run", specifier = ">=0.15.0,<1.0.0" },
+    { name = "google-cloud-scheduler", specifier = ">=2.20.0,<3.0.0" },
     { name = "jinja2", specifier = ">=3.0.0,<4.0.0" },
     { name = "pip-audit", specifier = ">=2.7.0,<3.0.0" },
     { name = "prometheus-client", specifier = ">=0.20.0,<1.0.0" },
@@ -1546,7 +1555,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.27.0,<2.0.0" },
     { name = "pandas", specifier = ">=2.3.0,<3.0.0" },
     { name = "pandas-stubs", specifier = ">=2.2.0,<3.0.0" },
-    { name = "pillow", specifier = ">=12.2.0,<13.0.0" },
+    { name = "pillow", specifier = ">=12.3.0,<13.0.0" },
     { name = "pip", specifier = ">=26.1.2" },
     { name = "pip-audit", specifier = ">=2.7.0,<3.0.0" },
     { name = "playwright", specifier = ">=1.40,<2.0" },
@@ -1676,7 +1685,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.14.1,<4.0.0" },
     { name = "bandit", specifier = ">=1.7.0,<2.0.0" },
     { name = "basedpyright", specifier = "==1.38.2" },
-    { name = "click", specifier = ">=8.3.1,<9.0.0" },
+    { name = "click", specifier = ">=8.3.3,<9.0.0" },
     { name = "curl-cffi", specifier = ">=0.15.0,<1.0.0" },
     { name = "fastapi", specifier = ">=0.115.0,<0.137.0" },
     { name = "hmmlearn", specifier = ">=0.3.0,<1.0.0" },
@@ -2155,6 +2164,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b7/89/dcaf0dc97e39b41e446456ceb60657ab025de79cfccd39cbd739d1a9849e/google_cloud_run-0.16.0.tar.gz", hash = "sha256:d52cf4e6ad3702ae48caccf6abcab543afee6f61c2a6ec753cc62a31e5b629f1", size = 514452, upload-time = "2026-03-26T22:17:05.589Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fa/c7/46153dc13713b5e4276d86f28ff4563332f9e4bae5ebc83abc5bfd994801/google_cloud_run-0.16.0-py3-none-any.whl", hash = "sha256:d7d2dd7307130fde2a0ce27e96d580dd23b7b2d973b6484b94d902e6b2618860", size = 459112, upload-time = "2026-03-26T22:16:00.018Z" },
+]
+
+[[package]]
+name = "google-cloud-scheduler"
+version = "2.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/d2/b38c2b901cf758115861828ee31a08e85ec615ea1f22fda440d6f4cb83ef/google_cloud_scheduler-2.20.0.tar.gz", hash = "sha256:17fee4b894e588587f76518185f20b6f7ddbce04ca91bbbb325ea995222d2b87", size = 151676, upload-time = "2026-06-03T16:13:42.024Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/4f/3fb7f4449be1f6c51b07c7c1cdb137c05a0ae329d8db38f621b99a7f105b/google_cloud_scheduler-2.20.0-py3-none-any.whl", hash = "sha256:7e227cb2438c168ca214dc852eaa96f7066a8f206faec3a88c810a25fb5da6d8", size = 138294, upload-time = "2026-06-03T16:12:18.746Z" },
 ]
 
 [[package]]
@@ -3946,11 +3971,11 @@ wheels = [
 
 [[package]]
 name = "pyasn1"
-version = "0.6.3"
+version = "0.6.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5c/5f/6583902b6f79b399c9c40674ac384fd9cd77805f9e6205075f828ef11fb2/pyasn1-0.6.3.tar.gz", hash = "sha256:697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf", size = 148685, upload-time = "2026-03-17T01:06:53.382Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/9a/23310166d960def5897e91fe20e5b724601b02a22e84ba1f94232c0b7f67/pyasn1-0.6.4.tar.gz", hash = "sha256:9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81", size = 151262, upload-time = "2026-07-09T01:12:33.988Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/a0/7d793dce3fa811fe047d6ae2431c672364b462850c6235ae306c0efd025f/pyasn1-0.6.3-py3-none-any.whl", hash = "sha256:a80184d120f0864a52a073acc6fc642847d0be408e7c7252f31390c0f4eadcde", size = 83997, upload-time = "2026-03-17T01:06:52.036Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/3b/6163796d69c3977d1e4287bea4a6979161cbbdd170ebb430511e8e1999ce/pyasn1-0.6.4-py3-none-any.whl", hash = "sha256:deda9277cfd454080ec40b207fb6df82206a3a2688735233cdcd8d3d565f088b", size = 84410, upload-time = "2026-07-09T01:12:32.92Z" },
 ]
 
 [[package]]
@@ -4069,16 +4094,16 @@ wheels = [
 
 [[package]]
 name = "pydantic-settings"
-version = "2.13.1"
+version = "2.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/6d/fffca34caecc4a3f97bda81b2098da5e8ab7efc9a66e819074a11955d87e/pydantic_settings-2.13.1.tar.gz", hash = "sha256:b4c11847b15237fb0171e1462bf540e294affb9b86db4d9aa5c01730bdbe4025", size = 223826, upload-time = "2026-02-19T13:45:08.055Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/b5/8f48e906c3e0205276e8bd8cb7512217a87b2685304d64be27cad5b3019f/pydantic_settings-2.14.2.tar.gz", hash = "sha256:c19dd64b19097f1de80184f0cc7b0272a13ae6e170cbf240a3e27e381ed14a5f", size = 237700, upload-time = "2026-06-19T13:44:56.324Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/4b/ccc026168948fec4f7555b9164c724cf4125eac006e176541483d2c959be/pydantic_settings-2.13.1-py3-none-any.whl", hash = "sha256:d56fd801823dbeae7f0975e1f8c8e25c258eb75d278ea7abb5d9cebb01b56237", size = 58929, upload-time = "2026-02-19T13:45:06.034Z" },
+    { url = "https://files.pythonhosted.org/packages/77/c1/6e422f34e569cf8e18df68d1939c81c099d2b61e4f7d9621c8a77560799c/pydantic_settings-2.14.2-py3-none-any.whl", hash = "sha256:a20c97b37910b6550d5ea50fbcc2d4187defe58cd57070b73863d069419c9440", size = 61715, upload-time = "2026-06-19T13:44:55.02Z" },
 ]
 
 [[package]]
@@ -4707,11 +4732,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "82.0.1"
+version = "83.0.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4f/db/cfac1baf10650ab4d1c111714410d2fbb77ac5a616db26775db562c8fab2/setuptools-82.0.1.tar.gz", hash = "sha256:7d872682c5d01cfde07da7bccc7b65469d3dca203318515ada1de5eda35efbf9", size = 1152316, upload-time = "2026-03-09T12:47:17.221Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/26/f5d29e25ffdb535afef2d35cdb55b325298f96debd670da4c325e08d70f4/setuptools-83.0.0.tar.gz", hash = "sha256:025bccbbf0fa05b6192bc64ae1e7b16e001fd6d6d4d5de03c97b1c1ade523bef", size = 1154254, upload-time = "2026-07-04T15:31:22.699Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl", hash = "sha256:a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb", size = 1006223, upload-time = "2026-03-09T12:47:15.026Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/40/e1e72872c6354b306daef1703549e8e83b4d43cfea356311bf722a043752/setuptools-83.0.0-py3-none-any.whl", hash = "sha256:29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3", size = 1008090, upload-time = "2026-07-04T15:31:20.885Z" },
 ]
 
 [[package]]
@@ -4850,14 +4875,14 @@ wheels = [
 
 [[package]]
 name = "starlette"
-version = "1.1.0"
+version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/66/4d20cdf39a8d6a51e663b7038e3b828ff211d3891a43a713fe7e4643f3a8/starlette-1.1.0.tar.gz", hash = "sha256:e83c7fe0ddecd8719c5b840080325aec0260acec86e9832899e377b91d65e90f", size = 2660060, upload-time = "2026-05-23T16:55:41.376Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/e3/7c1dc7381d9f8ab7d854328ebfa884e62cb3f3d8549ddfd37c7814f42afa/starlette-1.3.1.tar.gz", hash = "sha256:05d0213193f2fbaae60e2ecb593b4add4262ad4e46536b54abe36f11a71724e0", size = 2703240, upload-time = "2026-06-12T09:23:11.602Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/79/920b8e0a8b20f793e8d64855095cb8febabf6175b8550b6f7a547d813891/starlette-1.1.0-py3-none-any.whl", hash = "sha256:7f0dfd38e428aad5cb6f9f667f0ca1d2d8ca3f3385dccac8305f79ec98458382", size = 72899, upload-time = "2026-05-23T16:55:39.201Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/bb/2799cc2ede3ed41131f8975621e7213dfc7ef4acbbaadfa440f32500c370/starlette-1.3.1-py3-none-any.whl", hash = "sha256:c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6", size = 73632, upload-time = "2026-06-12T09:23:10.017Z" },
 ]
 
 [[package]]
@@ -4976,7 +5001,7 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.27.0,<2.0.0" },
     { name = "pandas", specifier = ">=2.3.0,<3.0.0" },
     { name = "pandas-stubs", specifier = ">=2.2.0,<3.0.0" },
-    { name = "pillow", specifier = ">=12.2.0,<13.0.0" },
+    { name = "pillow", specifier = ">=12.3.0,<13.0.0" },
     { name = "pip", specifier = ">=26.1.2" },
     { name = "pip-audit", specifier = ">=2.7.0,<3.0.0" },
     { name = "plotly", specifier = ">=6.4.0,<7.0.0" },
@@ -5301,21 +5326,23 @@ wheels = [
 
 [[package]]
 name = "ujson"
-version = "5.12.1"
+version = "5.13.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/bc/78/937198ea8708182dd1edbf0237bf255a96feab3f511691ad08b84da98e5d/ujson-5.12.1.tar.gz", hash = "sha256:5b7e96406c301a1366534479a7352ec40ec68bb327c0c119091635acd5925e35", size = 7164538, upload-time = "2026-05-05T22:05:01.354Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/7a/c8bb37c8f6f3623d60c33d15d18cd6d6655d0f9c3eb31a9969f76361b199/ujson-5.13.0.tar.gz", hash = "sha256:d62e3d7625384c08082abad81a077af587fdef2761bb14c3822f4234b8d07d75", size = 7166784, upload-time = "2026-06-14T22:36:50.209Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/f0/985b351771ebf095e2c1aaad18f4d251831226a767a32593310e4f181f19/ujson-5.12.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:c4bdc052a5d097f0a2e56d93aed97355f9f7a62ef9baa4f8517e43245434af9c", size = 57959, upload-time = "2026-05-05T22:03:48.348Z" },
-    { url = "https://files.pythonhosted.org/packages/61/73/03c7473372e1a538206fc655e474fa15f8bf9c46bb7c73c5fec9a544e429/ujson-5.12.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:5dc91fa06ea35920b704fd9d70871897680145998071cfbf5ee3e19f2c9fc242", size = 55564, upload-time = "2026-05-05T22:03:49.869Z" },
-    { url = "https://files.pythonhosted.org/packages/04/e6/104ebc35fa8dbaca66bf027c53c0c9c572271c2984576f4fd7d349d1a2e4/ujson-5.12.1-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b5db0849c0e3da54822a5834f2dc51d7c51072d7f7d665014ee34600dc10889b", size = 59448, upload-time = "2026-05-05T22:03:51.224Z" },
-    { url = "https://files.pythonhosted.org/packages/11/d2/55274e80fe1806cdb5cb97483be16cd6163337ab11c3bd7e28ff8a8aad26/ujson-5.12.1-cp313-cp313-manylinux_2_24_i686.manylinux_2_28_i686.whl", hash = "sha256:949cb4863a5d4847edeb47c5364b334e8cadf23a7cbdaa547d86098a4b093106", size = 61611, upload-time = "2026-05-05T22:03:52.731Z" },
-    { url = "https://files.pythonhosted.org/packages/6c/15/ec46b1757c8f7770d8c101b8a463bec67c19e89c46c608d01e4b193cc64a/ujson-5.12.1-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8aa731138d6dfca4ab84501b72384e6c544bfb48cb87a0dd4d304df3246cac25", size = 59120, upload-time = "2026-05-05T22:03:54.064Z" },
-    { url = "https://files.pythonhosted.org/packages/b5/27/ec73bc8908c33eb1f5be29d696084e531cbcfbd5c7b89ce54c025f66c682/ujson-5.12.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:727e983ef27892d86ee2d28fd517eeb02b2c1165aafcbe929dce988aeee81bfe", size = 1038913, upload-time = "2026-05-05T22:03:55.792Z" },
-    { url = "https://files.pythonhosted.org/packages/6d/30/907e47569bed5f5eb258fef5e587c6759a7a062048796e40024497137e28/ujson-5.12.1-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:d57d731ecf492d3d011e65369f8330654f0875b19f646be5270d478e843d3b81", size = 1198409, upload-time = "2026-05-05T22:03:57.947Z" },
-    { url = "https://files.pythonhosted.org/packages/46/aa/f135f4b741baf14d5350be5511076408e7540353d3d850a430cb89d585a6/ujson-5.12.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:1a09636220f26c66f80c6c6283023cb53120e843825f890be92696cd1aa43f39", size = 1091456, upload-time = "2026-05-05T22:04:00.355Z" },
-    { url = "https://files.pythonhosted.org/packages/6e/81/5e6ef1115c0f700a74a150857c66cb22245f0e43f79667af9bf2b88f9452/ujson-5.12.1-cp313-cp313-win32.whl", hash = "sha256:ee83fbac03a0896faf190177c938f94eb610b798d495a19d50997242c4eca685", size = 41055, upload-time = "2026-05-05T22:04:02.372Z" },
-    { url = "https://files.pythonhosted.org/packages/98/76/8b423bc72a02f3fcf90f911a16382f360442c1a8887955c023d517f5d4ba/ujson-5.12.1-cp313-cp313-win_amd64.whl", hash = "sha256:e08d9e096c416ddc34519241f97c201258b42639f2012d9547d8ae32921800dd", size = 45331, upload-time = "2026-05-05T22:04:03.946Z" },
-    { url = "https://files.pythonhosted.org/packages/5f/f2/c839a923da49384d4a319ddd5ce666e50e45a5c8417cec742c65667a1864/ujson-5.12.1-cp313-cp313-win_arm64.whl", hash = "sha256:963287e4b1bc463735c4056968a2dfa59bb831b6daba68bddd14f451191fe9e5", size = 39828, upload-time = "2026-05-05T22:04:05.52Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/f1/fe8a467d8ff5821e076b96f398d3acfe3cd568d900e6ccb41b215592b152/ujson-5.13.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:46998fc8d11aec34a20e2010905e7059732a3d192d9a3c3fe4f9ffd146c87ec8", size = 56746, upload-time = "2026-06-14T22:35:43.398Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/c0/c7ab82d6471dfa7e4fd68ae6ff2c6a50d077c05d6ecdea0cec8af635b2c4/ujson-5.13.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ee03ce288ba25b05cf0de87203165642277a25caa4f00a437e13152e5214e310", size = 54388, upload-time = "2026-06-14T22:35:44.586Z" },
+    { url = "https://files.pythonhosted.org/packages/10/e6/4e9e998d991ff88bbc93b21daa63bba2baa61c6f952dbcec937cf7304ebe/ujson-5.13.0-cp313-cp313-manylinux1_i686.manylinux2014_i686.manylinux_2_17_i686.manylinux_2_5_i686.whl", hash = "sha256:cdf33b588a81b05d0b585c66f83050c49cb670623424d10e4d1ad37ba2f7eed9", size = 60051, upload-time = "2026-06-14T22:35:45.567Z" },
+    { url = "https://files.pythonhosted.org/packages/9c/11/876dff43f05417a01c6119f0fa10e01f1226631c5927ef08f56876b2bb67/ujson-5.13.0-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:4cabd73c114ce93c21d7db2e2d8e16217fd8a5b2b3ec754629eebef5c262d47f", size = 53438, upload-time = "2026-06-14T22:35:46.623Z" },
+    { url = "https://files.pythonhosted.org/packages/09/02/f9dbf6c3e46d700eb1d9ed637567221a06eeb1ec289633be992ef54d7a34/ujson-5.13.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ffc61fc756a64f4d169a78cc638d769e3c324f45fc51997626abf4e5e5dd6460", size = 55060, upload-time = "2026-06-14T22:35:47.647Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/3d/7e49a70265a1e5ed1b5e8edd5f54d57ae41e2134faeae9b16f6f5a0eae20/ujson-5.13.0-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2c00323c13a35822c9a67a26c0b2a0787510bf1ef490922b58009b362d1a3e21", size = 58189, upload-time = "2026-06-14T22:35:48.617Z" },
+    { url = "https://files.pythonhosted.org/packages/66/34/b64278f67e19052f09810576c7e50b3da8d4f5218b226046324d4d5c24b4/ujson-5.13.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:496e662a6b46d5f936d77fb68259cece19213bb2301ddd520dbd75ac7c90c5f4", size = 57941, upload-time = "2026-06-14T22:35:49.674Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/8c/51513357a5c75bf3e5bae46accfdb3e6e6f5caeb72ca8b253ec45ba853fb/ujson-5.13.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:7fd41b86444df14f8b4b7afaaa9f27bacfbf8c18380872317aeab6cd125dcede", size = 1037688, upload-time = "2026-06-14T22:35:50.699Z" },
+    { url = "https://files.pythonhosted.org/packages/54/5a/dc6afe071d6b977390d2dc41e15800a2716f317988dd03187cffe7b4d624/ujson-5.13.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:bf3c2c4ea55d4187903fcdc689a9bf5b0fc72d8c0eaff39db18c1f337c8832c1", size = 1197141, upload-time = "2026-06-14T22:35:52.052Z" },
+    { url = "https://files.pythonhosted.org/packages/50/23/b473d101412c68527cb502a8728f96ab307aa7bfa75d6ea2037e2c7f74e8/ujson-5.13.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:b6eca7751d61045a9b1e7f9a8c97ac24b164f085b60bef1c4668654bb2338011", size = 1090235, upload-time = "2026-06-14T22:35:53.589Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/0a/8e583cce90f9f91ca1bedb3e628b6f5642aed91feb29b197431268d4c4be/ujson-5.13.0-cp313-cp313-win32.whl", hash = "sha256:b63d3820f978bc8e98cc3f1fe26a33b0d2ea237733a23fe5e9cb5d51f466bd97", size = 40069, upload-time = "2026-06-14T22:35:55.019Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/b5/1fe203bc294e98fdd65606883692ad8dc0aaac73838b89c99c3513404424/ujson-5.13.0-cp313-cp313-win_amd64.whl", hash = "sha256:17a59d5cf23ef98f7c9314524976b4b288374d83200add01d953024fb06404f9", size = 41098, upload-time = "2026-06-14T22:35:55.966Z" },
+    { url = "https://files.pythonhosted.org/packages/50/5e/aceadce24fdb7cbc67f02286b1d4e91a575aaef5afb876c9908d6e6e5769/ujson-5.13.0-cp313-cp313-win_arm64.whl", hash = "sha256:b49516fbe803ff30d6caa9ccc3799ec7f968992747ce3099eae4758928577b53", size = 38877, upload-time = "2026-06-14T22:35:56.936Z" },
 ]
 
 [[package]]
@@ -5408,6 +5435,7 @@ dependencies = [
     { name = "google-cloud-logging" },
     { name = "google-cloud-pubsub" },
     { name = "google-cloud-run" },
+    { name = "google-cloud-scheduler" },
     { name = "google-cloud-secret-manager" },
     { name = "google-cloud-storage" },
     { name = "httpx" },
@@ -5461,7 +5489,7 @@ requires-dist = [
     { name = "databento", specifier = ">=0.32.0,<1.0.0" },
     { name = "duckdb", specifier = ">=1.5.0,<2.0.0" },
     { name = "fakeredis", specifier = ">=2.20.0,<3.0.0" },
-    { name = "fastapi", specifier = ">=0.115.0,<0.138.0" },
+    { name = "fastapi", specifier = ">=0.115.0,<0.137.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "fsspec", specifier = ">=2025.2.0,<2026.0.0" },
     { name = "gcsfs", specifier = ">=2025.5.0,<2026.0.0" },
@@ -5472,6 +5500,7 @@ requires-dist = [
     { name = "google-cloud-logging", specifier = ">=3.12.0,<4.0.0" },
     { name = "google-cloud-pubsub", specifier = ">=2.28.0,<3.0.0" },
     { name = "google-cloud-run", specifier = ">=0.15.0,<1.0.0" },
+    { name = "google-cloud-scheduler", specifier = ">=2.20.0,<3.0.0" },
     { name = "google-cloud-secret-manager", specifier = ">=2.25.0,<3.0.0" },
     { name = "google-cloud-storage", specifier = ">=3.8.0,<4.0.0" },
     { name = "httpx", specifier = ">=0.28.1,<1.0.0" },
