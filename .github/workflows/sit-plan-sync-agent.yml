@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   sit-plan-sync:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, glue]
     timeout-minutes: 20
 
     env:
