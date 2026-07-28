@@ -29,7 +29,7 @@ tests/
 
 Declared combinations of `DATA_MODE`, `CLOUD_PROVIDER`, `TESTNET_MODE`, and related axes must match what services
 actually deploy. SSOT for the matrix:
-`unified-trading-codex/09-strategy/cross-cutting/operational-modes-matrix.md`. When CI or staging changes those env
+`unified-trading-pm/codex/09-strategy/architecture-v2/cross-cutting/operational-modes-matrix.md`. When CI or staging changes those env
 defaults, extend smoke (3a) and full E2E (3b) assertions so testnet paths cannot silently hit production endpoints.
 
 ## Environment Variables
@@ -77,8 +77,8 @@ Tests skip gracefully when credentials or bucket are not configured.
 
 `tests/smoke/test_coverage_matrix_smoke.py` parametrises over representative
 `(service × category × venue × data_type)` cells and asserts that TEST-bucket
-state is internally consistent with the canonical per-category path layout
-and manifest v5 schema.
+state is internally consistent with the canonical per-asset-group path layout
+and manifest v9 schema.
 
 Opt-in — the test skips by default:
 
@@ -108,8 +108,8 @@ Adding a new representative cell = append a row to `_CELLS`.
 
 SSOT references:
 
-- Per-category bucket + path layouts: `unified-trading-pm/codex/02-data/per-category-bucket-layouts.md`
-- Manifest v5 schema: `unified-trading-pm/codex/02-data/availability-manifest-and-data-status.md`
+- Per-asset-group bucket + path layouts: `unified-trading-pm/codex/02-data/per-asset-group-bucket-layouts.md`
+- Manifest v9 schema: `unified-trading-pm/codex/02-data/availability-manifest-and-data-status.md`
 - Playbook: `unified-trading-pm/codex/15-runbooks/smoke-testing-playbook.md`
 
 ## SIT Scope
@@ -156,4 +156,4 @@ Which repos are gated by SIT for staging → main promotion.
 
 ## SSOT
 
-`unified-trading-codex/06-coding-standards/integration-testing-layers.md`
+`unified-trading-pm/codex/06-coding-standards/integration-testing-layers.md`

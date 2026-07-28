@@ -203,7 +203,7 @@ BACKTEST_SEED=42 python scripts/run_sports_arb_backtest.py \
 ## References
 
 - `e2e_smoke_and_portable_backtests.md`
-- `unified-trading-codex/integration-testing-layers.md`
+- `unified-trading-pm/codex/06-coding-standards/integration-testing-layers.md`
 - `batch-live-symmetry.mdc` (cursor rule)
 - `VCR_CREDENTIAL_RECORDING_PLAN.md`
 - `system-integration-tests/README.md`
