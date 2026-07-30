@@ -22,10 +22,6 @@ LOCAL_DEPS=()
 # reads as "declared but never imported" and reddens QG (jammed the exec-svc 0.6.0 cascade).
 MANIFEST_ALIGNMENT_SKIP=true
 WORKSPACE_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
-# lxml 5.4.0 PYSEC-2026-87 (fix=6.1.0): constrained to <6.0 by workspace; cannot upgrade without breaking
-# uv.lock resolution — ignore until lxml constraint is lifted workspace-wide.
-# joblib PYSEC-2024-277 + pyjwt PYSEC-2025-183: no-fix-available / workspace-wide ignore (base-service.sh).
-PIP_AUDIT_EXTRA_ARGS="--ignore-vuln PYSEC-2024-277 --ignore-vuln PYSEC-2025-183 --ignore-vuln PYSEC-2026-87"
 # CODEX_MAX_VIOLATIONS pinned 2026-06-11 per plans/active/codex_violations_ratchet_to_five_2026_06_10.md (census-honest: 0 current violations; ratchet-down only).
 CODEX_MAX_VIOLATIONS=0
 # Not a deployable HTTP/CLI service — this is a Layer-3 e2e/smoke test harness (no api/main.py,
