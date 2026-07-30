@@ -7,6 +7,19 @@
 # the cross-repo invariant suite (scripts/run_cross_repo_invariants.sh), which fails on any
 # invariant failure OR on a skip (a skip == workspace not assembled == the bug this layer catches).
 #
+# WHAT `SIT_VALIDATED` ACTUALLY MEANS (corrected 2026-07-29, over-claim fix per
+# uac_value_only_config_change_breaks_utl_untested_2026_07_20.md): this job is an API-SURFACE
+# check, NOT a full integration test run. It installs ONLY unified-api-contracts (see "Install
+# unified-api-contracts" below) — every other sibling repo is cloned but never installed, never
+# imported, and its own test suite is never collected. The invariants assert cross-repo contract
+# shape (export names, schema/signature compatibility, cassette↔consumer linkage, data_type
+# canonicalization) — they do NOT prove "the resolved cross-repo combination works" or that a
+# dependent's behavior is correct on the new tree, only that its declared surface still matches.
+# A value-only change (e.g. a config constant whose NAME is unchanged but VALUE differs) can pass
+# SIT_VALIDATED while still breaking a consumer at runtime — this is a known, accepted gap, not a
+# bug in this job; downstream readers of `ci_status=SIT_VALIDATED` must not treat it as proof a
+# dependent repo's tests were executed.
+#
 # Cadence: nightly (03:00 UTC, offset from performance-test's 02:00) + manual + on-promotion
 # (repository_dispatch [full-workspace-sit] fired by the Tier C promotion bot before it advances a
 # live-defi-rollout → staging PR). A repo must not promote to staging while this is RED for its layer.
@@ -248,12 +261,23 @@ jobs:
       # MISSING LINK FIX (2026-06-10): the SIT result never reached PM — sit-unlock listens for
       # sit-passed/sit-failed repository_dispatch events that NOTHING sent, so a green SIT left
       # staging locked forever and a red SIT never opened staging for fixes. Close the loop.
+      #
+      # CANCELLED-RUN NO-OP (2026-07-29, sit_validated_tree_treadmill_blocks_breaking_promotes_2026_07_20.md
+      # "Distinct sub-finding"): `job.status` is one of success/failure/cancelled. The original code
+      # treated anything non-success as `sit-failed` — so a run cancelled mid-flight (e.g. an overlapping
+      # dispatch superseded by a newer one) reported a FALSE failure, an uninformative verdict that can
+      # still reach sit-unlock ahead of / after a genuinely green run. A cancelled run has no informative
+      # verdict to report — no-op instead of dispatching either event.
       - name: Report SIT result to PM (drives sit-unlock)
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           set -euo pipefail
+          if [ "${{ job.status }}" = "cancelled" ]; then
+            echo "Job was cancelled — no informative verdict to report; skipping sit-passed/sit-failed dispatch."
+            exit 0
+          fi
           if [ "${{ job.status }}" = "success" ]; then EVENT="sit-passed"; else EVENT="sit-failed"; fi
           gh api "repos/IggyIkenna/unified-trading-pm/dispatches" \
             -X POST -f event_type="$EVENT" \
