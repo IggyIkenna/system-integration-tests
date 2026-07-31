@@ -266,6 +266,16 @@ run_pytest_invariant "deployment-ui TypeScript source routes (cross-repo invaria
     "tests/test_deployment_ui_cross_repo_invariant.py::test_deployment_ui_repo_readiness_client_route_stable" \
     "tests/test_deployment_ui_cross_repo_invariant.py::test_deployment_ui_client_api_present"
 
+# ── 22. cefi registry vs instruments-service's real expected-universe (Layer 2 backstop) ──
+# Closes breaking_change_differ_blind_to_registry_data_dicts_2026_07_09.md's Layer-2 gap: on
+# the 2026-07-07/08 incident, full-workspace-sit ran GREEN because no test re-derived IS's
+# expected-universe from the live UAC registry. Loads instruments-service's dev-only
+# scripts/expected_universe.py by file path (not part of the installable package) and runs
+# the real build_expected('cefi') + the VENUE_DATA_TYPE_CAPABILITIES / CEFI_VENUE_FOLD
+# structural invariants against the assembled workspace's live registry.
+run_pytest_invariant "cefi registry vs instruments-service expected-universe (cross-repo invariant — Layer 2)" "instruments-service" \
+    "tests/test_cefi_registry_expected_universe_invariant.py"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════ Tier B SIT summary ════════════════"
