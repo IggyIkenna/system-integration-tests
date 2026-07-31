@@ -204,6 +204,8 @@ BACKTEST_SEED=42 python scripts/run_sports_arb_backtest.py \
 
 - `e2e_smoke_and_portable_backtests.md`
 - `unified-trading-pm/codex/06-coding-standards/integration-testing-layers.md`
+- `unified-trading-pm/codex/09-strategy/operational/paper-batch-live-reconciliation.md` — canonical SSOT for the §3
+  Batch-Live Symmetry criterion (paper(W)==batch-rerun(W) determinism spine)
 - `batch-live-symmetry.mdc` (cursor rule)
 - `VCR_CREDENTIAL_RECORDING_PLAN.md`
 - `system-integration-tests/README.md`
