@@ -145,9 +145,14 @@ extraPaths = [
     ".",
     "../deployment-api",
     "../unified-api-contracts",
-    "../unified-internal-contracts",
     "../unified-trading-library",
-    "../unified-cloud-interface",
+    "../alerting-service",
+    "../client-reporting-api",
+    "../execution-service",
+    "../features-service",
+    "../instruments-service",
+    "../market-data-processing-service",
+    "../strategy-service",
 ]
 
 # ── pytest ──────────────────────────────────────────────────────────────────────
