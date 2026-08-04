@@ -232,9 +232,12 @@ jobs:
               continue
             fi
 
-            # Poll (up to ~90s; observed run duration ~15-130s) the identified run to a terminal status.
+            # Poll (up to ~320s; observed run duration up to 307s for self-hosted glue-writer
+            # runner jobs — the prior 90s budget (18×5s) was too tight and caused 5/6 timeout
+            # verdicts on runs that actually completed success within 129-307s, per
+            # /plans/active/issues/sit_gate_fleet_green_auto_retrigger_stuck_2026_07_27.md).
             CONCLUSION=""
-            for _ in $(seq 1 18); do
+            for _ in $(seq 1 64); do
               RUN_JSON=$(curl -s -H "Authorization: token ${GH_PAT}" -H "Accept: application/vnd.github.v3+json" \
                 "https://api.github.com/repos/${GH_ORG}/unified-trading-pm/actions/runs/${NEW_RUN_ID}" 2>/dev/null || echo "{}")
               RUN_STATUS=$(printf '%s' "$RUN_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || echo "")
