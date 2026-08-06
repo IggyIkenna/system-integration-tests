@@ -205,11 +205,40 @@ jobs:
           STAMP_FAILURES=()
           for r in "${STAMP_REPOS[@]}"; do
             [ -d "$r/.git" ] || { echo "skip $r (not assembled)"; continue; }
-            # Defense-in-depth: only stamp a repo actually checked out on live-defi-rollout (the clone
-            # may have fallen back to main; stamping a main tree would be wrong — though the consumer's
-            # tree-equality check would also reject it).
+            # Defense-in-depth: only stamp a repo verifiably on live-defi-rollout. A clone that
+            # fell back to main checks out a NAMED branch ("main"), so BR != "live-defi-rollout"
+            # and != "HEAD" — still correctly skipped below. A repo pinned by the promote gate's
+            # SIT-on-LDR re-check (STEP 5 / "pinning $r to dispatched sha" above) is checked out
+            # via `git checkout <sha>`, which detaches HEAD even though that commit IS a
+            # legitimate live-defi-rollout commit — a literal branch-name comparison
+            # unconditionally skipped the stamp for this case, creating an infinite promote-gate
+            # loop (SIT passes -> stamp skipped -> gate re-dispatches SIT -> forever; confirmed
+            # live 2026-08-06, sit_stamp_skipped_on_detached_head_pinned_sha_2026_08_06.md). Accept
+            # a detached HEAD whose commit is live-defi-rollout itself or a verified ancestor of
+            # it; the real safety net against a genuinely wrong tree is the CONSUMER's tree-
+            # equality check (ldr_to_main_fleet_promote.sh: sit_validated_tree == LDR_TREE), not
+            # this local branch-name guard.
             BR="$(git -C "$r" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
-            if [ "$BR" != "live-defi-rollout" ]; then echo "skip $r (on '$BR', not live-defi-rollout)"; continue; fi
+            ON_LDR=false
+            if [ "$BR" = "live-defi-rollout" ]; then
+              ON_LDR=true
+            elif [ "$BR" = "HEAD" ]; then
+              CUR_SHA="$(git -C "$r" rev-parse HEAD 2>/dev/null || echo "")"
+              LDR_REF_SHA="$(git -C "$r" rev-parse live-defi-rollout 2>/dev/null || echo "")"
+              if [ -n "$CUR_SHA" ] && [ "$CUR_SHA" = "$LDR_REF_SHA" ]; then
+                ON_LDR=true  # fast path: exactly the tip this clone fetched at job start
+              elif [ -n "$CUR_SHA" ]; then
+                # LDR moved between the pin and this clone (fleet churn) — the original --depth=1
+                # clone has no history connecting the two shallow single-commit grafts, so deepen
+                # before asking git to judge ancestry.
+                git -C "$r" fetch -q --unshallow origin live-defi-rollout 2>/dev/null \
+                  || git -C "$r" fetch -q --deepen=1000 origin live-defi-rollout 2>/dev/null || true
+                if git -C "$r" merge-base --is-ancestor "$CUR_SHA" origin/live-defi-rollout 2>/dev/null; then
+                  ON_LDR=true
+                fi
+              fi
+            fi
+            if [ "$ON_LDR" != "true" ]; then echo "skip $r (on '$BR', not verified as live-defi-rollout)"; continue; fi
             SHA="$(git -C "$r" rev-parse HEAD 2>/dev/null || echo "")"
             TREE="$(git -C "$r" rev-parse 'HEAD^{tree}' 2>/dev/null || echo "")"
             if [ -z "$SHA" ] || [ -z "$TREE" ]; then echo "skip $r (no sha/tree)"; continue; fi
