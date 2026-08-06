@@ -243,7 +243,7 @@ jobs:
           ref: staging
 
       - name: Setup Python CI tools
-        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
+        uses: IggyIkenna/unified-trading-ci/.github/actions/setup-python-tools@main
         with:
           python-version: "3.13.9"
 
@@ -369,7 +369,7 @@ jobs:
       # longer a clonable repo. The codex/ directory now lives inside PM. The SIT readiness check
       # reads it from the PM clone the deps-assembly step lays down at ../unified-trading-pm/codex.
       - name: Setup Python CI tools
-        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
+        uses: IggyIkenna/unified-trading-ci/.github/actions/setup-python-tools@main
         with:
           python-version: "3.13.9"
 
@@ -636,7 +636,7 @@ jobs:
           sleep 30
 
       - name: Setup Python CI tools
-        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
+        uses: IggyIkenna/unified-trading-ci/.github/actions/setup-python-tools@main
         with:
           python-version: "3.13.9"
 

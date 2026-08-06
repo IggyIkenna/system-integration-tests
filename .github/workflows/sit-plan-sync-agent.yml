@@ -55,7 +55,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Setup agent CI tools
-        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-agent-tools@main
+        uses: IggyIkenna/unified-trading-ci/.github/actions/setup-agent-tools@main
 
       - name: Configure git identity
         run: |
