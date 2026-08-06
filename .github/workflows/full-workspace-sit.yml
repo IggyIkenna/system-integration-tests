@@ -59,6 +59,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           GH_ORG: IggyIkenna
           DEP_BRANCH: live-defi-rollout
+          # SHA pin (2026-08-06, sit_validated_tree_treadmill_blocks_breaking_promotes_2026_07_20.md):
+          # the LDR→main fleet promoter's ldr-main-breaking-gate dispatch now carries the EXACT commit
+          # it computed sit_validated_tree needs to match. Without this, this job cloned "whatever LDR
+          # is NOW" at its own (later, independently-timed) start — a moving-tree race under fleet
+          # churn where the gate and this job can disagree on which tree SIT actually validated. Only
+          # the ONE repo named in the payload is pinned; every other sibling still clones its own live
+          # tip (the cross-repo assembly must reflect current reality for everyone else). Empty on the
+          # nightly cron / manual dispatch / the plain fleet-green auto-retrigger (no repo/sha in
+          # payload) — those fall back to the live tip exactly as before.
+          PINNED_REPO: ${{ github.event.client_payload.repo }}
+          PINNED_SHA: ${{ github.event.client_payload.sha }}
         run: |
           set -euo pipefail
           # PM holds the manifest; clone it first.
@@ -87,6 +98,14 @@ jobs:
               || git clone --depth=1 -b main \
               "https://x-access-token:${GH_TOKEN}@github.com/${GH_ORG}/${r}.git" "$r" 2>/dev/null \
               || echo "WARN: could not clone $r (skipping — runner will fail loudly if it is a required sibling)"
+            if [ -n "${PINNED_SHA:-}" ] && [ "$r" = "${PINNED_REPO:-}" ] && [ -d "$r/.git" ]; then
+              echo "  pinning $r to dispatched sha ${PINNED_SHA:0:12} (was: $(git -C "$r" rev-parse --short HEAD))"
+              if git -C "$r" fetch --depth=1 origin "$PINNED_SHA" 2>/dev/null && git -C "$r" checkout -q "$PINNED_SHA"; then
+                echo "  ✅ $r pinned to ${PINNED_SHA:0:12}"
+              else
+                echo "::warning::could not fetch/checkout pinned sha ${PINNED_SHA} for $r — leaving it on ${DEP_BRANCH} tip (fail-open: the gate's own re-check next tick catches a genuine mismatch via sit_validated_tree)"
+              fi
+            fi
           done
           echo "Assembled workspace:" && ls -d */
 
