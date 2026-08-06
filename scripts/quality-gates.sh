@@ -27,6 +27,7 @@ CODEX_MAX_VIOLATIONS=0
 # Not a deployable HTTP/CLI service — this is a Layer-3 e2e/smoke test harness (no api/main.py,
 # no ServiceBootstrap entrypoint). Skip the service-lifecycle infra checks (STEP 5.61/5.62).
 SKIP_SERVICE_LIFECYCLE_STEPS=true
+MAX_DURATION=600  # 2026-08-05: raised from default 300s — QG wall time measured ~400s under shared-runner contention (baseline 52.2s is a single-core-pinned measurement from 2026-06-17). Matches PM's 600s cap.
 source "${WORKSPACE_ROOT}/unified-trading-pm/scripts/quality-gates-base/base-service.sh"
 
 # Codex enforcement: lifecycle triple (STARTED / STOPPED / FAILED) via UTL — not duplicated in service code.

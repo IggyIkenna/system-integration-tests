@@ -104,17 +104,39 @@ def test_venue_to_tardis_matches_inverted_venue_mapping() -> None:
     direct match OR a match after applying CEFI_VENUE_FOLD to the resolved venue. This was
     a genuine pre-existing inconsistency (not just an overly-strict test), now fixed by
     checking the invariant the system ACTUALLY relies on instead of a naive 1:1 assumption.
+
+    Narrowed to `VENUES_BY_ASSET_GROUP["cefi"]` members 2026-08-04
+    (unified-api-contracts@d67a226f, operator decision): bare "OKX" was REMOVED from the
+    CeFi capture universe entirely (never reached MVP as an aggregate venue — 2,475+
+    permanently-failing capture attempts), and its `CEFI_VENUE_FOLD` entries
+    ("OKX-SWAP"/"OKX-FUTURES" -> "OKX") were deliberately deleted along with it, since that
+    fold exists only to reconcile capture-universe/honest-coverage accounting. Bare "OKX"
+    is INTENTIONALLY still present in `_VENUE_TO_TARDIS`/`venue_instrument_type_to_tardis`
+    as a legacy execution-context alias (instruments-service's multi-exchange bare-OKX
+    resolution, CLOB_VENUES) — it no longer needs to round-trip through the fold because it
+    no longer participates in capture accounting. The round-trip invariant below therefore
+    only applies to venues that ARE members of the capture universe; a legacy alias outside
+    it is not required to resolve via CEFI_VENUE_FOLD.
     """
     from unified_api_contracts import VenueMapping
     from unified_api_contracts.internal.reference.instrument_key import _VENUE_TO_TARDIS
-    from unified_api_contracts.registry.market_data_categories import CEFI_VENUE_FOLD
+    from unified_api_contracts.registry.market_data_categories import (
+        CEFI_VENUE_FOLD,
+        VENUES_BY_ASSET_GROUP,
+    )
 
     mapping = VenueMapping()
+    cefi_capture_universe = set(VENUES_BY_ASSET_GROUP["cefi"])
 
-    # Every canonical venue in _VENUE_TO_TARDIS must map back correctly, either directly
-    # or via the CeFi venue-dialect fold (aggregate/bundle venues like bare OKX/BYBIT are
-    # only reachable through the fold, not a single direct Tardis-exchange mapping).
+    # Every canonical venue in _VENUE_TO_TARDIS that is part of the CeFi capture universe
+    # must map back correctly, either directly or via the CeFi venue-dialect fold
+    # (aggregate/bundle venues like bare BYBIT are only reachable through the fold, not a
+    # single direct Tardis-exchange mapping). Venues NOT in the capture universe (e.g. bare
+    # "OKX") are legacy/execution-context aliases exempt from this round-trip — see the
+    # docstring above.
     for venue, tardis_exchange in _VENUE_TO_TARDIS.items():
+        if venue not in cefi_capture_universe:
+            continue
         resolved = mapping.tardis_to_venue.get(tardis_exchange)
         folded = CEFI_VENUE_FOLD.get(resolved) if resolved is not None else None
         assert resolved == venue or folded == venue, (
