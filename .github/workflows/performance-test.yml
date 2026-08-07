@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python CI tools
-        uses: IggyIkenna/unified-trading-pm/.github/actions/setup-python-tools@main
+        uses: IggyIkenna/unified-trading-ci/.github/actions/setup-python-tools@main
         with:
           python-version: "3.13.9"
 

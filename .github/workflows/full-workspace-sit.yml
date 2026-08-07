@@ -261,9 +261,15 @@ jobs:
               continue
             fi
 
-            # Poll (up to ~30s) for a run id NOT in PRE_RUN_IDS — that's the run our dispatch created.
+            # Poll (up to ~150s) for a run id NOT in PRE_RUN_IDS — that's the run our dispatch created.
+            # The prior 30s budget (6x5s) was too tight under load: confirmed 2026-08-06 (recurring
+            # sit_gate_fleet_green_auto_retrigger_stuck_2026_07_27.md occurrence, deployment-service PR#729)
+            # — repos varied run-to-run (a load/list-API-lag flake, not a per-repo issue), and the
+            # `?per_page=10` recent-runs listing can transiently omit a just-dispatched run under fleet-wide
+            # dispatch volume. Mirrors the same widen-the-poll-budget fix already applied to the completion
+            # poll below (90s->320s, commit 69b93bc).
             NEW_RUN_ID=""
-            for _ in $(seq 1 6); do
+            for _ in $(seq 1 30); do
               sleep 5
               CANDIDATES=$(curl -s -H "Authorization: token ${GH_PAT}" -H "Accept: application/vnd.github.v3+json" \
                 "https://api.github.com/repos/${GH_ORG}/unified-trading-pm/actions/workflows/ci-status-update.yml/runs?per_page=10" \
