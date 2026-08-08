@@ -124,16 +124,43 @@ jobs:
         if: env.ANTHROPIC_API_KEY == ''
         run: echo "ANTHROPIC_API_KEY not set — skipping SIT plan sync agent"
 
-      - name: Notify Telegram
-        if: always() && env.TELEGRAM_BOT_TOKEN != ''
+  # Notify ci-health on FAILURE only (Telegram retired 2026-08-08 — CI alerting is Slack-only).
+  # The old "Notify Telegram" step was `if: always()`, so it paged a ✅ lifecycle message on EVERY
+  # run — and because this workflow also triggers on `push: main` (not just the 03:00 cron), that
+  # was several success pings a day into the Telegram alerts bot. Per the actionable-only contract
+  # (/codex/04-architecture/ci-alerting.md + …/agent-orchestrator-alerting.md) a scheduled advisory
+  # agent's SUCCESS is a lifecycle event and must never page; only its FAILURE is actionable.
+  #
+  # The failure path reuses this repo's existing canonical route (identical to the notify-ci-watcher
+  # job in quality-gates-v2.yml): a `ci-failure-alert` repository_dispatch into unified-trading-pm,
+  # whose ci-health.yml owns the Slack #ci-failures post via the notify-slack.yml carrier. Posting
+  # to the webhook directly from here would violate the carrier's single-dedup-point invariant.
+  # Best-effort: a failed dispatch MUST NOT redden the run (the job failure is the real signal, and
+  # ci-health's */15 cron backstop catches it regardless).
+  notify-ci-watcher:
+    name: Notify ci-health (failure only)
+    needs: sit-plan-sync
+    if: always() && needs.sit-plan-sync.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch ci-failure-alert → PM ci-health
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
-          STATUS: ${{ job.status }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_ORG: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          BRANCH: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          ICON=$([[ "$STATUS" == "success" ]] && echo "✅" || echo "⚠️")
-          TEXT="${ICON} *sit-plan-sync-agent* | ${STATUS} | SIT vs PM plans checked"
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="${TEXT}" \
-            -d parse_mode="Markdown" || true
+          set +e
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "[notify-ci-watcher] no GH_PAT — skipping event-driven dispatch; cron backstop remains."
+            exit 0
+          fi
+          gh api "repos/${GH_ORG}/unified-trading-pm/dispatches" \
+            -f event_type=ci-failure-alert \
+            -f "client_payload[repo]=${REPO}" \
+            -f "client_payload[branch]=${BRANCH}" \
+            -f "client_payload[run_url]=${RUN_URL}" \
+            && echo "[notify-ci-watcher] dispatched ci-failure-alert for sit-plan-sync-agent (${REPO}@${BRANCH}) -> PM ci-health." \
+            || echo "[notify-ci-watcher] dispatch failed (best-effort); cron backstop remains."
+          exit 0
