@@ -276,6 +276,24 @@ run_pytest_invariant "deployment-ui TypeScript source routes (cross-repo invaria
 run_pytest_invariant "cefi registry vs instruments-service expected-universe (cross-repo invariant — Layer 2)" "instruments-service" \
     "tests/test_cefi_registry_expected_universe_invariant.py"
 
+# ── 23. venue-coverage cascade, invariant 1 — MTDS batch ⟹ live (ratchet baseline) ──
+# Codex SSOT: unified-trading-pm/codex/06-coding-standards/integration-testing-layers.md
+# § "The venue-coverage cascade — operator ruling 2026-08-14". Origin:
+# plans/active/issues/venue_coverage_position_read_vs_execute_asymmetry_2026_08_14.md.
+# Fails only on a NEW gap beyond tests/data/mtds_batch_live_coverage_baseline.json — the
+# pre-existing 109-venue backlog does not block the fleet; a regression does.
+run_pytest_invariant "venue-coverage cascade — MTDS batch⟹live (cross-repo invariant)" "market-tick-data-service" \
+    "tests/test_mtds_venue_coverage_cascade_invariant.py"
+
+# ── 24. venue-coverage cascade, invariant 3 — strategy ⟹ execution reachability (ratchet baseline) ──
+# Same codex SSOT + origin issue as #23. Checks CONNECTOR INSTANTIATION outside
+# defi_execution/protocols/+tests/, not just module existence — a module existing is not
+# the same as anything in production calling it (measured 2026-08-14 session 3: Morpho has
+# no dispatcher path at all; Uniswap's is hardcoded to None). Fails only on a NEW
+# regression beyond tests/data/execution_service_venue_reachability_baseline.json.
+run_pytest_invariant "venue-coverage cascade — strategy⟹execution reachability (cross-repo invariant)" "strategy-service,execution-service" \
+    "tests/test_execution_service_venue_coverage_cascade_invariant.py"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════ Tier B SIT summary ════════════════"
