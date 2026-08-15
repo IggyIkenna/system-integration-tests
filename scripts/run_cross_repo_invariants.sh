@@ -294,6 +294,18 @@ run_pytest_invariant "venue-coverage cascade — MTDS batch⟹live (cross-repo i
 run_pytest_invariant "venue-coverage cascade — strategy⟹execution reachability (cross-repo invariant)" "strategy-service,execution-service" \
     "tests/test_execution_service_venue_coverage_cascade_invariant.py"
 
+# ── 25. venue-coverage cascade, invariant 4 — LST token address drift (UAC ⟺ execution-service) ──
+# Same origin issue as #23/#24. Guards the temporary window (until Chunk A's migration lands)
+# where unified-api-contracts' lst_token_addresses.py and execution-service's per-protocol
+# address constants both hold a copy of the same on-chain token address — a wrong address
+# silently mis-reconciles a real position, no error anywhere. Unlike #23/#24 there is no
+# tolerated backlog: every entry was migrated as an exact copy, so ANY mismatch is a real
+# edit to one side that wasn't mirrored to the other. Once Chunk A lands (connectors import
+# the address from UAC instead of duplicating it) this invariant becomes structurally
+# untrippable and should be deleted, not left green.
+run_pytest_invariant "LST token address drift — UAC ⟺ execution-service (cross-repo invariant)" "unified-api-contracts,execution-service" \
+    "tests/test_lst_token_address_drift_invariant.py"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════ Tier B SIT summary ════════════════"
