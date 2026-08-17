@@ -306,6 +306,16 @@ run_pytest_invariant "venue-coverage cascade — strategy⟹execution reachabili
 run_pytest_invariant "LST token address drift — UAC ⟺ execution-service (cross-repo invariant)" "unified-api-contracts,execution-service" \
     "tests/test_lst_token_address_drift_invariant.py"
 
+# ── 26. venue-coverage cascade, invariant 2 — MTDS venue ⟹ strategy position reader (ratchet baseline) ──
+# Same codex SSOT + origin issue as #23/#24. Checks every MTDS batch-capture venue's protocol
+# against strategy-service's per-venue batch/live/paper position-reading capability axis
+# (position_interface/capabilities.py::position_read_mode_availability(), built
+# strategy-service@926be71046). Fails only on a NEW gap beyond
+# tests/data/strategy_position_read_mode_baseline.json — the pre-existing 106-venue backlog
+# does not block the fleet; a regression does.
+run_pytest_invariant "venue-coverage cascade — MTDS⟹strategy position-read (cross-repo invariant)" "market-tick-data-service,strategy-service" \
+    "tests/test_strategy_position_read_mode_cascade_invariant.py"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "════════════════ Tier B SIT summary ════════════════"
