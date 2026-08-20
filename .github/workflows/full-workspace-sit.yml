@@ -137,6 +137,7 @@ jobs:
       # to REQUIRED_SIBLINGS + its invariant + the manifest list (the suite asserts the two match).
       - name: Stamp SIT_VALIDATED + LDR tree (WS-L SIT-rehome producer — covered repos only)
         if: always()
+        id: stamp
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
           GH_ORG: IggyIkenna
@@ -312,6 +313,21 @@ jobs:
 
           if [ "${#STAMP_FAILURES[@]}" -gt 0 ]; then
             echo "::error::${#STAMP_FAILURES[@]} stamp verification failure(s): ${STAMP_FAILURES[*]}"
+            # Disambiguate "stamp-dispatch/GitHub-API infra failure" from "a real cross-repo
+            # invariant broke" (sit_stamp_dispatch_503_false_positive_2026_08_17.md): a cluster of
+            # full-workspace-sit "failures" on 2026-08-17 were GitHub API 503s in THIS step while
+            # every invariant passed every time, but the downstream escalation had no way to tell
+            # the difference and framed it as "identify which repo broke the suite" — misleading, a
+            # worker following that hypothesis on faith could have shipped an unjustified change.
+            ALL_INVARIANTS_PASS=$(python3 -c "
+          import json
+          results = json.load(open('$_RESULTS'))
+          print('true' if results and all(v == 'PASS' for v in results.values()) else 'false')
+          ")
+            if [ "$ALL_INVARIANTS_PASS" = "true" ]; then
+              echo "failure_class=stamp_infra_only" >> "$GITHUB_OUTPUT"
+              echo "(all per-repo invariants PASSED — this failure is stamp-dispatch/GitHub-API-only)"
+            fi
             exit 1
           fi
 
@@ -329,14 +345,32 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
+          FAILURE_CLASS: ${{ steps.stamp.outputs.failure_class }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           if [ "${{ job.status }}" = "cancelled" ]; then
             echo "Job was cancelled — no informative verdict to report; skipping sit-passed/sit-failed dispatch."
             exit 0
           fi
           if [ "${{ job.status }}" = "success" ]; then EVENT="sit-passed"; else EVENT="sit-failed"; fi
-          gh api "repos/IggyIkenna/unified-trading-pm/dispatches" \
-            -X POST -f event_type="$EVENT" \
-            && echo "Dispatched $EVENT to unified-trading-pm" \
-            || echo "::error::failed to dispatch $EVENT — staging lock will dangle"
+          # Propagate failure_class=stamp_infra_only (set by the "Stamp SIT_VALIDATED" step above)
+          # so sit-unlock's escalation-context builder can tell a stamp-dispatch/GitHub-API failure
+          # apart from a broken cross-repo invariant — see
+          # sit_stamp_dispatch_503_false_positive_2026_08_17.md. Switched from `gh api -f` (which
+          # cannot express a nested client_payload object) to the same curl+escaped-JSON pattern
+          # already used twice above in this file for the ci-status-update dispatch.
+          if [ -n "${FAILURE_CLASS:-}" ]; then
+            PAYLOAD="{\"event_type\": \"${EVENT}\", \"client_payload\": {\"failure_class\": \"${FAILURE_CLASS}\"}}"
+          else
+            PAYLOAD="{\"event_type\": \"${EVENT}\"}"
+          fi
+          HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/IggyIkenna/unified-trading-pm/dispatches" \
+            -d "$PAYLOAD")
+          if [ "$HTTP" = "204" ]; then
+            echo "Dispatched $EVENT to unified-trading-pm (failure_class=${FAILURE_CLASS:-none})"
+          else
+            echo "::error::failed to dispatch $EVENT (HTTP ${HTTP}) — staging lock will dangle"
+          fi
